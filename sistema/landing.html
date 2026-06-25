@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lubricentro Villagra – Expertos en Mantenimiento Automotriz</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f5f7fb; color: #0f172a; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── NAVBAR ── */
+    .lp-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 68px;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .lp-logo { font-size: 1.15rem; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
+    .lp-logo span { color: #60a5fa; }
+    .lp-nav-links { display: flex; gap: 30px; }
+    .lp-nav-links a { color: #94a3b8; font-size: 0.95rem; transition: color .2s; }
+    .lp-nav-links a:hover { color: #fff; }
+    .lp-nav-ctas { display: flex; gap: 10px; }
+    .lp-btn {
+      padding: 9px 22px; border-radius: 10px;
+      font-weight: 700; font-size: 0.9rem;
+      cursor: pointer; border: none; transition: all .2s;
+    }
+    .lp-btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #e2e8f0;
+    }
+    .lp-btn-ghost:hover { background: rgba(255,255,255,0.08); }
+    .lp-btn-primary { background: #2563eb; color: #fff; }
+    .lp-btn-primary:hover { background: #1d4ed8; }
+
+    /* ── HERO ── */
+    .lp-hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0f172a 100%);
+      position: relative; overflow: hidden;
+      padding: 110px 60px 70px;
+    }
+    .lp-hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 65% 50%, rgba(37,99,235,0.35) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    /* Decorative grid overlay */
+    .lp-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .lp-hero-content { position: relative; z-index: 1; max-width: 580px; }
+    .lp-hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,99,235,0.18);
+      border: 1px solid rgba(96,165,250,0.35);
+      color: #93c5fd; padding: 6px 16px;
+      border-radius: 999px; font-size: 0.84rem;
+      font-weight: 600; margin-bottom: 26px;
+    }
+    .lp-hero h1 {
+      font-size: 3.5rem; font-weight: 900;
+      color: #fff; line-height: 1.1; margin-bottom: 22px;
+    }
+    .lp-hero h1 span { color: #60a5fa; }
+    .lp-hero p {
+      font-size: 1.12rem; color: #94a3b8;
+      line-height: 1.75; margin-bottom: 38px;
+    }
+    .lp-hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+    .lp-hero-btns .lp-btn {
+      padding: 14px 30px; font-size: 1rem; border-radius: 12px;
+    }
+    .lp-hero-btns .lp-btn-ghost {
+      border: 2px solid rgba(255,255,255,0.18);
+      color: #e2e8f0; background: rgba(255,255,255,0.05);
+    }
+
+
+    /* ── STATS STRIP ── */
+    .lp-stats-strip {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 40px 60px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .lp-stat-item {
+      text-align: center;
+      padding: 10px 20px;
+      border-right: 1px solid #e2e8f0;
+    }
+    .lp-stat-item:last-child { border-right: none; }
+    .lp-stat-item .num {
+      font-size: 2.4rem; font-weight: 900; color: #2563eb; line-height: 1;
+    }
+    .lp-stat-item .lbl { color: #64748b; font-size: 0.88rem; margin-top: 6px; }
+
+    /* ── SECTION COMMONS ── */
+    .lp-section { padding: 84px 60px; }
+    .lp-section-white { background: #fff; }
+    .lp-section-gray { background: #f5f7fb; }
+    .lp-section-title { text-align: center; margin-bottom: 52px; }
+    .lp-badge-label {
+      display: inline-block;
+      background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe;
+      padding: 4px 14px; border-radius: 999px;
+      font-size: 0.82rem; font-weight: 700; margin-bottom: 14px;
+    }
+    .lp-section-title h2 {
+      font-size: 2.2rem; font-weight: 900;
+      color: #0f172a; margin-bottom: 12px;
+    }
+    .lp-section-title p { color: #64748b; font-size: 1.05rem; }
+
+    /* ── SERVICES ── */
+    .lp-services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 22px;
+    }
+    .lp-service-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 28px 26px;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 2px 14px rgba(15,23,42,0.05);
+    }
+    .lp-service-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 36px rgba(15,23,42,0.11);
+    }
+    .lp-svc-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; margin-bottom: 18px;
+    }
+    .icon-blue   { background: #eff6ff; color: #2563eb; }
+    .icon-red    { background: #fef2f2; color: #dc2626; }
+    .icon-orange { background: #fff7ed; color: #ea580c; }
+    .icon-green  { background: #f0fdf4; color: #16a34a; }
+    .icon-purple { background: #faf5ff; color: #7c3aed; }
+    .icon-yellow { background: #fefce8; color: #ca8a04; }
+    .lp-service-card h4 { font-size: 1.02rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .lp-service-card p { color: #64748b; font-size: 0.9rem; line-height: 1.65; }
+
+    /* ── WHY US ── */
+    .lp-features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .lp-feature {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 24px; border-radius: 18px;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      transition: border-color .2s;
+    }
+    .lp-feature:hover { border-color: #bfdbfe; }
+    .lp-feat-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: 12px; background: #eff6ff; color: #2563eb;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .lp-feature h4 { font-size: 0.97rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .lp-feature p { font-size: 0.875rem; color: #64748b; line-height: 1.65; }
+
+    /* ── HOW IT WORKS ── */
+    .lp-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+    .lp-steps::before {
+      content: '';
+      position: absolute; top: 32px; left: 12.5%; right: 12.5%;
+      height: 2px; background: #e2e8f0; z-index: 0;
+    }
+    .lp-step { text-align: center; padding: 0 20px; position: relative; z-index: 1; }
+    .lp-step-num {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: #2563eb; color: #fff;
+      font-size: 1.4rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+      border: 4px solid #fff;
+      box-shadow: 0 0 0 2px #2563eb;
+    }
+    .lp-step h4 { font-size: 0.97rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .lp-step p { font-size: 0.88rem; color: #64748b; line-height: 1.6; }
+
+    /* ── CONTACT ── */
+    .lp-contact-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;
+    }
+    .lp-contact-info { display: grid; gap: 14px; }
+    .lp-contact-item {
+      display: flex; gap: 16px; align-items: center;
+      padding: 18px 20px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px;
+    }
+    .lp-cicon {
+      width: 42px; height: 42px; flex-shrink: 0;
+      background: #eff6ff; color: #2563eb;
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .lp-contact-item strong { display: block; font-size: 0.82rem; color: #94a3b8; margin-bottom: 3px; font-weight: 600; }
+    .lp-contact-item span { font-weight: 600; color: #0f172a; font-size: 0.95rem; }
+    .lp-cta-block {
+      margin-top: 6px;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      border-radius: 18px; padding: 30px; color: #fff;
+    }
+    .lp-cta-block h3 { font-size: 1.3rem; margin-bottom: 10px; }
+    .lp-cta-block p { color: #bfdbfe; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.6; }
+    .lp-cta-block button {
+      width: 100%; padding: 14px;
+      background: #fff; color: #1e3a8a;
+      border: none; border-radius: 12px;
+      font-weight: 800; font-size: 1rem;
+      cursor: pointer; transition: opacity .2s;
+    }
+    .lp-cta-block button:hover { opacity: 0.9; }
+    .lp-map-placeholder {
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 20px; min-height: 300px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px; color: #94a3b8;
+    }
+    .lp-map-placeholder i { font-size: 3rem; color: #cbd5e1; }
+    .lp-map-placeholder p { font-size: 0.92rem; }
+    .lp-map-placeholder small { font-size: 0.78rem; color: #cbd5e1; }
+
+    /* ── FOOTER ── */
+    .lp-footer {
+      background: #0f172a;
+      padding: 48px 60px 32px;
+    }
+    .lp-footer-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 40px; flex-wrap: wrap;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 28px;
+    }
+    .lp-footer-brand .logo { font-size: 1.15rem; font-weight: 800; color: #fff; }
+    .lp-footer-brand .logo span { color: #60a5fa; }
+    .lp-footer-brand p { color: #64748b; font-size: 0.88rem; margin-top: 8px; max-width: 260px; line-height: 1.6; }
+    .lp-footer-links-group h5 { color: #e2e8f0; font-size: 0.88rem; margin-bottom: 14px; }
+    .lp-footer-links-group a {
+      display: block; color: #64748b;
+      font-size: 0.88rem; margin-bottom: 10px; transition: color .2s;
+    }
+    .lp-footer-links-group a:hover { color: #e2e8f0; }
+    .lp-footer-bottom {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    .lp-footer-bottom p { color: #475569; font-size: 0.84rem; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 980px) {
+      .lp-nav-links { display: none; }
+      .lp-nav { padding: 0 24px; }
+      .lp-hero { padding: 100px 28px 60px; }
+      .lp-hero h1 { font-size: 2.4rem; }
+      .lp-stats-strip { grid-template-columns: repeat(2,1fr); padding: 32px 28px; }
+      .lp-stat-item:nth-child(2) { border-right: none; }
+      .lp-stat-item:nth-child(3) { border-right: 1px solid #e2e8f0; border-top: 1px solid #e2e8f0; }
+      .lp-stat-item:nth-child(4) { border-top: 1px solid #e2e8f0; }
+      .lp-section { padding: 60px 28px; }
+      .lp-features-grid { grid-template-columns: 1fr; }
+      .lp-steps { grid-template-columns: 1fr 1fr; gap: 28px; }
+      .lp-steps::before { display: none; }
+      .lp-contact-grid { grid-template-columns: 1fr; }
+      .lp-footer-top { flex-direction: column; }
+      .lp-footer { padding: 40px 28px 24px; }
+      .lp-footer-bottom { flex-direction: column; text-align: center; }
+    }
+    @media (max-width: 600px) {
+      .lp-hero h1 { font-size: 1.9rem; }
+      .lp-stats-strip { grid-template-columns: repeat(2,1fr); }
+      .lp-steps { grid-template-columns: 1fr; }
+      .lp-hero-btns .lp-btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="lp-nav">
+    <div class="lp-logo">Lubricentro <span>Villagra</span></div>
+    <div class="lp-nav-links">
+      <a href="#servicios">Servicios</a>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#contacto">Contacto</a>
+    </div>
+    <div class="lp-nav-ctas">
+      <button class="lp-btn lp-btn-ghost" onclick="location.href='login.html'">Iniciar sesión</button>
+      <button class="lp-btn lp-btn-primary" onclick="location.href='login.html'">Registrarse</button>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="lp-hero">
+    <div class="lp-hero-content">
+      <div class="lp-hero-badge">
+        <i class="fas fa-circle-check"></i> Servicio profesional garantizado
+      </div>
+      <h1>Tu vehículo en manos <span>expertas</span></h1>
+      <p>Agenda tu cita en línea, da seguimiento en tiempo real y recibe tu factura digital. Mantenimiento automotriz transparente y sin sorpresas.</p>
+      <div class="lp-hero-btns">
+        <button class="lp-btn lp-btn-primary" onclick="location.href='login.html'">
+          <i class="fas fa-calendar-plus" style="margin-right:8px;"></i> Agendar cita
+        </button>
+        <button class="lp-btn lp-btn-ghost" onclick="location.href='#servicios'">
+          Ver servicios <i class="fas fa-arrow-down" style="margin-left:8px;"></i>
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── STATS STRIP ── -->
+  <div class="lp-stats-strip">
+    <div class="lp-stat-item">
+      <div class="num">+10</div>
+      <div class="lbl">Años de experiencia</div>
+    </div>
+    <div class="lp-stat-item">
+      <div class="num">+500</div>
+      <div class="lbl">Clientes satisfechos</div>
+    </div>
+    <div class="lp-stat-item">
+      <div class="num">+1,500</div>
+      <div class="lbl">Servicios realizados</div>
+    </div>
+    <div class="lp-stat-item">
+      <div class="num">100%</div>
+      <div class="lbl">Transparencia en el servicio</div>
+    </div>
+  </div>
+
+  <!-- ── SERVICES ── -->
+  <section class="lp-section lp-section-gray" id="servicios">
+    <div class="lp-section-title">
+      <div class="lp-badge-label">Nuestros servicios</div>
+      <h2>Todo lo que tu vehículo necesita</h2>
+      <p>Atención especializada con repuestos de calidad y mecánicos certificados</p>
+    </div>
+    <div class="lp-services-grid">
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-blue"><i class="fas fa-oil-can"></i></div>
+        <h4>Cambio de aceite</h4>
+        <p>Servicio rápido con aceites de alta calidad para proteger el motor de tu vehículo.</p>
+      </div>
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-red"><i class="fas fa-circle-dot"></i></div>
+        <h4>Revisión de frenos</h4>
+        <p>Inspección y mantenimiento de discos, pastillas y sistema hidráulico de frenos.</p>
+      </div>
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-orange"><i class="fas fa-filter"></i></div>
+        <h4>Filtros y repuestos</h4>
+        <p>Cambio de filtros de aire, aceite, combustible y habitáculo con marcas de confianza.</p>
+      </div>
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-green"><i class="fas fa-stethoscope"></i></div>
+        <h4>Mantenimiento preventivo</h4>
+        <p>Revisión general del vehículo para prevenir fallas y prolongar su vida útil.</p>
+      </div>
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-purple"><i class="fas fa-bolt"></i></div>
+        <h4>Sistema eléctrico</h4>
+        <p>Diagnóstico y reparación de baterías, alternadores y sistemas eléctricos en general.</p>
+      </div>
+      <div class="lp-service-card">
+        <div class="lp-svc-icon icon-yellow"><i class="fas fa-temperature-half"></i></div>
+        <h4>Sistema de refrigeración</h4>
+        <p>Revisión y mantenimiento del radiador, mangueras y líquido refrigerante para evitar sobrecalentamiento.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY US ── -->
+  <section class="lp-section lp-section-white" id="nosotros">
+    <div class="lp-section-title">
+      <div class="lp-badge-label">¿Por qué elegirnos?</div>
+      <h2>Tecnología y transparencia para tu tranquilidad</h2>
+      <p>Un sistema digital completo para que siempre estés informado sobre tu vehículo</p>
+    </div>
+    <div class="lp-features-grid">
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-mobile-screen"></i></div>
+        <div>
+          <h4>Seguimiento en línea</h4>
+          <p>Consulta el estado de tu vehículo en tiempo real desde cualquier dispositivo.</p>
+        </div>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+        <div>
+          <h4>Facturación transparente</h4>
+          <p>Recibe tu factura detallada al finalizar el servicio con desglose de todos los costos.</p>
+        </div>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-user-shield"></i></div>
+        <div>
+          <h4>Mecánicos certificados</h4>
+          <p>Personal calificado con experiencia comprobada en todo tipo de vehículos.</p>
+        </div>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-calendar-check"></i></div>
+        <div>
+          <h4>Citas en línea</h4>
+          <p>Agenda tu servicio en minutos sin llamadas ni filas de espera presenciales.</p>
+        </div>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <div>
+          <h4>Inventario controlado</h4>
+          <p>Repuestos verificados en stock para no retrasar tu servicio ni generar esperas.</p>
+        </div>
+      </div>
+      <div class="lp-feature">
+        <div class="lp-feat-icon"><i class="fas fa-clock"></i></div>
+        <div>
+          <h4>Tiempos cumplidos</h4>
+          <p>Nos comprometemos con los tiempos estimados y te notificamos cuando tu auto esté listo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section class="lp-section lp-section-gray" id="como-funciona">
+    <div class="lp-section-title">
+      <div class="lp-badge-label">Proceso</div>
+      <h2>¿Cómo funciona?</h2>
+      <p>Cuatro pasos simples para tener tu vehículo en óptimas condiciones</p>
+    </div>
+    <div class="lp-steps">
+      <div class="lp-step">
+        <div class="lp-step-num">1</div>
+        <h4>Regístrate</h4>
+        <p>Crea tu cuenta como cliente en menos de 2 minutos con tu correo y datos básicos.</p>
+      </div>
+      <div class="lp-step">
+        <div class="lp-step-num">2</div>
+        <h4>Agenda tu cita</h4>
+        <p>Selecciona el servicio que necesitas y elige el horario que mejor te convenga.</p>
+      </div>
+      <div class="lp-step">
+        <div class="lp-step-num">3</div>
+        <h4>Seguimiento</h4>
+        <p>Monitorea el avance del servicio en tiempo real desde tu panel de cliente.</p>
+      </div>
+      <div class="lp-step">
+        <div class="lp-step-num">4</div>
+        <h4>Recibe tu factura</h4>
+        <p>Al terminar, recibe tu factura digital detallada y el historial del servicio.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT ── -->
+  <section class="lp-section lp-section-white" id="contacto">
+    <div class="lp-section-title">
+      <div class="lp-badge-label">Contacto</div>
+      <h2>Encuéntranos o contáctanos</h2>
+      <p>Estamos listos para atenderte de lunes a sábado</p>
+    </div>
+    <div class="lp-contact-grid">
+      <div>
+        <div class="lp-contact-info">
+          <div class="lp-contact-item">
+            <div class="lp-cicon"><i class="fas fa-clock"></i></div>
+            <div>
+              <strong>Horario de atención</strong>
+              <span>Lunes a Sábado / 8:00 a.m. – 6:00 p.m.</span>
+            </div>
+          </div>
+          <div class="lp-contact-item">
+            <div class="lp-cicon"><i class="fas fa-phone"></i></div>
+            <div>
+              <strong>Teléfono</strong>
+              <span>8888-8888</span>
+            </div>
+          </div>
+          <div class="lp-contact-item">
+            <div class="lp-cicon"><i class="fas fa-envelope"></i></div>
+            <div>
+              <strong>Correo electrónico</strong>
+              <span>contacto@lubricentrovillagra.com</span>
+            </div>
+          </div>
+          <div class="lp-contact-item">
+            <div class="lp-cicon"><i class="fas fa-location-dot"></i></div>
+            <div>
+              <strong>Dirección</strong>
+              <span>San José, Costa Rica</span>
+            </div>
+          </div>
+        </div>
+        <div class="lp-cta-block" style="margin-top:20px;">
+          <h3>¿Listo para agendar?</h3>
+          <p>Regístrate gratis y agenda tu primera cita en minutos. Sin llamadas, sin filas.</p>
+          <button onclick="location.href='login.html'">
+            <i class="fas fa-calendar-plus" style="margin-right:8px;"></i>Agendar mi cita ahora
+          </button>
+        </div>
+      </div>
+      <div class="lp-map-placeholder">
+        <i class="fas fa-map-location-dot"></i>
+        <p>Mapa de ubicación</p>
+        <small>Se integrará con Google Maps</small>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="lp-footer">
+    <div class="lp-footer-top">
+      <div class="lp-footer-brand">
+        <div class="logo">Lubricentro <span>Villagra</span></div>
+        <p>Sistema de gestión automotriz digital. Transparencia y calidad en cada servicio.</p>
+      </div>
+      <div class="lp-footer-links-group">
+        <h5>Navegación</h5>
+        <a href="#servicios">Servicios</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#contacto">Contacto</a>
+      </div>
+      <div class="lp-footer-links-group">
+        <h5>Acceso</h5>
+        <a href="login.html">Iniciar sesión</a>
+        <a href="login.html">Registrarse</a>
+      </div>
+      <div class="lp-footer-links-group">
+        <h5>Contacto</h5>
+        <a href="#">8888-8888</a>
+        <a href="#">contacto@lubricentrovillagra.com</a>
+        <a href="#">San José, Costa Rica</a>
+      </div>
+    </div>
+    <div class="lp-footer-bottom">
+      <p>© 2025 Lubricentro Villagra · Todos los derechos reservados</p>
+      <p style="color:#334155;">San José, Costa Rica</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

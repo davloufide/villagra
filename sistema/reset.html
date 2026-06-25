@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restablecer contraseña – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; background: linear-gradient(160deg, #1e293b, #0f172a); color: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { background: #fff; width: 100%; max-width: 420px; border-radius: 16px; padding: 36px 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+    .logo-icon { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg, #2563eb, #60a5fa); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.05rem; }
+    .logo span { font-weight: 800; font-size: 1.05rem; }
+    .logo span b { color: #2563eb; }
+    h3 { font-size: 1.35rem; font-weight: 800; margin-bottom: 6px; }
+    .sub { color: #64748b; font-size: 0.88rem; margin-bottom: 22px; }
+    .field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 0.8rem; color: #475569; font-weight: 700; }
+    .field-wrap { position: relative; }
+    .field-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.88rem; }
+    .field input { width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 11px 13px 11px 38px; outline: none; font-size: 0.9rem; transition: border-color .16s, box-shadow .16s; }
+    .field input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: #fff; }
+    .submit { width: 100%; padding: 13px; border-radius: 11px; border: none; background: #2563eb; color: #fff; font-size: 0.97rem; font-weight: 700; cursor: pointer; transition: background .16s; margin-top: 4px; }
+    .submit:hover { background: #1d4ed8; }
+    .submit:disabled { opacity: .6; cursor: default; }
+    .msg { border-radius: 9px; padding: 11px 14px; font-size: 0.85rem; margin-bottom: 14px; display: none; }
+    .msg.error { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
+    .msg.ok { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+    .back { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 0.84rem; margin-top: 18px; text-decoration: none; }
+    .back:hover { color: #0f172a; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+      <span>Lubricentro <b>Villagra</b></span>
+    </div>
+
+    <h3>Restablecer contraseña</h3>
+    <p class="sub">Escribe tu nueva contraseña para volver a ingresar.</p>
+
+    <div id="msg-error" class="msg error"></div>
+    <div id="msg-ok" class="msg ok"></div>
+
+    <div id="form-reset">
+      <div class="field">
+        <label>Nueva contraseña</label>
+        <div class="field-wrap">
+          <i class="fas fa-lock"></i>
+          <input id="r-pass1" type="password" placeholder="Mínimo 8 caracteres">
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar contraseña</label>
+        <div class="field-wrap">
+          <i class="fas fa-lock"></i>
+          <input id="r-pass2" type="password" placeholder="Repite la contraseña">
+        </div>
+      </div>
+      <button class="submit" id="btn-reset" onclick="hacerReset()">
+        <i class="fas fa-check" style="margin-right:8px;"></i>Guardar nueva contraseña
+      </button>
+    </div>
+
+    <a href="login.html" class="back"><i class="fas fa-arrow-left"></i> Volver a iniciar sesión</a>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const token = new URLSearchParams(window.location.search).get('token');
+
+    if (!token) {
+      const e = document.getElementById('msg-error');
+      e.textContent = 'Enlace inválido. Solicita uno nuevo desde "¿Olvidaste tu contraseña?".';
+      e.style.display = 'block';
+      document.getElementById('form-reset').style.display = 'none';
+    }
+
+    async function hacerReset() {
+      const p1  = document.getElementById('r-pass1').value;
+      const p2  = document.getElementById('r-pass2').value;
+      const err = document.getElementById('msg-error');
+      const ok  = document.getElementById('msg-ok');
+      const btn = document.getElementById('btn-reset');
+      err.style.display = 'none';
+      ok.style.display  = 'none';
+
+      if (p1.length < 8) { err.textContent = 'La contraseña debe tener al menos 8 caracteres.'; err.style.display = 'block'; return; }
+      if (p1 !== p2)     { err.textContent = 'Las contraseñas no coinciden.'; err.style.display = 'block'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+      try {
+        const r = await apiFetch('/auth/reset', {
+          method: 'POST',
+          body: JSON.stringify({ token, password: p1 })
+        });
+        document.getElementById('form-reset').style.display = 'none';
+        ok.innerHTML = (r.mensaje || 'Contraseña actualizada.') + ' Redirigiendo al inicio...';
+        ok.style.display = 'block';
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+      } catch (e) {
+        err.textContent = e.message;
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check" style="margin-right:8px;"></i>Guardar nueva contraseña';
+      }
+    }
+
+    document.getElementById('r-pass2')?.addEventListener('keydown', e => { if (e.key === 'Enter') hacerReset(); });
+  </script>
+</body>
+</html>

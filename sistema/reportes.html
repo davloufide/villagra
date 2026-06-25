@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Módulo Reportes – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html" class="active"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Reportes</h2>
+        <p>Indicadores principales, historial e información resumida</p>
+      </div>
+      <div class="top-actions">
+        <a href="index.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
+        <h3>Mantenimientos</h3>
+        <div class="number" id="rep-mantenimientos">48</div>
+        <p class="sub">Este mes</p>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +6 vs mes anterior</div>
+      </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <h3>Ingresos</h3>
+        <div class="number" id="rep-ingresos">₡1.25M</div>
+        <p class="sub">Facturación mensual</p>
+        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
+      </div>
+      <div class="card kpi-card kpi-red">
+        <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <h3>Stock bajo</h3>
+        <div class="number" id="rep-stock-bajo">4</div>
+        <p class="sub">Productos críticos</p>
+        <div class="kpi-trend trend-down"><i class="fas fa-arrow-up"></i> +1 nuevo</div>
+      </div>
+      <div class="card kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-trophy"></i></div>
+        <h3>Top mecánico</h3>
+        <div class="number" id="rep-top-num" style="font-size:1.6rem;">-</div>
+        <p class="sub" id="rep-top-nombre">Sin datos</p>
+      </div>
+    </section>
+
+    <div class="two-col" style="margin-bottom:18px;">
+
+      <!-- Chart placeholder -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Ingresos mensuales</h3><p>Últimos 6 meses</p></div>
+          <span class="tag info">2025</span>
+        </div>
+        <div id="rep-chart" style="display:flex;align-items:flex-end;gap:10px;height:160px;padding:10px 0 0;">
+          <p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Cargando...</p>
+        </div>
+      </div>
+
+      <!-- Top mechanics & service breakdown -->
+      <div style="display:grid;gap:18px;align-content:start;">
+        <div class="card">
+          <div class="card-header"><h3>Ranking de mecánicos</h3><span class="tag info">Abril</span></div>
+          <div class="list" id="rep-ranking">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:14px;">Servicios más solicitados</h3>
+          <div id="rep-servicios">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="api.js"></script>
+<script src="script.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/reportes.js"></script>
+</body>
+</html>

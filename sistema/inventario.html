@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html" class="active"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Inventario</h2>
+        <p>Control de productos, stock y alertas de reposición</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleFormStock()"><i class="fas fa-plus-minus"></i> Aumentar stock</button>
+        <button class="btn btn-primary btn-sm" onclick="toggleFormProd()"><i class="fas fa-plus"></i> Producto nuevo</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <h3>Total productos</h3>
+        <div class="number" id="inv-total">-</div>
+        <p class="sub">Productos activos</p>
+      </div>
+      <div class="card kpi-card kpi-red">
+        <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <h3>Alertas</h3>
+        <div class="number" id="inv-alertas">-</div>
+        <p class="sub">Bajo el stock mínimo</p>
+      </div>
+      <div class="card kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <h3>Valor en stock</h3>
+        <div class="number" id="inv-valor">-</div>
+        <p class="sub">Costo total del inventario</p>
+      </div>
+    </section>
+
+    <div id="inv-alerta-banner" class="alert alert-danger" style="margin-bottom:18px;display:none;">
+      <i class="fas fa-triangle-exclamation"></i>
+      <span id="inv-alerta-texto"></span>
+    </div>
+
+    <!-- Form (oculto) -->
+    <div id="form-producto" class="card" style="display:none;margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Registrar producto</h3><p>Agrega un producto al inventario</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Nombre <span style="color:#dc2626;">*</span></label><input id="inv-nombre" placeholder="Filtro de aceite"></div>
+        <div class="field"><label>Código <span style="color:#dc2626;">*</span></label><input id="inv-codigo" placeholder="FA-001"></div>
+        <div class="field"><label>Marca</label><input id="inv-marca" placeholder="Castrol, Bosch..."></div>
+        <div class="field"><label>Categoría</label><select id="inv-categoria"><option value="">Seleccionar</option></select></div>
+        <div class="field"><label>Cantidad en stock</label><input id="inv-stock" type="number" placeholder="10"></div>
+        <div class="field"><label>Stock mínimo</label><input id="inv-minimo" type="number" placeholder="5"></div>
+        <div class="field"><label>Costo unitario</label><input id="inv-costo" placeholder="5000"></div>
+        <div class="field"><label>Precio de venta</label><input id="inv-precio" placeholder="7500"></div>
+      </div>
+      <div class="form-actions">
+        <button id="btn-guardar-producto" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar producto</button>
+        <button onclick="toggleFormProd()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Form aumentar stock (oculto) -->
+    <div id="form-stock" class="card" style="display:none;margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Aumentar stock</h3><p>Suma unidades a un producto que ya existe</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field" style="grid-column:1/-1;">
+          <label>Producto <span style="color:#dc2626;">*</span></label>
+          <select id="stock-producto"><option value="">-- Seleccionar producto --</option></select>
+        </div>
+        <div class="field">
+          <label>Unidades a agregar <span style="color:#dc2626;">*</span></label>
+          <input id="stock-cantidad" type="number" min="1" placeholder="Ej: 10">
+        </div>
+        <div class="field">
+          <label>Stock actual</label>
+          <input id="stock-actual" disabled placeholder="-" style="background:#f1f5f9;">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="btn-aumentar-stock" class="btn btn-success" style="flex:1;"><i class="fas fa-arrow-up"></i> Agregar al inventario</button>
+        <button onclick="toggleFormStock()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="card">
+      <div class="card-header">
+        <div><h3>Inventario actual</h3><p>Todos los productos registrados</p></div>
+        <input id="inv-buscar" placeholder="Buscar producto o código..." oninput="filtrarProductos(this.value)"
+          style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:240px;">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Producto</th><th>Código</th><th>Marca</th><th>Stock</th><th>Costo</th></tr></thead>
+          <tbody id="inv-tbody">
+            <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/inventario.js"></script>
+</body>
+</html>

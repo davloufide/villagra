@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehículos – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html" class="active"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Vehículos</h2>
+        <p>Registro y consulta de vehículos de los clientes</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-primary btn-sm" onclick="toggleFormVeh()"><i class="fas fa-plus"></i> Registrar vehículo</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-car-side"></i></div>
+        <h3>Total vehículos</h3>
+        <div class="number" id="v-total">-</div>
+        <p class="sub">Registrados en el sistema</p>
+      </div>
+      <div class="card kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-layer-group"></i></div>
+        <h3>Marcas distintas</h3>
+        <div class="number" id="v-marcas">-</div>
+        <p class="sub">En la flota de clientes</p>
+      </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-users"></i></div>
+        <h3>Clientes con vehículo</h3>
+        <div class="number" id="v-clientes">-</div>
+        <p class="sub">Propietarios registrados</p>
+      </div>
+    </section>
+
+    <!-- Form registrar (oculto por defecto) -->
+    <div id="form-vehiculo" class="card" style="display:none;margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3 id="v-form-titulo">Registrar vehículo</h3><p>Asigna un vehículo a un cliente</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Placa <span style="color:#dc2626;">*</span></label>
+          <input id="v-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label>Propietario <span style="color:#dc2626;">*</span></label>
+          <select id="v-propietario"><option value="">-- Seleccionar cliente --</option></select>
+        </div>
+        <div class="field">
+          <label>Marca <span style="color:#dc2626;">*</span></label>
+          <select id="v-marca"><option value="">-- Seleccionar marca --</option></select>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+          <textarea id="v-obs" placeholder="Color, modelo, año u otras notas del vehículo..." style="height:70px;"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar vehículo</button>
+        <button onclick="toggleFormVeh()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <div class="card">
+      <div class="card-header">
+        <div><h3>Vehículos registrados</h3><p>Haz clic en "Ver" para el historial</p></div>
+        <input id="v-buscar" placeholder="Buscar por placa, marca o cliente..." oninput="filtrarVehiculos(this.value)"
+          style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:260px;">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Placa</th><th>Marca</th><th>Propietario</th><th>Registrado</th><th></th></tr></thead>
+          <tbody id="v-tbody">
+            <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Detalle / historial -->
+    <div id="v-detalle" class="card" style="display:none;margin-top:18px;">
+      <div class="card-header">
+        <div><h3 id="vd-titulo">-</h3><p id="vd-sub">-</p></div>
+        <button onclick="cerrarDetalleVeh()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha ingreso</th><th>Estado</th><th>Avance</th></tr></thead>
+          <tbody id="vd-historial"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/vehiculos.js"></script>
+</body>
+</html>

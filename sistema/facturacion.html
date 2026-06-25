@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facturación – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html" class="active"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Facturación</h2>
+        <p>Genera facturas a partir de mantenimientos terminados</p>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <h3>Facturado este mes</h3>
+        <div class="number" id="fac-mes" style="font-size:1.5rem;">-</div>
+        <p class="sub" id="fac-mes-count">- facturas</p>
+      </div>
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-file-invoice"></i></div>
+        <h3>Total facturas</h3>
+        <div class="number" id="fac-total">-</div>
+        <p class="sub">Emitidas en total</p>
+      </div>
+      <div class="card kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <h3>Pendientes de cobro</h3>
+        <div class="number" id="fac-pendientes">-</div>
+        <p class="sub">Sin pagar aún</p>
+      </div>
+      <div class="card kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-chart-pie"></i></div>
+        <h3>Ticket promedio</h3>
+        <div class="number" id="fac-ticket" style="font-size:1.4rem;">-</div>
+        <p class="sub">Por factura</p>
+      </div>
+    </section>
+
+    <div class="two-col" style="margin-bottom:18px;">
+
+      <!-- Generador -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Generar factura</h3><p>Selecciona un mantenimiento terminado</p></div>
+        </div>
+        <div class="form-grid">
+          <div class="field" style="grid-column:1/-1;">
+            <label>Mantenimiento a facturar <span style="color:#dc2626;">*</span></label>
+            <select id="fac-mantenimiento"><option value="">-- Seleccionar --</option></select>
+            <small id="fac-vacio" style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:none;">No hay mantenimientos terminados pendientes de facturar.</small>
+          </div>
+          <div class="field">
+            <label>Método de pago</label>
+            <select id="fac-metodo">
+              <option value="efectivo">Efectivo</option>
+              <option value="tarjeta">Tarjeta</option>
+              <option value="sinpe">Transferencia SINPE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <h3 style="font-size:1rem;">Líneas de la factura</h3>
+          <button class="btn btn-outline btn-sm" onclick="agregarLinea()"><i class="fas fa-plus"></i> Agregar línea</button>
+        </div>
+        <div id="fac-lineas"></div>
+
+        <div class="form-actions" style="margin-top:16px;">
+          <button id="btn-generar-factura" class="btn btn-success" style="flex:1;"><i class="fas fa-file-invoice-dollar"></i> Generar factura</button>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="card" style="border:2px dashed #e2e8f0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#2563eb,#60a5fa);display:flex;align-items:center;justify-content:center;"><i class="fas fa-oil-can" style="color:#fff;font-size:0.8rem;"></i></div>
+              <strong style="font-size:0.95rem;">Lubricentro Villagra</strong>
+            </div>
+            <p style="font-size:0.78rem;color:#64748b;">San José, Costa Rica</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.1rem;font-weight:900;color:#0f172a;">FACTURA</div>
+            <div style="font-size:0.76rem;color:#94a3b8;margin-top:4px;" id="pv-fecha"></div>
+          </div>
+        </div>
+
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.82rem;">
+          <div><span style="color:#94a3b8;">Cliente:</span> <strong id="pv-cliente">-</strong></div>
+          <div><span style="color:#94a3b8;">Vehículo:</span> <strong id="pv-vehiculo">-</strong></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Descripción</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">Monto</th></tr></thead>
+            <tbody id="pv-lineas"><tr><td colspan="3" style="color:#94a3b8;text-align:center;padding:14px;">Sin líneas</td></tr></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;padding-top:14px;border-top:2px solid #e2e8f0;">
+          <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:6px;">
+            <span style="color:#64748b;">Subtotal</span><span style="font-weight:600;" id="pv-subtotal">₡0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:10px;">
+            <span style="color:#64748b;">IVA (13%)</span><span style="font-weight:600;" id="pv-iva">₡0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 14px;background:linear-gradient(135deg,#1e3a8a,#2563eb);border-radius:10px;">
+            <span style="color:#bfdbfe;font-weight:700;">TOTAL</span>
+            <span style="color:#fff;font-size:1.25rem;font-weight:900;" id="pv-total">₡0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="card-header">
+        <div><h3>Historial de facturas</h3><p>Facturas emitidas</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#Orden</th><th>Cliente</th><th>Vehículo</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="fac-historial">
+            <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/facturacion.js"></script>
+</body>
+</html>

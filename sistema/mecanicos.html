@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mecánicos – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html" class="admin-only"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html" class="admin-only"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html" class="admin-only"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html" class="active"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html" class="admin-only"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html" class="admin-only"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html" class="admin-only"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html" class="admin-only"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Mecánicos</h2>
+        <p>Trabajos asignados, registro y gestión de servicios</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-primary btn-sm" onclick="toggleFormNuevoMec()"><i class="fas fa-plus"></i> Nuevo mantenimiento</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-list-check"></i></div>
+        <h3>Asignados</h3>
+        <div class="number" id="mec-asignados">-</div>
+        <p class="sub">Mantenimientos activos</p>
+      </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+        <h3>Completados</h3>
+        <div class="number" id="mec-completados">-</div>
+        <p class="sub">Mantenimientos cerrados</p>
+      </div>
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <h3>Pendientes de revisión</h3>
+        <div class="number" id="mec-pendientes">-</div>
+        <p class="sub">Con tareas sin completar</p>
+      </div>
+    </section>
+
+    <!-- Form nuevo mantenimiento (OPE-002) -->
+    <div id="form-nuevo-mec" class="card" style="display:none;margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Nuevo mantenimiento</h3><p>Cliente, placa y las tareas que vas a realizar</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Cliente <span style="color:#dc2626;">*</span></label>
+          <select id="mec-n-cliente"><option value="">-- Seleccionar cliente --</option></select>
+        </div>
+        <div class="field">
+          <label>Placa <span style="color:#dc2626;">*</span></label>
+          <input id="mec-n-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label>Marca <span style="color:#94a3b8;font-weight:400;">(si el vehículo es nuevo)</span></label>
+          <select id="mec-n-marca"><option value="">-- Seleccionar marca --</option></select>
+        </div>
+        <div class="field">
+          <label>Fecha estimada de entrega</label>
+          <input id="mec-n-fecha" type="date">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Tareas / servicios <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(se te asignan a ti)</span></label>
+          <div id="mec-n-servicios" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:4px;">
+            <p style="color:#94a3b8;font-size:0.85rem;">Cargando servicios...</p>
+          </div>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+          <textarea id="mec-n-obs" placeholder="Detalle del servicio..." style="height:55px;"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="btn-crear-mant-mec" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Crear mantenimiento</button>
+        <button onclick="toggleFormNuevoMec()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Lista de mantenimientos -->
+    <div class="card" style="margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Mis mantenimientos</h3><p>Vehículos a tu cargo · "Gestionar" para ver tareas</p></div>
+      </div>
+      <div class="list" id="mec-lista">
+        <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+      </div>
+    </div>
+
+    <!-- Panel de gestión (OPE-004) -->
+    <div id="mec-panel" class="card" style="display:none;">
+      <div class="card-header">
+        <div>
+          <h3 id="mec-p-titulo">Gestionar mantenimiento</h3>
+          <p id="mec-p-sub" style="color:#64748b;font-size:0.85rem;">-</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="abrirModalRepuestos()" class="btn btn-primary btn-sm"><i class="fas fa-boxes-stacked"></i> Solicitar repuesto</button>
+          <button onclick="cerrarPanelMec()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+        </div>
+      </div>
+
+      <!-- Editar info -->
+      <div class="form-grid" style="margin-bottom:18px;">
+        <div class="field">
+          <label>Fecha estimada de entrega</label>
+          <input id="mec-p-fecha" type="date">
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end;">
+          <button id="btn-guardar-mant-mec" class="btn btn-outline" style="width:100%;"><i class="fas fa-floppy-disk"></i> Guardar cambios</button>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observaciones</label>
+          <textarea id="mec-p-obs" placeholder="Notas del servicio..." style="height:55px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Tareas -->
+      <h4 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:10px;border-top:1px solid #e2e8f0;padding-top:14px;">Tareas</h4>
+      <div class="table-wrap" style="margin-bottom:16px;">
+        <table>
+          <thead><tr><th>Servicio</th><th>Mecánico</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="mec-p-tareas"></tbody>
+        </table>
+      </div>
+
+      <!-- Agregar tarea -->
+      <div class="form-grid">
+        <div class="field">
+          <label>Agregar tarea / servicio</label>
+          <select id="mec-p-add-servicio"><option value="">-- Seleccionar servicio --</option></select>
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end;">
+          <button id="btn-agregar-tarea-mec" class="btn btn-primary" style="width:100%;"><i class="fas fa-plus"></i> Agregar tarea</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Solicitar repuesto (GM-006) -->
+    <div id="rep-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9998;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#fff;width:100%;max-width:520px;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="font-size:1.15rem;font-weight:800;">Solicitar repuesto</h3>
+          <button onclick="cerrarModalRepuestos()" style="border:none;background:transparent;font-size:1.2rem;color:#94a3b8;cursor:pointer;">&times;</button>
+        </div>
+        <p id="rep-modal-sub" style="color:#64748b;font-size:0.85rem;margin-bottom:16px;">-</p>
+
+        <div class="form-grid">
+          <div class="field" style="grid-column:1/-1;">
+            <label>Repuesto</label>
+            <select id="mec-p-repuesto"><option value="">-- Seleccionar repuesto --</option></select>
+          </div>
+          <div class="field">
+            <label>Cantidad</label>
+            <input id="mec-p-rep-cant" type="number" min="1" placeholder="1">
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <button id="btn-solicitar-repuesto" class="btn btn-primary" style="width:100%;"><i class="fas fa-boxes-stacked"></i> Solicitar</button>
+          </div>
+        </div>
+
+        <h4 style="font-size:0.82rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin:16px 0 8px;">Repuestos solicitados</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Fecha</th></tr></thead>
+            <tbody id="mec-p-repuestos"><tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin repuestos solicitados</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="script.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/mecanicos.js"></script>
+</body>
+</html>

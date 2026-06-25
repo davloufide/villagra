@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operación – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html" class="admin-only"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html" class="admin-only"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html" class="active"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html" class="admin-only"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html" class="admin-only"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html" class="admin-only"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html" class="admin-only"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Módulo Operación</h2>
+        <p>Mantenimientos activos y asignación de tareas</p>
+      </div>
+      <div class="top-actions">
+        <button id="btn-toggle-nuevo" class="btn btn-primary btn-sm admin-only" onclick="toggleFormNuevo()">
+          <i class="fas fa-plus"></i> Nuevo mantenimiento
+        </button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-rotate"></i></div>
+        <h3>En proceso</h3>
+        <div class="number" id="op-en-proceso">-</div>
+        <p class="sub">Mantenimientos activos</p>
+      </div>
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-clock"></i></div>
+        <h3>Pendientes</h3>
+        <div class="number" id="op-pendientes">-</div>
+        <p class="sub">Sin iniciar</p>
+      </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+        <h3>Completados</h3>
+        <div class="number" id="op-completados">-</div>
+        <p class="sub">Total cerrados</p>
+      </div>
+    </section>
+
+    <!-- Formulario nuevo mantenimiento (solo admin) -->
+    <div id="form-nuevo-mant" class="card admin-only" style="display:none;margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Nuevo mantenimiento</h3><p>Cliente, placa y las tareas a realizar</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Cliente <span style="color:#dc2626;">*</span></label>
+          <select id="op-cliente"><option value="">-- Seleccionar cliente --</option></select>
+        </div>
+        <div class="field">
+          <label>Placa del vehículo <span style="color:#dc2626;">*</span></label>
+          <input id="op-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+        </div>
+        <div class="field">
+          <label>Marca <span style="color:#94a3b8;font-weight:400;">(solo si el vehículo es nuevo)</span></label>
+          <select id="op-marca"><option value="">-- Seleccionar marca --</option></select>
+        </div>
+        <div class="field">
+          <label>Mecánico <span style="color:#94a3b8;font-weight:400;">(opcional, se auto-asigna)</span></label>
+          <select id="op-mecanico"><option value="">Auto-asignar al menos cargado</option></select>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Tareas / servicios <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(elige una o varias)</span></label>
+          <div id="op-servicios" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:4px;">
+            <p style="color:#94a3b8;font-size:0.85rem;">Cargando servicios...</p>
+          </div>
+        </div>
+        <div class="field">
+          <label>Fecha estimada de entrega</label>
+          <input id="op-fecha" type="date">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+          <textarea id="op-obs" placeholder="Descripción del problema o servicio solicitado..." style="height:60px;"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button id="btn-guardar-mant" class="btn btn-success" style="flex:1;">
+          <i class="fas fa-floppy-disk"></i> Guardar mantenimiento
+        </button>
+        <button onclick="toggleFormNuevo()" class="btn btn-outline">
+          <i class="fas fa-xmark"></i> Cancelar
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de mantenimientos -->
+    <div class="card" style="margin-bottom:18px;">
+      <div class="card-header">
+        <div><h3>Mantenimientos</h3><p>Busca y filtra por cliente, estado o fecha</p></div>
+        <span id="op-count" style="font-size:0.82rem;color:#94a3b8;"></span>
+      </div>
+
+      <!-- Barra de filtros (OPE-014) -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px;">
+        <div style="flex:1;min-width:200px;">
+          <label style="font-size:0.76rem;color:#64748b;font-weight:700;display:block;margin-bottom:3px;">Buscar (cliente o placa)</label>
+          <input id="op-buscar" placeholder="Ej: María / ABC-123" oninput="aplicarFiltros()"
+            style="width:100%;border:1px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:0.85rem;outline:none;background:#f8fafc;">
+        </div>
+        <div>
+          <label style="font-size:0.76rem;color:#64748b;font-weight:700;display:block;margin-bottom:3px;">Estado</label>
+          <select id="op-f-estado" onchange="aplicarFiltros()"
+            style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 12px;font-size:0.85rem;outline:none;background:#f8fafc;">
+            <option value="todos">Todos</option>
+            <option value="recibido">Recibido</option>
+            <option value="en_progreso">En proceso</option>
+            <option value="terminado">Terminado</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.76rem;color:#64748b;font-weight:700;display:block;margin-bottom:3px;">Desde</label>
+          <input id="op-f-desde" type="date" onchange="aplicarFiltros()"
+            style="border:1px solid #e2e8f0;border-radius:9px;padding:7px 10px;font-size:0.85rem;outline:none;background:#f8fafc;">
+        </div>
+        <div>
+          <label style="font-size:0.76rem;color:#64748b;font-weight:700;display:block;margin-bottom:3px;">Hasta</label>
+          <input id="op-f-hasta" type="date" onchange="aplicarFiltros()"
+            style="border:1px solid #e2e8f0;border-radius:9px;padding:7px 10px;font-size:0.85rem;outline:none;background:#f8fafc;">
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="limpiarFiltros()"><i class="fas fa-eraser"></i> Limpiar</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Vehículo</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th>Avance</th>
+              <th>Ingreso</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="op-tbody-activos">
+            <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Panel de detalle y asignación de tareas -->
+    <div id="op-panel-tarea" class="card" style="display:none;">
+      <div class="card-header">
+        <div>
+          <h3 id="op-tarea-titulo">Detalle del mantenimiento</h3>
+          <p id="op-tarea-sub" style="color:#64748b;font-size:0.85rem;">-</p>
+        </div>
+        <button onclick="cerrarPanelTarea()" class="btn btn-outline btn-sm">
+          <i class="fas fa-xmark"></i> Cerrar
+        </button>
+      </div>
+
+      <!-- Editar información del mantenimiento -->
+      <div class="form-grid" style="margin-bottom:18px;">
+        <div class="field">
+          <label>Fecha estimada de entrega</label>
+          <input id="op-edit-fecha" type="date">
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end;">
+          <button id="btn-editar-mant" class="btn btn-outline" style="width:100%;"><i class="fas fa-floppy-disk"></i> Guardar cambios</button>
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Observaciones</label>
+          <textarea id="op-edit-obs" placeholder="Notas del servicio..." style="height:55px;"></textarea>
+        </div>
+      </div>
+
+      <!-- Tareas existentes -->
+      <div id="op-tareas-lista" style="margin-bottom:20px;"></div>
+
+      <!-- Agregar tarea (solo admin) -->
+      <div class="admin-only" id="op-form-tarea-wrap">
+        <h4 style="font-size:0.87rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:14px;border-top:1px solid #e2e8f0;padding-top:16px;">Agregar nueva tarea</h4>
+        <div class="form-grid">
+          <div class="field">
+            <label>Mecánico <span style="color:#94a3b8;font-weight:400;">(opcional, se auto-asigna)</span></label>
+            <select id="op-tarea-mecanico">
+              <option value="">Auto-asignar al menos cargado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de servicio <span style="color:#dc2626;">*</span></label>
+            <select id="op-tarea-servicio">
+              <option value="">-- Seleccionar servicio --</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Descripción adicional <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+            <input id="op-tarea-desc" placeholder="Detalle específico de la tarea...">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="btn-agregar-tarea" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Agregar tarea
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Catálogo de servicios (OPE-006) -->
+    <div class="card admin-only" style="margin-top:18px;">
+      <div class="card-header">
+        <div><h3>Catálogo de servicios</h3><p>Agrega procesos que no estén en la lista</p></div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Nombre del servicio <span style="color:#dc2626;">*</span></label>
+          <input id="cat-nombre" placeholder="Ej: Cambio de batería">
+        </div>
+        <div class="field">
+          <label>Precio base <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+          <input id="cat-precio" type="number" placeholder="0">
+        </div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Descripción <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+          <input id="cat-desc" placeholder="Detalle del servicio...">
+        </div>
+      </div>
+      <div class="form-actions" style="margin-bottom:8px;">
+        <button id="btn-crear-servicio" class="btn btn-primary"><i class="fas fa-plus"></i> Agregar al catálogo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Servicio</th><th>Precio base</th></tr></thead>
+          <tbody id="cat-tbody"><tr><td colspan="2" style="text-align:center;color:#94a3b8;">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="api.js"></script>
+<script src="script.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/operacion.js"></script>
+</body>
+</html>

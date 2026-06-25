@@ -1,0 +1,16 @@
+# Dependencias (se reinstalan con npm install)
+node_modules/
+backend/node_modules/
+
+# Secretos — ¡NUNCA subir a GitHub!
+.env
+backend/.env
+
+# Logs y temporales
+*.log
+.DS_Store
+
+# Carpetas que no son parte de la app
+.claude/
+Documentos G6/
+npm

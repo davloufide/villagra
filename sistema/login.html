@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; background: #f1f5f9; color: #0f172a; min-height: 100vh; display: flex; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── LEFT PANEL ── */
+    .auth-left {
+      width: 440px; flex-shrink: 0;
+      background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+      padding: 48px 44px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden;
+    }
+    .auth-left::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 60%, rgba(37,99,235,0.3) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .auth-logo { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    .auth-logo-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #fff;
+    }
+    .auth-logo span { font-size: 1.1rem; font-weight: 800; color: #fff; }
+    .auth-logo span b { color: #60a5fa; }
+
+    .auth-left-body { position: relative; z-index: 1; }
+    .auth-left-body h2 { font-size: 2rem; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+    .auth-left-body h2 span { color: #60a5fa; }
+    .auth-left-body p { color: #64748b; font-size: 0.95rem; line-height: 1.7; margin-bottom: 32px; }
+    .auth-features { display: grid; gap: 14px; }
+    .auth-feature { display: flex; align-items: center; gap: 12px; }
+    .auth-feature-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(37,99,235,0.2); color: #60a5fa;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.88rem; flex-shrink: 0;
+    }
+    .auth-feature p { color: #94a3b8; font-size: 0.87rem; line-height: 1.5; margin: 0; }
+    .auth-feature strong { color: #e2e8f0; display: block; font-size: 0.9rem; }
+
+    .auth-left-foot { position: relative; z-index: 1; }
+    .auth-left-foot a { color: #475569; font-size: 0.82rem; transition: color .16s; }
+    .auth-left-foot a:hover { color: #94a3b8; }
+
+    /* ── RIGHT PANEL ── */
+    .auth-right {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 40px 28px;
+    }
+    .auth-box { width: 100%; max-width: 420px; }
+
+    /* TABS */
+    .auth-tabs { display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin-bottom: 28px; }
+    .auth-tab {
+      flex: 1; padding: 10px; border-radius: 9px; font-size: 0.9rem;
+      font-weight: 600; text-align: center; cursor: pointer;
+      color: #64748b; transition: all .18s; border: none; background: transparent;
+    }
+    .auth-tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 4px rgba(15,23,42,0.1); }
+
+    /* FORMS */
+    .auth-form { display: none; }
+    .auth-form.visible { display: block; }
+    .auth-form h3 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    .auth-form p { color: #64748b; font-size: 0.88rem; margin-bottom: 24px; }
+
+    .field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 0.8rem; color: #475569; font-weight: 700; }
+    .field-wrap { position: relative; }
+    .field-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.88rem; }
+    .field input {
+      width: 100%; border: 1px solid #e2e8f0; background: #f8fafc;
+      border-radius: 10px; padding: 11px 13px 11px 38px;
+      outline: none; font-size: 0.9rem; color: #0f172a;
+      transition: border-color .16s, box-shadow .16s;
+    }
+    .field input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: #fff; }
+
+    .forgot { display: block; text-align: right; font-size: 0.8rem; color: #2563eb; margin-bottom: 20px; font-weight: 600; }
+    .auth-submit {
+      width: 100%; padding: 13px; border-radius: 11px; border: none;
+      background: #2563eb; color: #fff; font-size: 0.97rem; font-weight: 700;
+      cursor: pointer; transition: background .16s;
+    }
+    .auth-submit:hover { background: #1d4ed8; }
+    .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #94a3b8; font-size: 0.82rem; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    .role-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+    .role-opt {
+      border: 2px solid #e2e8f0; border-radius: 11px; padding: 12px 8px;
+      text-align: center; cursor: pointer; transition: all .16s;
+      background: #f8fafc;
+    }
+    .role-opt:hover { border-color: #93c5fd; background: #eff6ff; }
+    .role-opt.selected { border-color: #2563eb; background: #eff6ff; }
+    .role-opt i { font-size: 1.3rem; color: #64748b; display: block; margin-bottom: 6px; }
+    .role-opt.selected i { color: #2563eb; }
+    .role-opt span { font-size: 0.78rem; font-weight: 700; color: #475569; }
+    .role-opt.selected span { color: #1e40af; }
+
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 0.84rem; margin-top: 20px; }
+    .back-link:hover { color: #0f172a; }
+
+    @media (max-width: 840px) {
+      .auth-left { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT BRANDING -->
+  <div class="auth-left">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="fas fa-oil-can"></i></div>
+      <span>Lubricentro <b>Villagra</b></span>
+    </div>
+
+    <div class="auth-left-body">
+      <h2>Gestiona tu taller de forma <span>inteligente</span></h2>
+      <p>Accede al sistema de gestión automotriz más completo. Control total de clientes, mecánicos, inventario y facturación.</p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-mobile-screen"></i></div>
+          <div><strong>Seguimiento en tiempo real</strong><p>Monitorea el estado de cada vehículo desde tu dispositivo.</p></div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+          <div><strong>Facturación digital</strong><p>Genera y exporta facturas PDF en segundos.</p></div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-chart-bar"></i></div>
+          <div><strong>Reportes automáticos</strong><p>Indicadores de rendimiento y gestión del taller.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-left-foot">
+      <a href="landing.html"><i class="fas fa-arrow-left" style="margin-right:6px;"></i>Volver al sitio</a>
+    </div>
+  </div>
+
+  <!-- RIGHT FORM -->
+  <div class="auth-right">
+    <div class="auth-box">
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login', this)">Iniciar sesión</button>
+        <button class="auth-tab" onclick="switchTab('register', this)">Registrarse</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="auth-form visible" id="form-login">
+        <h3>Bienvenido de vuelta</h3>
+        <p>Ingresa tus credenciales para acceder al sistema</p>
+
+        <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:9px;padding:10px 14px;font-size:0.84rem;color:#dc2626;margin-bottom:14px;"></div>
+
+        <div class="field">
+          <label>Correo electrónico</label>
+          <div class="field-wrap">
+            <i class="fas fa-envelope"></i>
+            <input id="login-correo" type="email" placeholder="usuario@correo.com">
+          </div>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="field-wrap">
+            <i class="fas fa-lock"></i>
+            <input id="login-password" type="password" placeholder="••••••••">
+          </div>
+        </div>
+        <a href="#" class="forgot" onclick="mostrarRecuperar(); return false;">¿Olvidaste tu contraseña?</a>
+        <button class="auth-submit" id="btn-login" onclick="hacerLogin()">
+          <i class="fas fa-right-to-bracket" style="margin-right:8px;"></i>Ingresar al sistema
+        </button>
+        <div class="auth-divider">acceso rápido (demo)</div>
+        <div class="role-selector">
+          <div class="role-opt" onclick="demoLogin('admin@villagra.cr','Admin1234!')">
+            <i class="fas fa-shield-halved"></i><span>Admin</span>
+          </div>
+          <div class="role-opt" onclick="demoLogin('kevin@villagra.cr','Mecanico1!')">
+            <i class="fas fa-user-gear"></i><span>Mecánico</span>
+          </div>
+          <div class="role-opt" onclick="demoLogin('maria@cliente.cr','Cliente1!')">
+            <i class="fas fa-car"></i><span>Cliente</span>
+          </div>
+        </div>
+        <a href="landing.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+      </div>
+
+      <!-- RECUPERAR CONTRASEÑA -->
+      <div class="auth-form" id="form-recuperar">
+        <h3>Recuperar contraseña</h3>
+        <p>Ingresa tu correo y te generaremos un enlace para restablecerla.</p>
+
+        <div id="rec-error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:9px;padding:10px 14px;font-size:0.84rem;color:#dc2626;margin-bottom:14px;"></div>
+
+        <div id="rec-ok" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:9px;padding:12px 14px;font-size:0.84rem;color:#166534;margin-bottom:14px;">
+          <strong>Enlace de recuperación generado.</strong>
+          <p style="margin:6px 0 0;color:#15803d;">Haz clic para restablecer tu contraseña (válido 1 hora):</p>
+          <a id="rec-link" href="#" style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:700;word-break:break-all;">Abrir enlace</a>
+          <p style="margin:8px 0 0;font-size:0.76rem;color:#64748b;">En modo demo el enlace se muestra aquí. En producción llegaría a tu correo.</p>
+        </div>
+
+        <div class="field">
+          <label>Correo electrónico</label>
+          <div class="field-wrap">
+            <i class="fas fa-envelope"></i>
+            <input id="rec-correo" type="email" placeholder="correo@ejemplo.com">
+          </div>
+        </div>
+        <button class="auth-submit" id="btn-recuperar" onclick="hacerRecuperar()">
+          <i class="fas fa-paper-plane" style="margin-right:8px;"></i>Generar enlace de recuperación
+        </button>
+        <a href="#" class="back-link" onclick="volverLogin(); return false;"><i class="fas fa-arrow-left"></i> Volver a iniciar sesión</a>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="auth-form" id="form-register">
+        <h3>Crear cuenta</h3>
+        <p>Regístrate gratis para dar seguimiento a tu vehículo</p>
+
+        <div id="reg-error" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:9px;padding:10px 14px;font-size:0.84rem;color:#dc2626;margin-bottom:14px;"></div>
+        <div id="reg-ok" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:9px;padding:10px 14px;font-size:0.84rem;color:#16a34a;margin-bottom:14px;"></div>
+
+        <div class="field">
+          <label>Nombre completo</label>
+          <div class="field-wrap">
+            <i class="fas fa-user"></i>
+            <input id="reg-nombre" type="text" placeholder="Tu nombre completo">
+          </div>
+        </div>
+        <div class="field">
+          <label>Correo electrónico</label>
+          <div class="field-wrap">
+            <i class="fas fa-envelope"></i>
+            <input id="reg-correo" type="email" placeholder="correo@ejemplo.com">
+          </div>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="field-wrap">
+            <i class="fas fa-lock"></i>
+            <input id="reg-password" type="password" placeholder="Mínimo 8 caracteres">
+          </div>
+        </div>
+        <button class="auth-submit" style="margin-top:6px;" onclick="hacerRegistro()">
+          <i class="fas fa-user-plus" style="margin-right:8px;"></i>Crear mi cuenta
+        </button>
+        <a href="landing.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    function switchTab(tab, el) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('visible'));
+      el.classList.add('active');
+      document.getElementById('form-' + tab).classList.add('visible');
+    }
+
+    function mostrarRecuperar() {
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('visible'));
+      document.getElementById('rec-error').style.display = 'none';
+      document.getElementById('rec-ok').style.display = 'none';
+      document.getElementById('form-recuperar').classList.add('visible');
+    }
+
+    function volverLogin() {
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('visible'));
+      document.getElementById('form-login').classList.add('visible');
+    }
+
+    async function hacerRecuperar() {
+      const correo = document.getElementById('rec-correo').value.trim();
+      const errEl  = document.getElementById('rec-error');
+      const okEl   = document.getElementById('rec-ok');
+      const btn    = document.getElementById('btn-recuperar');
+      errEl.style.display = 'none';
+      okEl.style.display  = 'none';
+
+      if (!correo) { errEl.textContent = 'Ingresa tu correo.'; errEl.style.display = 'block'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Generando...';
+      try {
+        const r = await apiFetch('/auth/recuperar', {
+          method: 'POST',
+          body: JSON.stringify({ correo })
+        });
+        if (r.token) {
+          // Modo demo: construir el enlace a reset.html con el token
+          const url = new URL('reset.html', window.location.href);
+          url.searchParams.set('token', r.token);
+          const link = document.getElementById('rec-link');
+          link.href = url.href;
+          link.textContent = url.href;
+          okEl.style.display = 'block';
+        } else {
+          errEl.style.color = '#166534';
+          errEl.textContent = r.mensaje || 'Si el correo existe, se envió el enlace.';
+          errEl.style.display = 'block';
+        }
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:8px;"></i>Generar enlace de recuperación';
+      }
+    }
+
+    async function hacerLogin() {
+      const correo   = document.getElementById('login-correo').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl    = document.getElementById('login-error');
+      const btn      = document.getElementById('btn-login');
+
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Ingresando...';
+
+      try {
+        const usuario = await login(correo, password);
+        // Redirigir según rol
+        if (usuario.rol === 'cliente') {
+          window.location.href = 'cliente.html';
+        } else if (usuario.rol === 'mecanico') {
+          window.location.href = 'mecanicos.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-right-to-bracket" style="margin-right:8px;"></i>Ingresar al sistema';
+      }
+    }
+
+    function demoLogin(correo, password) {
+      document.getElementById('login-correo').value = correo;
+      document.getElementById('login-password').value = password;
+      hacerLogin();
+    }
+
+    async function hacerRegistro() {
+      const nombre   = document.getElementById('reg-nombre').value.trim();
+      const correo   = document.getElementById('reg-correo').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const errEl    = document.getElementById('reg-error');
+      const okEl     = document.getElementById('reg-ok');
+
+      errEl.style.display = 'none';
+      okEl.style.display  = 'none';
+
+      try {
+        await apiFetch('/auth/registro', {
+          method: 'POST',
+          body: JSON.stringify({ nombre, correo, password, id_rol: 3 }) // rol cliente
+        });
+        okEl.textContent = 'Cuenta creada. Ya puedes iniciar sesión.';
+        okEl.style.display = 'block';
+        setTimeout(() => switchTab('login', document.querySelectorAll('.auth-tab')[0]), 1800);
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // Permitir Enter en los campos de login
+    document.addEventListener('DOMContentLoaded', () => {
+      ['login-correo','login-password'].forEach(id => {
+        document.getElementById(id)?.addEventListener('keydown', e => {
+          if (e.key === 'Enter') hacerLogin();
+        });
+      });
+    });
+  </script>
+</body>
+</html>

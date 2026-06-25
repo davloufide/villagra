@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-icon"><i class="fas fa-oil-can"></i></div>
+        <div><h1>Lubricentro Villagra</h1><p>Sistema de gestión</p></div>
+      </div>
+    </div>
+    <nav class="menu">
+      <span class="menu-label">General</span>
+      <a href="index.html" class="active"><i class="fas fa-house"></i> Inicio</a>
+      <span class="menu-label">Módulos</span>
+      <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
+      <a href="vehiculos.html"><i class="fas fa-car-side"></i> Vehículos</a>
+      <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
+      <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
+      <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
+      <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <a href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="sidebar-avatar">?</div>
+        <div>
+          <div class="u-name" id="sidebar-nombre">Cargando...</div>
+          <div class="u-role" id="sidebar-rol">-</div>
+        </div>
+      </div>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:10px;padding:9px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:transparent;color:#94a3b8;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+        <i class="fas fa-right-from-bracket" style="margin-right:7px;"></i>Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title">
+        <h2>Dashboard Principal</h2>
+        <p>Resumen general del taller</p>
+      </div>
+      <div class="top-actions">
+        <a href="operacion.html" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Nuevo servicio</a>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <section class="grid kpi">
+      <div class="card kpi-card kpi-blue">
+        <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
+        <h3>Servicios activos</h3>
+        <div class="number" id="kpi-activos">-</div>
+        <p class="sub" id="kpi-activos-sub">En proceso y pendientes</p>
+      </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <h3>Ingresos del mes</h3>
+        <div class="number" id="kpi-ingresos">-</div>
+        <p class="sub">Facturación acumulada</p>
+      </div>
+      <div class="card kpi-card kpi-purple">
+        <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
+        <h3>Mantenimientos del mes</h3>
+        <div class="number" id="kpi-mant">-</div>
+        <p class="sub" id="kpi-mant-sub">Total registrados</p>
+      </div>
+      <div class="card kpi-card kpi-red">
+        <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <h3>Alertas de stock</h3>
+        <div class="number" id="kpi-stock">-</div>
+        <p class="sub">Productos bajo mínimo</p>
+      </div>
+    </section>
+
+    <div class="two-col" style="margin-bottom:18px;">
+
+      <!-- Servicios recientes -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Servicios recientes</h3><p>Últimos mantenimientos</p></div>
+          <a href="operacion.html" class="btn btn-outline btn-sm">Ver todos</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Placa</th><th>Cliente</th><th>Estado</th><th>Avance</th></tr></thead>
+            <tbody id="dash-recientes">
+              <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:20px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Acceso rápido + stock -->
+      <div style="display:grid;gap:18px;">
+        <div class="card">
+          <div class="card-header"><h3>Acceso rápido</h3></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <a href="operacion.html" class="btn btn-outline" style="flex-direction:column;gap:5px;padding:14px;height:auto;"><i class="fas fa-screwdriver-wrench" style="font-size:1.2rem;color:#2563eb;"></i><span style="font-size:0.78rem;">Operación</span></a>
+            <a href="inventario.html" class="btn btn-outline" style="flex-direction:column;gap:5px;padding:14px;height:auto;"><i class="fas fa-boxes-stacked" style="font-size:1.2rem;color:#7c3aed;"></i><span style="font-size:0.78rem;">Inventario</span></a>
+            <a href="facturacion.html" class="btn btn-outline" style="flex-direction:column;gap:5px;padding:14px;height:auto;"><i class="fas fa-file-invoice-dollar" style="font-size:1.2rem;color:#16a34a;"></i><span style="font-size:0.78rem;">Facturación</span></a>
+            <a href="reportes.html" class="btn btn-outline" style="flex-direction:column;gap:5px;padding:14px;height:auto;"><i class="fas fa-chart-bar" style="font-size:1.2rem;color:#f59e0b;"></i><span style="font-size:0.78rem;">Reportes</span></a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Stock crítico</h3><a href="inventario.html" class="btn btn-danger btn-sm">Ver inventario</a></div>
+          <div class="list" id="dash-stock">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
