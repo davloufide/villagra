@@ -240,6 +240,30 @@
           </button>
         </div>
       </div>
+
+      <!-- Repuestos / insumos usados (IVO-008 / IVO-009) -->
+      <div class="admin-only" style="border-top:1px solid #e2e8f0;margin-top:16px;padding-top:16px;">
+        <h4 style="font-size:0.87rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:12px;">Repuestos / insumos usados</h4>
+        <div class="table-wrap" style="margin-bottom:14px;">
+          <table>
+            <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Fecha</th></tr></thead>
+            <tbody id="op-rep-lista"><tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin repuestos asociados</td></tr></tbody>
+          </table>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Repuesto</label>
+            <select id="op-rep-producto"><option value="">-- Seleccionar repuesto --</option></select>
+          </div>
+          <div class="field">
+            <label>Cantidad</label>
+            <input id="op-rep-cant" type="number" min="1" placeholder="1">
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <button id="btn-op-rep" class="btn btn-primary" style="width:100%;"><i class="fas fa-boxes-stacked"></i> Asociar y descontar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Catálogo de servicios (OPE-006) -->

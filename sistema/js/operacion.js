@@ -118,7 +118,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       clientes.forEach(c => opt('op-cliente', c.id_cliente, c.usuarios?.nombre ?? ('Cliente ' + c.id_cliente)));
       marcas.forEach(m => opt('op-marca', m.id_marca, m.nombre_marca));
+
+      await cargarRepuestosSelect();
     } catch (e) { console.error('[Operacion selectores]', e); }
+  }
+
+  // Repuestos disponibles para asociar (IVO-008)
+  async function cargarRepuestosSelect() {
+    try {
+      const productos = await inventario.lista();
+      const sel = document.getElementById('op-rep-producto');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- Seleccionar repuesto --</option>' +
+        productos.map(p => `<option value="${p.id_producto}">${p.nombre} (${p.codigo}) · stock: ${p.cantidad_stock}</option>`).join('');
+    } catch (e) { console.error('[Operacion repuestos]', e); }
+  }
+
+  async function cargarRepuestosMant(idMant) {
+    try {
+      const movs = await inventario.movimientosDe(idMant);
+      const salidas = (movs ?? []).filter(m => m.tipo === 'salida');
+      document.getElementById('op-rep-lista').innerHTML = salidas.length
+        ? salidas.map(m => `
+            <tr>
+              <td>${m.productos?.nombre ?? '-'} <small style="color:#94a3b8;">${m.productos?.codigo ?? ''}</small></td>
+              <td>${m.cantidad}</td>
+              <td style="font-size:0.82rem;color:#64748b;">${m.fecha ? new Date(m.fecha).toLocaleDateString('es-CR') : '-'}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin repuestos asociados</td></tr>';
+    } catch (e) { console.error('[Repuestos mant]', e); }
   }
 
   // ── Catálogo de servicios (OPE-006) — construye todo lo que depende de servicios ──
@@ -233,6 +261,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             </table>
           </div>`
         : '<p style="color:#94a3b8;font-size:0.88rem;padding:8px;">Sin tareas asignadas todavía.</p>';
+
+      // Repuestos asociados a este mantenimiento (IVO-008)
+      document.getElementById('op-rep-cant').value = '';
+      await cargarRepuestosMant(id);
     } catch (e) {
       toast('Error cargando detalle: ' + e.message, 'error');
     }
@@ -242,6 +274,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     mantSeleccionado = null;
     document.getElementById('op-panel-tarea').style.display = 'none';
   };
+
+  // ── Asociar repuesto al mantenimiento y descontar stock (IVO-008/009) ──
+  const btnOpRep = document.getElementById('btn-op-rep');
+  if (btnOpRep) {
+    btnOpRep.addEventListener('click', async () => {
+      if (!mantSeleccionado) { toast('Abre un mantenimiento primero', 'error'); return; }
+      const idProd = document.getElementById('op-rep-producto').value;
+      const cant   = parseInt(document.getElementById('op-rep-cant').value);
+      if (!idProd) { toast('Selecciona un repuesto', 'error'); return; }
+      if (!cant || cant <= 0) { toast('Ingresa una cantidad válida', 'error'); return; }
+
+      btnLoading(btnOpRep, true);
+      try {
+        await inventario.movimiento({ id_producto: parseInt(idProd), id_mantenimiento: mantSeleccionado, tipo: 'salida', cantidad: cant });
+        toast('Repuesto asociado y descontado del inventario');
+        document.getElementById('op-rep-cant').value = '';
+        await cargarRepuestosSelect();      // refresca stock en el selector
+        await cargarRepuestosMant(mantSeleccionado);
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        btnLoading(btnOpRep, false);
+      }
+    });
+  }
 
   // ── Editar info del mantenimiento (OPE-003) ───────────────
   const btnEditarMant = document.getElementById('btn-editar-mant');

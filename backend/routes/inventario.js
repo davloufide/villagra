@@ -24,6 +24,25 @@ router.get('/categorias', verificarToken, async (req, res) => {
   res.json(data);
 });
 
+// POST /api/inventario/categorias — crear categoría (admin) [IVO-006]
+router.post('/categorias', verificarToken, soloRol('administrador'), async (req, res) => {
+  const { nombre } = req.body;
+  if (!nombre || !nombre.trim())
+    return res.status(400).json({ error: 'El nombre de la categoría es requerido' });
+
+  const { data, error } = await supabase
+    .from('categorias')
+    .insert({ nombre: nombre.trim() })
+    .select('id_categoria, nombre')
+    .single();
+
+  if (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Esa categoría ya existe' });
+    return res.status(500).json({ error: error.message });
+  }
+  res.status(201).json(data);
+});
+
 // GET /api/inventario/alertas — productos bajo stock mínimo
 router.get('/alertas', verificarToken, async (req, res) => {
   // PostgREST no compara columna vs columna en un filtro, así que se
@@ -108,6 +127,60 @@ router.get('/movimientos/:idMant', verificarToken, soloRol('administrador', 'mec
     .eq('id_mantenimiento', req.params.idMant)
     .order('fecha', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// PATCH /api/inventario/:id/salida — disminuir el stock (admin) [IVO-003]
+router.patch('/:id/salida', verificarToken, soloRol('administrador'), async (req, res) => {
+  const cantidad = parseInt(req.body.cantidad);
+  if (!cantidad || cantidad <= 0)
+    return res.status(400).json({ error: 'La cantidad a disminuir debe ser mayor a 0' });
+
+  const { data: prod, error: pErr } = await supabase
+    .from('productos').select('nombre, cantidad_stock').eq('id_producto', req.params.id).single();
+  if (pErr || !prod) return res.status(404).json({ error: 'Producto no encontrado' });
+
+  if (prod.cantidad_stock < cantidad)
+    return res.status(400).json({ error: `No puedes disminuir ${cantidad}: solo hay ${prod.cantidad_stock} de ${prod.nombre}` });
+
+  const nuevoStock = prod.cantidad_stock - cantidad;
+  const { data, error } = await supabase
+    .from('productos')
+    .update({ cantidad_stock: nuevoStock })
+    .eq('id_producto', req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Registrar el movimiento de salida (best-effort)
+  await supabase.from('movimientos_inventario')
+    .insert({ id_producto: parseInt(req.params.id), tipo: 'salida', cantidad })
+    .then(() => {}, () => {});
+
+  res.json(data);
+});
+
+// PATCH /api/inventario/:id/ajuste — fijar el stock a un valor exacto (admin) [IVO-010]
+// Para correcciones: conteo físico, errores, devoluciones. Registra la diferencia.
+router.patch('/:id/ajuste', verificarToken, soloRol('administrador'), async (req, res) => {
+  const nueva = parseInt(req.body.cantidad);
+  if (isNaN(nueva) || nueva < 0)
+    return res.status(400).json({ error: 'La cantidad debe ser 0 o mayor' });
+
+  const { data: prod, error: pErr } = await supabase
+    .from('productos').select('cantidad_stock').eq('id_producto', req.params.id).single();
+  if (pErr || !prod) return res.status(404).json({ error: 'Producto no encontrado' });
+
+  const diff = nueva - prod.cantidad_stock;
+  const { data, error } = await supabase
+    .from('productos').update({ cantidad_stock: nueva }).eq('id_producto', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  if (diff !== 0) {
+    await supabase.from('movimientos_inventario')
+      .insert({ id_producto: parseInt(req.params.id), tipo: diff > 0 ? 'entrada' : 'salida', cantidad: Math.abs(diff) })
+      .then(() => {}, () => {});
+  }
   res.json(data);
 });
 

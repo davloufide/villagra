@@ -51,7 +51,7 @@
         <p>Control de productos, stock y alertas de reposición</p>
       </div>
       <div class="top-actions">
-        <button class="btn btn-outline btn-sm" onclick="toggleFormStock()"><i class="fas fa-plus-minus"></i> Aumentar stock</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleFormStock()"><i class="fas fa-plus-minus"></i> Ajustar stock</button>
         <button class="btn btn-primary btn-sm" onclick="toggleFormProd()"><i class="fas fa-plus"></i> Producto nuevo</button>
       </div>
     </div>
@@ -92,7 +92,14 @@
         <div class="field"><label>Nombre <span style="color:#dc2626;">*</span></label><input id="inv-nombre" placeholder="Filtro de aceite"></div>
         <div class="field"><label>Código <span style="color:#dc2626;">*</span></label><input id="inv-codigo" placeholder="FA-001"></div>
         <div class="field"><label>Marca</label><input id="inv-marca" placeholder="Castrol, Bosch..."></div>
-        <div class="field"><label>Categoría</label><select id="inv-categoria"><option value="">Seleccionar</option></select></div>
+        <div class="field">
+          <label>Categoría <button type="button" onclick="toggleNuevaCat()" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">+ nueva</button></label>
+          <select id="inv-categoria"><option value="">Seleccionar</option></select>
+          <div id="nueva-cat-wrap" style="display:none;gap:6px;margin-top:6px;">
+            <input id="nueva-cat-nombre" placeholder="Nombre de la categoría" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;outline:none;">
+            <button id="btn-crear-cat" class="btn btn-primary btn-sm" type="button"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
         <div class="field"><label>Cantidad en stock</label><input id="inv-stock" type="number" placeholder="10"></div>
         <div class="field"><label>Stock mínimo</label><input id="inv-minimo" type="number" placeholder="5"></div>
         <div class="field"><label>Costo unitario</label><input id="inv-costo" placeholder="5000"></div>
@@ -104,10 +111,10 @@
       </div>
     </div>
 
-    <!-- Form aumentar stock (oculto) -->
+    <!-- Form ajustar stock (oculto): aumentar o disminuir -->
     <div id="form-stock" class="card" style="display:none;margin-bottom:18px;">
       <div class="card-header">
-        <div><h3>Aumentar stock</h3><p>Suma unidades a un producto que ya existe</p></div>
+        <div><h3>Ajustar stock</h3><p>Suma (entrada) o resta (salida/consumo) unidades de un producto</p></div>
       </div>
       <div class="form-grid">
         <div class="field" style="grid-column:1/-1;">
@@ -115,7 +122,7 @@
           <select id="stock-producto"><option value="">-- Seleccionar producto --</option></select>
         </div>
         <div class="field">
-          <label>Unidades a agregar <span style="color:#dc2626;">*</span></label>
+          <label>Cantidad <span style="color:#dc2626;">*</span></label>
           <input id="stock-cantidad" type="number" min="1" placeholder="Ej: 10">
         </div>
         <div class="field">
@@ -124,9 +131,12 @@
         </div>
       </div>
       <div class="form-actions">
-        <button id="btn-aumentar-stock" class="btn btn-success" style="flex:1;"><i class="fas fa-arrow-up"></i> Agregar al inventario</button>
+        <button id="btn-aumentar-stock" class="btn btn-success" style="flex:1;"><i class="fas fa-arrow-up"></i> Aumentar (entrada)</button>
+        <button id="btn-disminuir-stock" class="btn btn-warning" style="flex:1;"><i class="fas fa-arrow-down"></i> Disminuir (salida)</button>
+        <button id="btn-corregir-stock" class="btn btn-secondary" style="flex:1;"><i class="fas fa-pen"></i> Corregir (valor exacto)</button>
         <button onclick="toggleFormStock()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
       </div>
+      <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;"><strong>Corregir</strong>: fija el stock exactamente a la cantidad ingresada (para conteos físicos, errores o devoluciones).</p>
     </div>
 
     <!-- Tabla -->

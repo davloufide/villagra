@@ -85,12 +85,15 @@ const servicios = {
 
 // ── Inventario ────────────────────────────────────────────
 const inventario = {
-  lista:       ()       => apiFetch('/inventario'),
-  categorias:  ()       => apiFetch('/inventario/categorias'),
+  lista:         ()       => apiFetch('/inventario'),
+  categorias:    ()       => apiFetch('/inventario/categorias'),
+  crearCategoria:(nombre) => apiFetch('/inventario/categorias', { method: 'POST', body: JSON.stringify({ nombre }) }),
   alertas:     ()       => apiFetch('/inventario/alertas'),
   crear:       (body)   => apiFetch('/inventario', { method: 'POST', body: JSON.stringify(body) }),
   actualizar:  (id, b)  => apiFetch(`/inventario/${id}`, { method: 'PATCH', body: JSON.stringify(b) }),
   entrada:     (id, cantidad) => apiFetch(`/inventario/${id}/entrada`, { method: 'PATCH', body: JSON.stringify({ cantidad }) }),
+  salida:      (id, cantidad) => apiFetch(`/inventario/${id}/salida`, { method: 'PATCH', body: JSON.stringify({ cantidad }) }),
+  ajuste:      (id, cantidad) => apiFetch(`/inventario/${id}/ajuste`, { method: 'PATCH', body: JSON.stringify({ cantidad }) }),
   movimiento:  (body)   => apiFetch('/inventario/movimiento', { method: 'POST', body: JSON.stringify(body) }),
   movimientosDe: (idMant) => apiFetch(`/inventario/movimientos/${idMant}`)
 };

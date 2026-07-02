@@ -58,13 +58,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     ));
   };
 
-  async function cargarCategorias() {
+  async function cargarCategorias(seleccionar) {
     try {
       const cats = await inventario.categorias();
       const sel = document.getElementById('inv-categoria');
-      cats.forEach(c => sel.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`);
+      sel.innerHTML = '<option value="">Seleccionar</option>' +
+        cats.map(c => `<option value="${c.id_categoria}">${c.nombre}</option>`).join('');
+      if (seleccionar) sel.value = seleccionar;
     } catch {}
   }
+
+  // Crear categoría nueva (IVO-006)
+  window.toggleNuevaCat = () => {
+    const w = document.getElementById('nueva-cat-wrap');
+    w.style.display = w.style.display === 'none' ? 'flex' : 'none';
+    if (w.style.display === 'flex') document.getElementById('nueva-cat-nombre').focus();
+  };
+
+  document.getElementById('btn-crear-cat').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-crear-cat');
+    const nombre = document.getElementById('nueva-cat-nombre').value.trim();
+    if (!nombre) { toast('Escribe el nombre de la categoría', 'error'); return; }
+    btnLoading(btn, true);
+    try {
+      const cat = await inventario.crearCategoria(nombre);
+      toast('Categoría creada: ' + cat.nombre);
+      document.getElementById('nueva-cat-nombre').value = '';
+      document.getElementById('nueva-cat-wrap').style.display = 'none';
+      await cargarCategorias(cat.id_categoria); // recarga y deja seleccionada la nueva
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btnLoading(btn, false);
+    }
+  });
 
   window.toggleFormProd = () => {
     document.getElementById('form-stock').style.display = 'none';
@@ -93,8 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('stock-actual').value = p ? `${p.cantidad_stock} uds.` : '';
   });
 
-  document.getElementById('btn-aumentar-stock').addEventListener('click', async () => {
-    const btn      = document.getElementById('btn-aumentar-stock');
+  // Ajustar stock: sirve para aumentar (entrada) y disminuir (salida) [IVO-003]
+  async function ajustarStock(tipo) {
+    const btn      = document.getElementById(tipo === 'entrada' ? 'btn-aumentar-stock' : 'btn-disminuir-stock');
     const idProd   = parseInt(document.getElementById('stock-producto').value);
     const cantidad = parseInt(document.getElementById('stock-cantidad').value);
     if (!idProd) { toast('Selecciona un producto', 'error'); return; }
@@ -102,8 +130,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     btnLoading(btn, true);
     try {
-      const actualizado = await inventario.entrada(idProd, cantidad);
+      const actualizado = tipo === 'entrada'
+        ? await inventario.entrada(idProd, cantidad)
+        : await inventario.salida(idProd, cantidad);
       toast(`Stock actualizado: ahora hay ${actualizado.cantidad_stock} uds.`);
+      document.getElementById('form-stock').style.display = 'none';
+      await cargarProductos();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btnLoading(btn, false);
+    }
+  }
+
+  document.getElementById('btn-aumentar-stock').addEventListener('click', () => ajustarStock('entrada'));
+  document.getElementById('btn-disminuir-stock').addEventListener('click', () => ajustarStock('salida'));
+
+  // Corregir a valor exacto (IVO-010)
+  document.getElementById('btn-corregir-stock').addEventListener('click', async () => {
+    const btn      = document.getElementById('btn-corregir-stock');
+    const idProd   = parseInt(document.getElementById('stock-producto').value);
+    const cantidad = parseInt(document.getElementById('stock-cantidad').value);
+    if (!idProd) { toast('Selecciona un producto', 'error'); return; }
+    if (isNaN(cantidad) || cantidad < 0) { toast('Ingresa el valor exacto (0 o mayor)', 'error'); return; }
+
+    btnLoading(btn, true);
+    try {
+      const actualizado = await inventario.ajuste(idProd, cantidad);
+      toast(`Stock corregido: ahora hay ${actualizado.cantidad_stock} uds.`);
       document.getElementById('form-stock').style.display = 'none';
       await cargarProductos();
     } catch (e) {
