@@ -61,7 +61,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const v = await vehiculos.detalle(id);
       document.getElementById('vd-titulo').textContent = `${v.placa} · ${v.marcas?.nombre_marca ?? ''}`;
-      document.getElementById('vd-sub').textContent    = 'Propietario: ' + (v.clientes?.usuarios?.nombre ?? '-');
+      const notas = v.observaciones
+        ? `<br><span style="color:#475569;"><strong>Notas del vehículo:</strong> ${v.observaciones}</span>`
+        : '<br><span style="color:#94a3b8;">Sin notas registradas</span>';
+      document.getElementById('vd-sub').innerHTML = 'Propietario: ' + (v.clientes?.usuarios?.nombre ?? '-') + notas;
       const h = v.historial ?? [];
       document.getElementById('vd-historial').innerHTML = h.length
         ? h.map(m => `

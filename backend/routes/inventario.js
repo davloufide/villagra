@@ -43,6 +43,24 @@ router.post('/categorias', verificarToken, soloRol('administrador'), async (req,
   res.status(201).json(data);
 });
 
+// DELETE /api/inventario/categorias/:id — eliminar categoría (admin)
+// Los productos de esa categoría quedan "Sin categoría" (id_categoria = null).
+router.delete('/categorias/:id', verificarToken, soloRol('administrador'), async (req, res) => {
+  const id = req.params.id;
+
+  const { data: afectados, error: errU } = await supabase
+    .from('productos')
+    .update({ id_categoria: null })
+    .eq('id_categoria', id)
+    .select('id_producto');
+  if (errU) return res.status(500).json({ error: errU.message });
+
+  const { error } = await supabase.from('categorias').delete().eq('id_categoria', id);
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ ok: true, productos_afectados: (afectados ?? []).length });
+});
+
 // GET /api/inventario/alertas — productos bajo stock mínimo
 router.get('/alertas', verificarToken, async (req, res) => {
   // PostgREST no compara columna vs columna en un filtro, así que se

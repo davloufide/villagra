@@ -57,7 +57,7 @@ router.get('/mi-perfil', verificarToken, soloRol('cliente'), async (req, res) =>
     .select(`
       id_cliente, telefono,
       usuarios(nombre, correo),
-      vehiculos(id_vehiculo, placa, marcas(nombre_marca))
+      vehiculos(id_vehiculo, placa, observaciones, marcas(nombre_marca))
     `)
     .eq('id_usuario', req.usuario.id)
     .single();

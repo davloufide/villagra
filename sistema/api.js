@@ -88,6 +88,7 @@ const inventario = {
   lista:         ()       => apiFetch('/inventario'),
   categorias:    ()       => apiFetch('/inventario/categorias'),
   crearCategoria:(nombre) => apiFetch('/inventario/categorias', { method: 'POST', body: JSON.stringify({ nombre }) }),
+  eliminarCategoria:(id)  => apiFetch(`/inventario/categorias/${id}`, { method: 'DELETE' }),
   alertas:     ()       => apiFetch('/inventario/alertas'),
   crear:       (body)   => apiFetch('/inventario', { method: 'POST', body: JSON.stringify(body) }),
   actualizar:  (id, b)  => apiFetch(`/inventario/${id}`, { method: 'PATCH', body: JSON.stringify(b) }),

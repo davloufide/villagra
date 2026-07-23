@@ -127,11 +127,14 @@
           <div class="field"><label>Código <span style="color:#dc2626;">*</span></label><input id="inv-codigo" placeholder="FA-001"></div>
           <div class="field"><label>Marca</label><input id="inv-marca" placeholder="Castrol, Bosch..."></div>
           <div class="field">
-            <label>Categoría <button type="button" onclick="toggleNuevaCat()" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">+ nueva</button></label>
+            <label>Categoría <button type="button" onclick="toggleNuevaCat()" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">+ gestionar</button></label>
             <select id="inv-categoria"><option value="">Seleccionar</option></select>
-            <div id="nueva-cat-wrap" style="display:none;gap:6px;margin-top:6px;">
-              <input id="nueva-cat-nombre" placeholder="Nombre de la categoría" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;outline:none;">
-              <button id="btn-crear-cat" class="btn btn-primary btn-sm" type="button"><i class="fas fa-plus"></i></button>
+            <div id="nueva-cat-wrap" style="display:none;margin-top:6px;">
+              <div style="display:flex;gap:6px;">
+                <input id="nueva-cat-nombre" placeholder="Nombre de la categoría" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;outline:none;">
+                <button id="btn-crear-cat" class="btn btn-primary btn-sm" type="button"><i class="fas fa-plus"></i></button>
+              </div>
+              <div id="cat-list" style="margin-top:8px;display:flex;flex-direction:column;gap:5px;"></div>
             </div>
           </div>
           <div class="field"><label>Cantidad en stock</label><input id="inv-stock" type="number" placeholder="10"></div>

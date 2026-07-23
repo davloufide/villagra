@@ -65,8 +65,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       sel.innerHTML = '<option value="">Seleccionar</option>' +
         cats.map(c => `<option value="${c.id_categoria}">${c.nombre}</option>`).join('');
       if (seleccionar) sel.value = seleccionar;
+
+      // Lista de categorías existentes con opción de eliminar
+      const lista = document.getElementById('cat-list');
+      if (lista) {
+        lista.innerHTML = cats.length
+          ? cats.map(c => `
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:5px 6px 5px 10px;">
+                <span style="font-size:0.83rem;color:#334155;">${c.nombre}</span>
+                <button type="button" class="btn btn-outline btn-sm" onclick="eliminarCategoria(${c.id_categoria}, '${(c.nombre || '').replace(/'/g, "\\'")}')" title="Eliminar categoría"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
+              </div>`).join('')
+          : '<p style="font-size:0.8rem;color:#94a3b8;padding:2px 2px 0;">Aún no hay categorías.</p>';
+      }
     } catch {}
   }
+
+  // Eliminar una categoría (sus productos quedan "Sin categoría")
+  window.eliminarCategoria = async (id, nombre) => {
+    const n = todos.filter(p => p.id_categoria === id).length;
+    const mensaje = n > 0
+      ? `La categoría "${nombre}" tiene ${n} producto(s). Al eliminarla, esos productos quedarán como "Sin categoría". ¿Continuar?`
+      : `¿Eliminar la categoría "${nombre}"?`;
+    if (!(await confirmar({ titulo: 'Eliminar categoría', mensaje, confirmar: 'Eliminar' }))) return;
+    try {
+      const r = await inventario.eliminarCategoria(id);
+      toast(`Categoría eliminada${r.productos_afectados ? ` · ${r.productos_afectados} producto(s) sin categoría` : ''}`);
+      await cargarCategorias();
+      await cargarProductos();  // refresca la tabla (los nombres de categoría cambian)
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
 
   // Crear categoría nueva (IVO-006)
   window.toggleNuevaCat = () => {
