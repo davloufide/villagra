@@ -74,22 +74,40 @@ router.get('/:id', verificarToken, async (req, res) => {
 
 // POST /api/facturacion — generar factura (admin)
 router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
-  const { id_mantenimiento, lineas, metodo_pago } = req.body;
+  const { id_mantenimiento, lineas, metodo_pago, descuento_pct } = req.body;
   if (!id_mantenimiento || !lineas?.length)
     return res.status(400).json({ error: 'id_mantenimiento y lineas son requeridos' });
 
+  // FACT-005: descuento opcional; si viene, debe estar entre 1% y 100%
+  let pct = 0;
+  if (descuento_pct != null && descuento_pct !== '' && Number(descuento_pct) !== 0) {
+    pct = Number(descuento_pct);
+    if (!Number.isFinite(pct) || pct < 1 || pct > 100)
+      return res.status(400).json({ error: 'El descuento debe ser un porcentaje entre 1% y 100%' });
+  }
+
   const IVA_RATE = 0.13;
-  const subtotal = lineas.reduce((s, l) => s + l.cantidad * l.precio_unitario, 0);
-  const iva      = parseFloat((subtotal * IVA_RATE).toFixed(2));
-  const total    = parseFloat((subtotal + iva).toFixed(2));
+  const subtotal  = parseFloat(lineas.reduce((s, l) => s + l.cantidad * l.precio_unitario, 0).toFixed(2));
+  const descuento = parseFloat((subtotal * pct / 100).toFixed(2));
+  const base      = parseFloat((subtotal - descuento).toFixed(2));
+  const iva       = parseFloat((base * IVA_RATE).toFixed(2));
+  const total     = parseFloat((base + iva).toFixed(2));
 
   const numero_orden = `ORD-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
 
-  const { data: factura, error } = await supabase
-    .from('facturas')
-    .insert({ id_mantenimiento, numero_orden, subtotal, iva, total, metodo_pago })
-    .select()
-    .single();
+  const registro = { id_mantenimiento, numero_orden, subtotal, iva, total, metodo_pago };
+
+  // Intentar guardar el monto de descuento en su columna; si la migración
+  // aún no se corrió (columna inexistente), reintentar sin ella: el descuento
+  // igual queda aplicado en iva/total y es derivable de subtotal-(total-iva).
+  let factura, error;
+  ({ data: factura, error } = await supabase
+    .from('facturas').insert({ ...registro, descuento }).select().single());
+
+  if (error && (error.code === 'PGRST204' || /descuento/i.test(error.message || ''))) {
+    ({ data: factura, error } = await supabase
+      .from('facturas').insert(registro).select().single());
+  }
 
   if (error) {
     if (error.code === '23505')

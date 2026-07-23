@@ -82,6 +82,13 @@ async function descargarFacturaPDF(id) {
         </table>
         <div class="tot">
           <div><span>Subtotal</span><span>${money(f.subtotal)}</span></div>
+          ${(() => {
+            // Descuento: explícito (columna) o derivado de subtotal-(total-iva)
+            const desc = Number(f.descuento) || Math.max(0, Number(f.subtotal) - (Number(f.total) - Number(f.iva)));
+            if (desc <= 0) return '';
+            const pct = f.subtotal > 0 ? Math.round(desc / Number(f.subtotal) * 100) : 0;
+            return `<div style="color:#dc2626;"><span>Descuento${pct ? ` (${pct}%)` : ''}</span><span>-${money(desc)}</span></div>`;
+          })()}
           <div><span>IVA (13%)</span><span>${money(f.iva)}</span></div>
           <div class="grand"><span>TOTAL</span><span>${money(f.total)}</span></div>
         </div>

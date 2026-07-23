@@ -167,6 +167,111 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Exportar reporte de inventario a PDF (IVO-012)
+  // Respeta el filtro de búsqueda activo: exporta lo que se está viendo.
+  window.exportarInventarioPDF = () => {
+    const money = n => '₡' + Number(n || 0).toLocaleString('es');
+    const q = (document.getElementById('inv-buscar')?.value ?? '').toLowerCase();
+    const lista = q
+      ? todos.filter(p =>
+          (p.nombre ?? '').toLowerCase().includes(q) ||
+          (p.codigo ?? '').toLowerCase().includes(q) ||
+          (p.marca ?? '').toLowerCase().includes(q))
+      : todos;
+
+    if (!lista.length) { toast('No hay productos para exportar', 'error'); return; }
+
+    const bajos = lista.filter(p => p.cantidad_stock < p.stock_minimo);
+    const valorTotal = lista.reduce((s, p) => s + (p.cantidad_stock * Number(p.costo_unitario ?? 0)), 0);
+    const etiqueta = { danger: 'Crítico', warning: 'Bajo', success: 'OK' };
+
+    const filas = lista.map(p => {
+      const nv = nivelStock(p);
+      const valor = p.cantidad_stock * Number(p.costo_unitario ?? 0);
+      return `
+        <tr>
+          <td><strong>${p.nombre}</strong></td>
+          <td>${p.codigo ?? '-'}</td>
+          <td>${p.categorias?.nombre ?? '-'}</td>
+          <td>${p.marca ?? '-'}</td>
+          <td style="text-align:center;">${p.cantidad_stock}</td>
+          <td style="text-align:center;">${p.stock_minimo ?? '-'}</td>
+          <td style="text-align:center;"><span class="badge ${nv}">${etiqueta[nv]}</span></td>
+          <td style="text-align:right;">${money(p.costo_unitario)}</td>
+          <td style="text-align:right;">${money(valor)}</td>
+        </tr>`;
+    }).join('');
+
+    const seccionBajos = bajos.length ? `
+      <div class="alerta">
+        <strong>⚠ ${bajos.length} producto(s) por debajo del stock mínimo:</strong>
+        ${bajos.map(p => `${p.nombre} (${p.cantidad_stock}/${p.stock_minimo})`).join(' · ')}
+      </div>` : '';
+
+    const html = `
+      <html><head><meta charset="utf-8"><title>Reporte de inventario</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:900px;margin:26px auto;padding:0 20px;}
+        .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2563eb;padding-bottom:16px;margin-bottom:18px;}
+        .brand{font-size:1.3rem;font-weight:800;color:#1e3a8a;}
+        .muted{color:#64748b;font-size:0.85rem;}
+        .kpis{display:flex;gap:12px;margin-bottom:16px;}
+        .kpi{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;}
+        .kpi .lbl{color:#64748b;font-size:0.78rem;text-transform:uppercase;letter-spacing:.4px;}
+        .kpi .val{font-size:1.35rem;font-weight:800;margin-top:3px;}
+        .alerta{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:9px;padding:10px 13px;font-size:0.84rem;margin-bottom:16px;}
+        table{width:100%;border-collapse:collapse;margin-top:6px;}
+        th,td{padding:8px 9px;border-bottom:1px solid #e2e8f0;font-size:0.83rem;}
+        th{background:#f8fafc;text-align:left;color:#475569;}
+        .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:0.72rem;font-weight:700;}
+        .badge.danger{background:#fee2e2;color:#b91c1c;}
+        .badge.warning{background:#fef3c7;color:#92400e;}
+        .badge.success{background:#dcfce7;color:#166534;}
+        tfoot td{font-weight:800;border-top:2px solid #0f172a;font-size:0.9rem;}
+        @media print{.badge{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+      </style></head>
+      <body>
+        <div class="head">
+          <div>
+            <div class="brand">Lubricentro Villagra</div>
+            <div class="muted">San José, Costa Rica<br>Tel. 8888-8888</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.35rem;font-weight:900;">REPORTE DE INVENTARIO</div>
+            <div class="muted">Generado: ${new Date().toLocaleString('es-CR')}</div>
+            ${q ? `<div class="muted">Filtro aplicado: "${q}"</div>` : ''}
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="lbl">Total productos</div><div class="val">${lista.length}</div></div>
+          <div class="kpi"><div class="lbl">Con stock crítico</div><div class="val" style="color:#dc2626;">${bajos.length}</div></div>
+          <div class="kpi"><div class="lbl">Valor en stock</div><div class="val">${money(valorTotal)}</div></div>
+        </div>
+
+        ${seccionBajos}
+
+        <table>
+          <thead><tr>
+            <th>Producto</th><th>Código</th><th>Categoría</th><th>Marca</th>
+            <th style="text-align:center;">Stock</th><th style="text-align:center;">Mín.</th>
+            <th style="text-align:center;">Estado</th><th style="text-align:right;">Costo unit.</th><th style="text-align:right;">Valor</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+          <tfoot><tr><td colspan="8" style="text-align:right;">VALOR TOTAL DEL INVENTARIO</td><td style="text-align:right;">${money(valorTotal)}</td></tr></tfoot>
+        </table>
+
+        <p style="text-align:center;color:#94a3b8;font-size:0.8rem;margin-top:26px;">Reporte generado por Auto Service Pro · Lubricentro Villagra</p>
+      </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) { toast('Permite las ventanas emergentes para exportar el PDF', 'error'); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 350);
+  };
+
   document.getElementById('btn-guardar-producto').addEventListener('click', async () => {
     const btn    = document.getElementById('btn-guardar-producto');
     const nombre = document.getElementById('inv-nombre').value.trim();

@@ -101,6 +101,11 @@
               <option value="sinpe">Transferencia SINPE</option>
             </select>
           </div>
+          <div class="field">
+            <label>Descuento (%) <span style="color:#94a3b8;font-weight:400;">opcional</span></label>
+            <input id="fac-descuento" type="number" min="0" max="100" step="1" value="0" placeholder="0"
+              oninput="renderPreviewActual()">
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -146,6 +151,9 @@
         <div style="margin-top:14px;padding-top:14px;border-top:2px solid #e2e8f0;">
           <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:6px;">
             <span style="color:#64748b;">Subtotal</span><span style="font-weight:600;" id="pv-subtotal">₡0</span>
+          </div>
+          <div id="pv-descuento-row" style="display:none;justify-content:space-between;font-size:0.84rem;margin-bottom:6px;color:#dc2626;">
+            <span id="pv-descuento-label">Descuento</span><span style="font-weight:600;" id="pv-descuento">-₡0</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:10px;">
             <span style="color:#64748b;">IVA (13%)</span><span style="font-weight:600;" id="pv-iva">₡0</span>

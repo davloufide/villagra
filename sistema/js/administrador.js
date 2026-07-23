@@ -2,9 +2,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const rol = iniciarLayout(['administrador']);
   if (!rol) return;
 
+  let empleadosCache = [];
+
   async function cargarEmpleados() {
     try {
       const lista = await empleados.lista();
+      empleadosCache = lista;
+      llenarSelectVac(lista);
       const tbody = document.getElementById('adm-tbody');
       if (!tbody) return;
       tbody.innerHTML = lista.map(e => {
@@ -65,6 +69,90 @@ document.addEventListener('DOMContentLoaded', async () => {
       toast(e.message, 'error');
     }
   };
+
+  // ── ADM-004/005: registrar uso de vacaciones ────────────
+  function llenarSelectVac(lista) {
+    const sel = document.getElementById('rvac-empleado');
+    if (!sel) return;
+    const previo = sel.value;
+    sel.innerHTML = '<option value="">-- Seleccionar empleado --</option>' +
+      lista.map(e => `<option value="${e.id_empleado}">${e.usuarios?.nombre ?? 'Empleado'} · ${e.dias_vacaciones ?? 0} días</option>`).join('');
+    if (previo) sel.value = previo;
+    mostrarSaldoVac();
+  }
+
+  function mostrarSaldoVac() {
+    const sel = document.getElementById('rvac-empleado');
+    const inp = document.getElementById('rvac-saldo');
+    if (!sel || !inp) return;
+    const e = empleadosCache.find(x => x.id_empleado === parseInt(sel.value));
+    inp.value = e ? `${e.dias_vacaciones ?? 0} días` : '';
+  }
+
+  // Contar días hábiles (lun-vie) entre dos fechas, inclusive
+  function contarDiasHabiles(desde, hasta) {
+    const d1 = new Date(desde + 'T00:00:00'), d2 = new Date(hasta + 'T00:00:00');
+    if (isNaN(d1) || isNaN(d2) || d2 < d1) return 0;
+    let n = 0;
+    for (let d = new Date(d1); d <= d2; d.setDate(d.getDate() + 1)) {
+      const dia = d.getDay();
+      if (dia !== 0 && dia !== 6) n++;
+    }
+    return n;
+  }
+
+  function autoCalcularDias() {
+    const ini = document.getElementById('rvac-inicio').value;
+    const fin = document.getElementById('rvac-fin').value;
+    if (ini && fin) {
+      const n = contarDiasHabiles(ini, fin);
+      if (n > 0) document.getElementById('rvac-dias').value = n;
+    }
+  }
+
+  const selVac = document.getElementById('rvac-empleado');
+  if (selVac) selVac.addEventListener('change', mostrarSaldoVac);
+  ['rvac-inicio', 'rvac-fin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', autoCalcularDias);
+  });
+
+  const btnVac = document.getElementById('btn-registrar-vac');
+  if (btnVac) {
+    btnVac.addEventListener('click', async () => {
+      const id_empleado = parseInt(document.getElementById('rvac-empleado').value);
+      const fecha_inicio = document.getElementById('rvac-inicio').value;
+      const fecha_fin    = document.getElementById('rvac-fin').value;
+      const dias_habiles = parseInt(document.getElementById('rvac-dias').value);
+
+      if (!id_empleado) { toast('Selecciona un empleado', 'error'); return; }
+      if (!fecha_inicio || !fecha_fin) { toast('Indica las fechas de inicio y fin', 'error'); return; }
+      if (new Date(fecha_fin) < new Date(fecha_inicio)) { toast('La fecha fin no puede ser anterior a la de inicio', 'error'); return; }
+      if (!dias_habiles || dias_habiles <= 0) { toast('Los días hábiles deben ser mayores a 0', 'error'); return; }
+
+      // ADM-005: aviso temprano en el front (el backend igual lo valida)
+      const emp = empleadosCache.find(x => x.id_empleado === id_empleado);
+      const saldo = emp?.dias_vacaciones ?? 0;
+      if (dias_habiles > saldo) {
+        toast(`Saldo insuficiente: ${emp?.usuarios?.nombre ?? 'el empleado'} solo tiene ${saldo} día(s).`, 'error');
+        return;
+      }
+
+      btnLoading(btnVac, true);
+      try {
+        const r = await empleados.registrarVac({ id_empleado, fecha_inicio, fecha_fin, dias_habiles });
+        toast(`Vacaciones registradas. Saldo restante: ${r.dias_restantes} día(s).`);
+        document.getElementById('rvac-dias').value   = '';
+        document.getElementById('rvac-inicio').value = '';
+        document.getElementById('rvac-fin').value    = '';
+        await cargarEmpleados();
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        btnLoading(btnVac, false);
+      }
+    });
+  }
 
   const btnGuardar = document.getElementById('btn-guardar-empleado');
   if (btnGuardar) {

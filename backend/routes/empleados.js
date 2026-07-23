@@ -83,6 +83,53 @@ router.post('/vacaciones', verificarToken, soloRol('administrador', 'mecanico'),
   res.status(201).json(data);
 });
 
+// POST /api/empleados/vacaciones/registrar — el admin registra directamente
+// el uso de vacaciones de un empleado y descuenta del saldo (ADM-004/005)
+router.post('/vacaciones/registrar', verificarToken, soloRol('administrador'), async (req, res) => {
+  const { id_empleado, fecha_inicio, fecha_fin, dias_habiles } = req.body;
+
+  if (!id_empleado || !fecha_inicio || !fecha_fin)
+    return res.status(400).json({ error: 'id_empleado, fecha_inicio y fecha_fin son requeridos' });
+
+  const dias = parseInt(dias_habiles);
+  if (!dias || dias <= 0)
+    return res.status(400).json({ error: 'Los días hábiles deben ser un número mayor a 0' });
+
+  const { data: emp } = await supabase
+    .from('empleados')
+    .select('id_empleado, dias_vacaciones, usuarios(nombre)')
+    .eq('id_empleado', id_empleado)
+    .single();
+
+  if (!emp) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+  // ADM-005: impedir saldo negativo
+  const saldo = emp.dias_vacaciones ?? 0;
+  if (dias > saldo)
+    return res.status(400).json({
+      error: `Saldo insuficiente: ${emp.usuarios?.nombre ?? 'el empleado'} tiene ${saldo} día(s) disponible(s) y se intentan registrar ${dias}.`
+    });
+
+  // ADM-004: registrar como aprobada (uso ya efectuado) y descontar del saldo
+  const { data: vac, error: errV } = await supabase
+    .from('vacaciones')
+    .insert({ id_empleado, fecha_inicio, fecha_fin, dias_habiles: dias, estado: 'aprobada' })
+    .select()
+    .single();
+
+  if (errV) return res.status(500).json({ error: errV.message });
+
+  const restantes = saldo - dias;
+  const { error: errU } = await supabase
+    .from('empleados')
+    .update({ dias_vacaciones: restantes })
+    .eq('id_empleado', id_empleado);
+
+  if (errU) return res.status(500).json({ error: errU.message });
+
+  res.status(201).json({ ...vac, dias_restantes: restantes });
+});
+
 // PATCH /api/empleados/vacaciones/:id — aprobar o rechazar (admin)
 router.patch('/vacaciones/:id', verificarToken, soloRol('administrador'), async (req, res) => {
   const { estado } = req.body;

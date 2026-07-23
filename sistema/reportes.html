@@ -52,6 +52,7 @@
         <p>Indicadores principales, historial e información resumida</p>
       </div>
       <div class="top-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportarReportesPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
         <a href="index.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
       </div>
     </div>
@@ -114,6 +115,22 @@
           <div id="rep-servicios">
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
           </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- RPS-004: total de mantenimientos completados por mecánico -->
+    <div class="card">
+      <div class="card-header">
+        <div><h3>Mantenimientos completados por mecánico</h3><p>Productividad histórica del equipo</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:40px;">#</th><th>Mecánico</th><th style="text-align:right;">Mantenimientos completados</th></tr></thead>
+          <tbody id="rep-mant-mecanico">
+            <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

@@ -81,11 +81,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>`).join('');
   }
 
-  function calcular() {
-    const subtotal = lineas.reduce((s, l) => s + (l.cantidad * l.precio_unitario), 0);
-    const iva = Math.round(subtotal * IVA);
-    return { subtotal, iva, total: subtotal + iva };
+  // Lee el % de descuento del form, acotado a 0..100
+  function descuentoPct() {
+    const v = parseFloat(document.getElementById('fac-descuento')?.value);
+    if (!Number.isFinite(v) || v <= 0) return 0;
+    return Math.min(100, v);
   }
+
+  function calcular() {
+    const subtotal  = lineas.reduce((s, l) => s + (l.cantidad * l.precio_unitario), 0);
+    const pct       = descuentoPct();
+    const descuento = Math.round(subtotal * pct / 100);
+    const base      = subtotal - descuento;
+    const iva       = Math.round(base * IVA);
+    return { subtotal, pct, descuento, base, iva, total: base + iva };
+  }
+
+  // Reusable desde el oninput del campo de descuento
+  window.renderPreviewActual = () => renderPreview(mantActual());
 
   function renderPreview(m) {
     document.getElementById('pv-fecha').textContent    = new Date().toLocaleDateString('es-CR');
@@ -103,10 +116,19 @@ document.addEventListener('DOMContentLoaded', async () => {
           </tr>`).join('')
       : '<tr><td colspan="3" style="color:#94a3b8;text-align:center;padding:14px;">Sin líneas</td></tr>';
 
-    const { subtotal, iva, total } = calcular();
+    const { subtotal, pct, descuento, iva, total } = calcular();
     document.getElementById('pv-subtotal').textContent = money(subtotal);
     document.getElementById('pv-iva').textContent      = money(iva);
     document.getElementById('pv-total').textContent    = money(total);
+
+    const row = document.getElementById('pv-descuento-row');
+    if (pct > 0 && descuento > 0) {
+      row.style.display = 'flex';
+      document.getElementById('pv-descuento-label').textContent = `Descuento (${pct}%)`;
+      document.getElementById('pv-descuento').textContent       = '-' + money(descuento);
+    } else {
+      row.style.display = 'none';
+    }
   }
 
   // ── Generar factura ───────────────────────────────────────
@@ -118,16 +140,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lineasValidas = lineas.filter(l => l.descripcion.trim() && l.precio_unitario > 0);
     if (!lineasValidas.length) { toast('Agrega al menos una línea con descripción y precio', 'error'); return; }
 
+    // FACT-005: si hay descuento, debe estar entre 1% y 100%
+    const rawDesc = document.getElementById('fac-descuento').value.trim();
+    let descuento_pct = 0;
+    if (rawDesc !== '' && parseFloat(rawDesc) !== 0) {
+      descuento_pct = parseFloat(rawDesc);
+      if (!Number.isFinite(descuento_pct) || descuento_pct < 1 || descuento_pct > 100) {
+        toast('El descuento debe ser un porcentaje entre 1% y 100%', 'error');
+        return;
+      }
+    }
+
     btnLoading(btn, true);
     try {
       await facturacion.crear({
         id_mantenimiento: idMant,
         metodo_pago: document.getElementById('fac-metodo').value,
+        descuento_pct,
         lineas: lineasValidas
       });
       toast('Factura generada correctamente');
       lineas = [];
       document.getElementById('fac-mantenimiento').value = '';
+      document.getElementById('fac-descuento').value = '0';
       renderLineas();
       renderPreview(null);
       await Promise.all([cargarFacturables(), cargarHistorial()]);

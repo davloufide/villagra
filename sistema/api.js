@@ -124,6 +124,7 @@ const empleados = {
   crear:             (body)   => apiFetch('/empleados', { method: 'POST', body: JSON.stringify(body) }),
   vacaciones:        ()       => apiFetch('/empleados/vacaciones'),
   solicitarVac:      (body)   => apiFetch('/empleados/vacaciones', { method: 'POST', body: JSON.stringify(body) }),
+  registrarVac:      (body)   => apiFetch('/empleados/vacaciones/registrar', { method: 'POST', body: JSON.stringify(body) }),
   responderVac:      (id, b)  => apiFetch(`/empleados/vacaciones/${id}`, { method: 'PATCH', body: JSON.stringify(b) })
 };
 
@@ -141,6 +142,7 @@ const reportes = {
   resumen:           () => apiFetch('/reportes/resumen'),
   ingresosMensuales: () => apiFetch('/reportes/ingresos-mensuales'),
   rankingMecanicos:  () => apiFetch('/reportes/ranking-mecanicos'),
+  mantenimientosPorMecanico: () => apiFetch('/reportes/mantenimientos-por-mecanico'),
   serviciosPopulares:() => apiFetch('/reportes/servicios-populares')
 };
 

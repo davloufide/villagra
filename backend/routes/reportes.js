@@ -89,6 +89,49 @@ router.get('/ranking-mecanicos', verificarToken, soloRol('administrador'), async
   res.json(ranking);
 });
 
+// GET /api/reportes/mantenimientos-por-mecanico — total de mantenimientos
+// COMPLETADOS (estado terminado) por mecánico, histórico (admin) [RPS-004]
+router.get('/mantenimientos-por-mecanico', verificarToken, soloRol('administrador'), async (req, res) => {
+  // Mantenimientos terminados con las tareas y el mecánico de cada una
+  const [mant, emps] = await Promise.all([
+    supabase
+      .from('mantenimientos')
+      .select('id_mantenimiento, estado, tareas(id_empleado, empleados(usuarios(nombre)))')
+      .eq('estado', 'terminado'),
+    supabase
+      .from('empleados')
+      .select('id_empleado, usuarios(nombre, roles(nombre))')
+  ]);
+
+  if (mant.error) return res.status(500).json({ error: mant.error.message });
+  if (emps.error) return res.status(500).json({ error: emps.error.message });
+
+  // Inicializar a 0 todos los mecánicos (para evaluar también a quienes no tienen ninguno)
+  const conteo = {};
+  (emps.data ?? []).forEach(e => {
+    if (e.usuarios?.roles?.nombre === 'mecanico') {
+      conteo[e.id_empleado] = { nombre: e.usuarios?.nombre ?? 'Mecánico', completados: 0 };
+    }
+  });
+
+  // Contar cada mantenimiento terminado UNA vez por mecánico que participó
+  (mant.data ?? []).forEach(m => {
+    const empleadosDelMant = new Set();
+    (m.tareas ?? []).forEach(t => { if (t.id_empleado != null) empleadosDelMant.add(t.id_empleado); });
+    empleadosDelMant.forEach(idEmp => {
+      if (!conteo[idEmp]) {
+        // Mecánico que ya no está en la lista activa pero trabajó en el mantenimiento
+        const nombre = (mant.data.flatMap(x => x.tareas ?? []).find(t => t.id_empleado === idEmp))?.empleados?.usuarios?.nombre ?? 'Desconocido';
+        conteo[idEmp] = { nombre, completados: 0 };
+      }
+      conteo[idEmp].completados++;
+    });
+  });
+
+  const ranking = Object.values(conteo).sort((a, b) => b.completados - a.completados);
+  res.json(ranking);
+});
+
 // GET /api/reportes/servicios-populares — servicios más solicitados (admin)
 router.get('/servicios-populares', verificarToken, soloRol('administrador'), async (req, res) => {
   const { data, error } = await supabase

@@ -165,6 +165,39 @@
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
           </div>
         </div>
+
+        <!-- ADM-004/005: registrar uso de vacaciones y descontar del saldo -->
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Registrar vacaciones</h3><p>Descuenta días del saldo del empleado</p></div>
+          </div>
+          <div class="form-grid">
+            <div class="field" style="grid-column:1/-1;">
+              <label>Empleado <span style="color:#dc2626;">*</span></label>
+              <select id="rvac-empleado"><option value="">-- Seleccionar empleado --</option></select>
+            </div>
+            <div class="field">
+              <label>Saldo disponible</label>
+              <input id="rvac-saldo" disabled placeholder="-" style="background:#f1f5f9;">
+            </div>
+            <div class="field">
+              <label>Días hábiles <span style="color:#dc2626;">*</span></label>
+              <input id="rvac-dias" type="number" min="1" placeholder="Ej: 5">
+            </div>
+            <div class="field">
+              <label>Desde <span style="color:#dc2626;">*</span></label>
+              <input id="rvac-inicio" type="date">
+            </div>
+            <div class="field">
+              <label>Hasta <span style="color:#dc2626;">*</span></label>
+              <input id="rvac-fin" type="date">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-registrar-vac" class="btn btn-success" style="flex:1;"><i class="fas fa-umbrella-beach"></i> Registrar y descontar</button>
+          </div>
+          <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">Al registrar, los días hábiles se restan del saldo del empleado. No se permite dejar el saldo en negativo.</p>
+        </div>
       </div>
     </div>
 
