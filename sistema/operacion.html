@@ -305,11 +305,12 @@
         </div>
         <div class="form-actions" style="margin-bottom:8px;">
           <button id="btn-crear-servicio" class="btn btn-primary"><i class="fas fa-plus"></i> Agregar al catálogo</button>
+          <button id="btn-cancelar-servicio" class="btn btn-outline" style="display:none;" onclick="cancelarEdicionServicio()"><i class="fas fa-xmark"></i> Cancelar edición</button>
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Servicio</th><th>Precio base</th></tr></thead>
-            <tbody id="cat-tbody"><tr><td colspan="2" style="text-align:center;color:#94a3b8;">Cargando...</td></tr></tbody>
+            <thead><tr><th>Servicio</th><th>Precio base</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody id="cat-tbody"><tr><td colspan="3" style="text-align:center;color:#94a3b8;">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>

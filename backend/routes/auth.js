@@ -2,6 +2,7 @@ const router  = require('express').Router();
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const supabase = require('../db/supabase');
+const { enviarCorreo, correoConfigurado } = require('../utils/mailer');
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -105,10 +106,39 @@ router.post('/recuperar', async (req, res) => {
     { expiresIn: '1h' }
   );
 
-  console.log(`\n[RECUPERAR CONTRASEÑA] ${usuario.nombre} (${correo})`);
-  console.log(`  Token (válido 1h): ${token}\n`);
+  // Construir el enlace de restablecimiento
+  const base   = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  const enlace = `${base}/reset.html?token=${token}`;
 
-  // MODO DEMO: devolvemos el token para mostrar el enlace en pantalla.
+  // Si el correo está configurado (SMTP), lo enviamos de verdad
+  if (correoConfigurado()) {
+    try {
+      await enviarCorreo({
+        para: correo,
+        asunto: 'Recuperación de contraseña · Lubricentro Villagra',
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:auto;color:#0f172a;">
+            <h2 style="color:#1e3a8a;">Lubricentro Villagra</h2>
+            <p>Hola ${usuario.nombre},</p>
+            <p>Recibimos una solicitud para restablecer tu contraseña. Hacé clic en el botón para crear una nueva (el enlace vence en 1 hora):</p>
+            <p style="text-align:center;margin:26px 0;">
+              <a href="${enlace}" style="background:#2563eb;color:#fff;text-decoration:none;padding:13px 26px;border-radius:10px;font-weight:700;display:inline-block;">Restablecer contraseña</a>
+            </p>
+            <p style="font-size:0.85rem;color:#64748b;">Si el botón no funciona, copiá y pegá este enlace en tu navegador:<br>
+              <a href="${enlace}" style="color:#2563eb;word-break:break-all;">${enlace}</a></p>
+            <p style="font-size:0.85rem;color:#64748b;">Si no solicitaste esto, ignorá este correo; tu contraseña no cambiará.</p>
+          </div>`
+      });
+      return res.json({ mensaje: 'Si el correo está registrado, te enviamos un enlace para restablecer la contraseña. Revisá tu bandeja de entrada (y spam).' });
+    } catch (e) {
+      console.error('[Error enviando correo de recuperación]', e.message);
+      // Si falla el envío, seguimos en modo demo para no bloquear al usuario.
+    }
+  }
+
+  // MODO DEMO (sin SMTP o si falló el envío): devolvemos el token para mostrar el enlace en pantalla.
+  console.log(`\n[RECUPERAR CONTRASEÑA] ${usuario.nombre} (${correo})`);
+  console.log(`  Enlace (válido 1h): ${enlace}\n`);
   res.json({ ...respuestaGenerica, demo: true, token });
 });
 

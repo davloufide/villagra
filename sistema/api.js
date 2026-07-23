@@ -79,8 +79,10 @@ const mantenimientos = {
 
 // ── Catálogo de servicios (tipos_servicio) ────────────────
 const servicios = {
-  lista: ()     => apiFetch('/tipos-servicio'),
-  crear: (body) => apiFetch('/tipos-servicio', { method: 'POST', body: JSON.stringify(body) })
+  lista:      ()         => apiFetch('/tipos-servicio'),
+  crear:      (body)     => apiFetch('/tipos-servicio', { method: 'POST', body: JSON.stringify(body) }),
+  actualizar: (id, body) => apiFetch(`/tipos-servicio/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  eliminar:   (id)       => apiFetch(`/tipos-servicio/${id}`, { method: 'DELETE' })
 };
 
 // ── Inventario ────────────────────────────────────────────

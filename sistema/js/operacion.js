@@ -171,17 +171,63 @@ document.addEventListener('DOMContentLoaded', async () => {
         serviciosCache.forEach(s => { selT.innerHTML += `<option value="${s.id_tipo_servicio}">${s.nombre}</option>`; });
       }
 
-      // Tabla del catálogo
+      // Tabla del catálogo (con editar / eliminar)
       const tb = document.getElementById('cat-tbody');
       if (tb) {
         tb.innerHTML = serviciosCache.length
-          ? serviciosCache.map(s => `<tr><td>${s.nombre}</td><td>₡${Number(s.precio_base ?? 0).toLocaleString('es')}</td></tr>`).join('')
-          : '<tr><td colspan="2" style="text-align:center;color:#94a3b8;">Sin servicios</td></tr>';
+          ? serviciosCache.map(s => `
+              <tr>
+                <td><strong>${s.nombre}</strong>${s.descripcion ? `<br><small style="color:#94a3b8;">${s.descripcion}</small>` : ''}</td>
+                <td>₡${Number(s.precio_base ?? 0).toLocaleString('es')}</td>
+                <td style="text-align:right;">
+                  <div style="display:inline-flex;gap:5px;">
+                    <button class="btn btn-outline btn-sm" onclick="editarServicio(${s.id_tipo_servicio})" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button class="btn btn-outline btn-sm" onclick="eliminarServicio(${s.id_tipo_servicio}, '${(s.nombre || '').replace(/'/g, "\\'")}')" title="Eliminar"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
+                  </div>
+                </td>
+              </tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin servicios</td></tr>';
       }
     } catch (e) { console.error('[Operacion catalogo]', e); }
   }
 
-  // Crear servicio nuevo en el catálogo
+  // Crear / editar servicio del catálogo (OPE-006)
+  let editServicioId = null;
+
+  window.editarServicio = (id) => {
+    const s = serviciosCache.find(x => x.id_tipo_servicio === id);
+    if (!s) return;
+    editServicioId = id;
+    document.getElementById('cat-nombre').value = s.nombre ?? '';
+    document.getElementById('cat-precio').value = s.precio_base ?? '';
+    document.getElementById('cat-desc').value   = s.descripcion ?? '';
+    document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar cambios';
+    document.getElementById('btn-cancelar-servicio').style.display = '';
+    document.getElementById('cat-nombre').focus();
+    document.getElementById('cat-nombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  window.cancelarEdicionServicio = () => {
+    editServicioId = null;
+    document.getElementById('cat-nombre').value = '';
+    document.getElementById('cat-precio').value = '';
+    document.getElementById('cat-desc').value   = '';
+    document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-plus"></i> Agregar al catálogo';
+    document.getElementById('btn-cancelar-servicio').style.display = 'none';
+  };
+
+  window.eliminarServicio = async (id, nombre) => {
+    if (!(await confirmar({ titulo: 'Eliminar servicio', mensaje: `¿Eliminar el servicio "${nombre}" del catálogo?`, confirmar: 'Eliminar' }))) return;
+    try {
+      await servicios.eliminar(id);
+      toast('Servicio eliminado');
+      if (editServicioId === id) cancelarEdicionServicio();
+      await cargarCatalogo();
+    } catch (e) {
+      toast(e.message, 'error');   // 409 si está en uso → muestra el mensaje del backend
+    }
+  };
+
   const btnCrearSvc = document.getElementById('btn-crear-servicio');
   if (btnCrearSvc) {
     btnCrearSvc.addEventListener('click', async () => {
@@ -190,17 +236,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       const desc   = document.getElementById('cat-desc').value.trim();
       if (!nombre) { toast('Escribe el nombre del servicio', 'error'); return; }
       btnLoading(btnCrearSvc, true);
+      let ok = false;
       try {
-        await servicios.crear({ nombre, precio_base: precio, descripcion: desc });
-        toast('Servicio agregado al catálogo');
-        document.getElementById('cat-nombre').value = '';
-        document.getElementById('cat-precio').value = '';
-        document.getElementById('cat-desc').value   = '';
+        if (editServicioId) {
+          await servicios.actualizar(editServicioId, { nombre, precio_base: precio, descripcion: desc });
+          toast('Servicio actualizado');
+        } else {
+          await servicios.crear({ nombre, precio_base: precio, descripcion: desc });
+          toast('Servicio agregado al catálogo');
+        }
         await cargarCatalogo();
+        ok = true;
       } catch (e) {
         toast(e.message, 'error');
       } finally {
         btnLoading(btnCrearSvc, false);
+        if (ok) cancelarEdicionServicio();
       }
     });
   }
