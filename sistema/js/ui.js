@@ -25,6 +25,62 @@ function mostrarVista(vista) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Diálogo de confirmación propio (reemplaza el confirm() del navegador) ──
+// Uso: if (!(await confirmar('¿Seguro?'))) return;
+//   o: await confirmar({ titulo, mensaje, confirmar, cancelar, peligro })
+function confirmar(opciones) {
+  const o = typeof opciones === 'string' ? { mensaje: opciones } : (opciones || {});
+  const titulo  = o.titulo    ?? 'Confirmar acción';
+  const mensaje = o.mensaje   ?? '¿Deseas continuar?';
+  const okTxt   = o.confirmar ?? 'Confirmar';
+  const noTxt   = o.cancelar  ?? 'Cancelar';
+  const peligro = o.peligro !== false; // por defecto, estilo de peligro (rojo)
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .14s;';
+    overlay.innerHTML = `
+      <div class="confirm-box" style="background:#fff;width:100%;max-width:430px;border-radius:16px;padding:24px 24px 20px;box-shadow:0 24px 60px rgba(0,0,0,0.35);transform:scale(.95);transition:transform .14s;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:46px;height:46px;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:${peligro ? '#fef2f2' : '#eff6ff'};color:${peligro ? '#dc2626' : '#2563eb'};">
+            <i class="fas fa-${peligro ? 'triangle-exclamation' : 'circle-question'}"></i>
+          </div>
+          <div style="flex:1;">
+            <h3 style="font-size:1.12rem;font-weight:800;color:#0f172a;margin-bottom:5px;">${titulo}</h3>
+            <p style="font-size:0.9rem;color:#64748b;line-height:1.55;">${mensaje}</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+          <button class="btn btn-outline" data-c="no">${noTxt}</button>
+          <button class="btn ${peligro ? 'btn-danger' : 'btn-primary'}" data-c="si">${okTxt}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      overlay.querySelector('.confirm-box').style.transform = 'scale(1)';
+    });
+
+    const cerrar = (val) => {
+      document.removeEventListener('keydown', onKey);
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 140);
+      resolve(val);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') cerrar(false);
+      else if (e.key === 'Enter') cerrar(true);
+    };
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) return cerrar(false);
+      const btn = e.target.closest('[data-c]');
+      if (btn) cerrar(btn.dataset.c === 'si');
+    });
+    document.addEventListener('keydown', onKey);
+    setTimeout(() => overlay.querySelector('[data-c="si"]').focus(), 30);
+  });
+}
+
 // Toast de notificaciones
 function toast(msg, tipo = 'success') {
   const t = document.createElement('div');
@@ -93,7 +149,7 @@ async function descargarFacturaPDF(id) {
         <div class="head">
           <div>
             <div class="brand">Lubricentro Villagra</div>
-            <div class="muted">San José, Costa Rica<br>Tel. 8888-8888</div>
+            <div class="muted">Moravia, San Vicente, San José, Costa Rica<br>Tel. 8413-2121 · lubricentrovillagra@gmail.com</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:1.4rem;font-weight:900;">FACTURA</div>

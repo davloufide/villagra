@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Eliminar tarea ────────────────────────────────────────
   window.eliminarTareaMant = async (idTarea) => {
-    if (!confirm('¿Quitar esta tarea del mantenimiento?')) return;
+    if (!(await confirmar({ titulo: 'Quitar tarea', mensaje: '¿Seguro que quieres quitar esta tarea del mantenimiento?', confirmar: 'Quitar' }))) return;
     try {
       await mantenimientos.eliminarTarea(idTarea);
       toast('Tarea eliminada');

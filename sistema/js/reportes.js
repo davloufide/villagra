@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="head">
           <div>
             <div class="brand">Lubricentro Villagra</div>
-            <div class="muted">San José, Costa Rica<br>Tel. 8888-8888</div>
+            <div class="muted">Moravia, San Vicente, San José, Costa Rica<br>Tel. 8413-2121 · lubricentrovillagra@gmail.com</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:1.35rem;font-weight:900;">REPORTE GENERAL</div>

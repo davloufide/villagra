@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.eliminarTareaMec = async (idTarea) => {
-    if (!confirm('¿Quitar esta tarea?')) return;
+    if (!(await confirmar({ titulo: 'Quitar tarea', mensaje: '¿Seguro que quieres quitar esta tarea del mantenimiento?', confirmar: 'Quitar' }))) return;
     try {
       await mantenimientos.eliminarTarea(idTarea);
       toast('Tarea eliminada');

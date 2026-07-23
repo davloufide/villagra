@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.eliminarUsuario = async (id) => {
     const u = usuariosCache.find(x => x.id_usuario === id);
-    if (!confirm(`¿Eliminar a "${u?.nombre ?? 'este usuario'}"? Esta acción no se puede deshacer.`)) return;
+    if (!(await confirmar({ titulo: 'Eliminar usuario', mensaje: `¿Eliminar a "${u?.nombre ?? 'este usuario'}"? Esta acción no se puede deshacer.`, confirmar: 'Eliminar' }))) return;
     try {
       await usuarios.eliminar(id);
       toast('Usuario eliminado');
