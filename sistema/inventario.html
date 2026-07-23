@@ -34,6 +34,7 @@
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Inventario actual" data-sub="Control de productos, stock y alertas de reposición" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Inventario</a>
           <a href="#" class="subitem" data-vista="producto" data-titulo="Registrar producto" data-sub="Agrega un producto al inventario" onclick="mostrarVista('producto');return false;"><i class="fas fa-plus"></i> Registrar producto</a>
           <a href="#" class="subitem" data-vista="stock" data-titulo="Ajustar stock" data-sub="Aumentar, disminuir o corregir el stock de un producto" onclick="irAjustarStock();return false;"><i class="fas fa-plus-minus"></i> Ajustar stock</a>
+          <a href="#" class="subitem" data-vista="categorias" data-titulo="Categorías" data-sub="Crea y elimina las categorías de productos" onclick="mostrarVista('categorias');return false;"><i class="fas fa-tags"></i> Categorías</a>
         </div>
       </div>
       <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
@@ -127,15 +128,8 @@
           <div class="field"><label>Código <span style="color:#dc2626;">*</span></label><input id="inv-codigo" placeholder="FA-001"></div>
           <div class="field"><label>Marca</label><input id="inv-marca" placeholder="Castrol, Bosch..."></div>
           <div class="field">
-            <label>Categoría <button type="button" onclick="toggleNuevaCat()" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">+ gestionar</button></label>
+            <label>Categoría <button type="button" onclick="mostrarVista('categorias')" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">gestionar categorías</button></label>
             <select id="inv-categoria"><option value="">Seleccionar</option></select>
-            <div id="nueva-cat-wrap" style="display:none;margin-top:6px;">
-              <div style="display:flex;gap:6px;">
-                <input id="nueva-cat-nombre" placeholder="Nombre de la categoría" style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.85rem;outline:none;">
-                <button id="btn-crear-cat" class="btn btn-primary btn-sm" type="button"><i class="fas fa-plus"></i></button>
-              </div>
-              <div id="cat-list" style="margin-top:8px;display:flex;flex-direction:column;gap:5px;"></div>
-            </div>
           </div>
           <div class="field"><label>Cantidad en stock</label><input id="inv-stock" type="number" placeholder="10"></div>
           <div class="field"><label>Stock mínimo</label><input id="inv-minimo" type="number" placeholder="5"></div>
@@ -178,6 +172,27 @@
         <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;"><strong>Corregir</strong>: fija el stock exactamente a la cantidad ingresada (para conteos físicos, errores o devoluciones).</p>
       </div>
     </div><!-- /vista-stock -->
+
+    <!-- ══════════ SUBMÓDULO: Categorías ══════════ -->
+    <div id="vista-categorias" class="vista" style="display:none;">
+      <div class="card" style="max-width:560px;">
+        <div class="card-header">
+          <div><h3>Categorías</h3><p>Crea nuevas categorías o elimina las que no uses</p></div>
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label>Nueva categoría</label>
+          <div style="display:flex;gap:8px;">
+            <input id="nueva-cat-nombre" placeholder="Ej: Lubricantes, Filtros, Frenos..." style="flex:1;border:1px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:0.88rem;outline:none;background:#f8fafc;">
+            <button id="btn-crear-cat" class="btn btn-primary" type="button"><i class="fas fa-plus"></i> Agregar</button>
+          </div>
+        </div>
+        <label style="font-size:0.8rem;color:#475569;font-weight:700;display:block;margin-bottom:8px;">Categorías existentes</label>
+        <div id="cat-list" style="display:flex;flex-direction:column;gap:6px;">
+          <p style="font-size:0.82rem;color:#94a3b8;">Cargando...</p>
+        </div>
+        <p style="font-size:0.78rem;color:#94a3b8;margin-top:12px;">Al eliminar una categoría con productos, esos productos quedan como <strong>"Sin categoría"</strong> (no se borran).</p>
+      </div>
+    </div><!-- /vista-categorias -->
 
   </main>
 </div>

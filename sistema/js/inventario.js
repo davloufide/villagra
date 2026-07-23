@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (lista) {
         lista.innerHTML = cats.length
           ? cats.map(c => `
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:5px 6px 5px 10px;">
-                <span style="font-size:0.83rem;color:#334155;">${c.nombre}</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:9px 10px 9px 14px;">
+                <span style="font-size:0.9rem;color:#334155;font-weight:500;"><i class="fas fa-tag" style="color:#94a3b8;margin-right:9px;font-size:0.78rem;"></i>${c.nombre}</span>
                 <button type="button" class="btn btn-outline btn-sm" onclick="eliminarCategoria(${c.id_categoria}, '${(c.nombre || '').replace(/'/g, "\\'")}')" title="Eliminar categoría"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
               </div>`).join('')
-          : '<p style="font-size:0.8rem;color:#94a3b8;padding:2px 2px 0;">Aún no hay categorías.</p>';
+          : '<p style="font-size:0.85rem;color:#94a3b8;">Aún no hay categorías. Agrega la primera arriba.</p>';
       }
     } catch {}
   }
@@ -97,13 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // Crear categoría nueva (IVO-006)
-  window.toggleNuevaCat = () => {
-    const w = document.getElementById('nueva-cat-wrap');
-    w.style.display = w.style.display === 'none' ? 'flex' : 'none';
-    if (w.style.display === 'flex') document.getElementById('nueva-cat-nombre').focus();
-  };
-
+  // Crear categoría (submódulo Categorías) [IVO-006]
   document.getElementById('btn-crear-cat').addEventListener('click', async () => {
     const btn = document.getElementById('btn-crear-cat');
     const nombre = document.getElementById('nueva-cat-nombre').value.trim();
@@ -113,8 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const cat = await inventario.crearCategoria(nombre);
       toast('Categoría creada: ' + cat.nombre);
       document.getElementById('nueva-cat-nombre').value = '';
-      document.getElementById('nueva-cat-wrap').style.display = 'none';
-      await cargarCategorias(cat.id_categoria); // recarga y deja seleccionada la nueva
+      await cargarCategorias(); // refresca la lista y el selector del producto
     } catch (e) {
       toast(e.message, 'error');
     } finally {
