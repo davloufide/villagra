@@ -409,12 +409,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // ── Nuevo mantenimiento (admin) ───────────────────────────
-  window.toggleFormNuevo = () => {
-    const form = document.getElementById('form-nuevo-mant');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  };
-
+  // ── Nuevo mantenimiento (admin) — la navegación la maneja mostrarVista (ui.js) ──
   const btnGuardar = document.getElementById('btn-guardar-mant');
   if (btnGuardar) {
     btnGuardar.addEventListener('click', async () => {
@@ -470,7 +465,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('op-obs').value      = '';
         document.getElementById('op-fecha').value    = '';
         document.querySelectorAll('.op-serv-check:checked').forEach(c => { c.checked = false; });
-        document.getElementById('form-nuevo-mant').style.display = 'none';
+        mostrarVista('lista');
         await cargarMantenimientos();
       } catch (e) {
         toast(e.message, 'error');

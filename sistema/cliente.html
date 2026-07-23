@@ -21,7 +21,22 @@
       <span class="menu-label admin-only">General</span>
       <a href="index.html" class="admin-only"><i class="fas fa-house"></i> Inicio</a>
       <span class="menu-label admin-only">Módulos</span>
-      <a href="cliente.html" class="active"><i class="fas fa-car"></i> <span class="menu-text-admin">Clientes</span><span class="menu-text-cliente" style="display:none;">Mi vehículo</span></a>
+
+      <div class="menu-group open">
+        <button type="button" class="menu-parent active" onclick="toggleMenuGrupo(this)">
+          <i class="fas fa-car"></i> <span class="menu-text-admin">Clientes</span><span class="menu-text-cliente" style="display:none;">Mi vehículo</span>
+          <i class="fas fa-chevron-down chev"></i>
+        </button>
+        <div class="submenu">
+          <!-- Submódulo admin -->
+          <a href="#" class="subitem admin-only active" data-vista="lista" data-titulo="Lista de clientes" data-sub="Gestión de clientes registrados" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Lista de clientes</a>
+          <!-- Submódulos cliente -->
+          <a href="#" class="subitem cliente-only" data-vista="panel" data-titulo="Mi vehículo" data-sub="Seguimiento de tu servicio" onclick="mostrarVista('panel');return false;" style="display:none;"><i class="fas fa-gauge-high"></i> Mi panel</a>
+          <a href="#" class="subitem cliente-only" data-vista="misveh" data-titulo="Mis vehículos" data-sub="Registra y gestiona tus vehículos" onclick="mostrarVista('misveh');return false;" style="display:none;"><i class="fas fa-car-side"></i> Mis vehículos</a>
+          <a href="#" class="subitem cliente-only" data-vista="cita" data-titulo="Nueva cita" data-sub="Agenda un servicio en el taller" onclick="mostrarVista('cita');return false;" style="display:none;"><i class="fas fa-calendar-plus"></i> Nueva cita</a>
+        </div>
+      </div>
+
       <a href="vehiculos.html" class="admin-only"><i class="fas fa-car-side"></i> Vehículos</a>
       <a href="operacion.html" class="admin-only"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
       <a href="mecanicos.html" class="admin-only"><i class="fas fa-user-gear"></i> Mecánicos</a>
@@ -53,7 +68,7 @@
 
       <div class="topbar">
         <div class="page-title">
-          <h2>Módulo Clientes</h2>
+          <h2>Lista de clientes</h2>
           <p>Gestión de clientes registrados en el sistema</p>
         </div>
         <div class="top-actions">
@@ -154,187 +169,194 @@
 
       <div class="topbar">
         <div class="page-title">
-          <h2>Mi vehículo</h2>
-          <p>Seguimiento de tu servicio y gestión de citas</p>
+          <h2 id="modulo-titulo">Mi vehículo</h2>
+          <p id="modulo-sub">Seguimiento de tu servicio y gestión de citas</p>
         </div>
         <div class="top-actions">
-          <button id="btn-nueva-cita" class="btn btn-primary btn-sm" onclick="toggleFormCita()">
+          <button id="btn-nueva-cita" class="btn btn-primary btn-sm" onclick="mostrarVista('cita')">
             <i class="fas fa-calendar-plus"></i> Nueva cita
           </button>
         </div>
       </div>
 
-      <!-- KPIs del cliente -->
-      <section class="grid kpi">
-        <div class="card kpi-card kpi-blue">
-          <div class="kpi-icon"><i class="fas fa-car"></i></div>
-          <h3>Mi vehículo</h3>
-          <div class="number" id="cli-placa" style="font-size:1.5rem;">-</div>
-          <p class="sub" id="cli-marca">-</p>
-        </div>
-        <div class="card kpi-card kpi-orange">
-          <div class="kpi-icon"><i class="fas fa-rotate"></i></div>
-          <h3>Estado actual</h3>
-          <div class="number" id="cli-estado" style="font-size:1.1rem;">-</div>
-          <p class="sub">Último servicio</p>
-        </div>
-        <div class="card kpi-card kpi-green">
-          <div class="kpi-icon"><i class="fas fa-percent"></i></div>
-          <h3>Avance</h3>
-          <div class="number" id="cli-avance">0%</div>
-          <p class="sub">Tareas completadas</p>
-        </div>
-        <div class="card kpi-card kpi-purple">
-          <div class="kpi-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-          <h3>Última factura</h3>
-          <div class="number" id="cli-factura-total" style="font-size:1.3rem;">₡0</div>
-          <p class="sub" id="cli-factura-estado">-</p>
-        </div>
-      </section>
+      <!-- ══════ SUBMÓDULO: Mi panel ══════ -->
+      <div id="vista-panel" class="vista">
 
-      <!-- Mis vehículos -->
-      <div class="card" style="margin-bottom:18px;">
-        <div class="card-header">
-          <div><h3>Mis vehículos</h3><p>Registra y mantén actualizada la información de tus vehículos</p></div>
-          <button class="btn btn-primary btn-sm" onclick="abrirFormVehiculo()"><i class="fas fa-plus"></i> Registrar vehículo</button>
+        <!-- KPIs del cliente -->
+        <section class="grid kpi">
+          <div class="card kpi-card kpi-blue">
+            <div class="kpi-icon"><i class="fas fa-car"></i></div>
+            <h3>Mi vehículo</h3>
+            <div class="number" id="cli-placa" style="font-size:1.5rem;">-</div>
+            <p class="sub" id="cli-marca">-</p>
+          </div>
+          <div class="card kpi-card kpi-orange">
+            <div class="kpi-icon"><i class="fas fa-rotate"></i></div>
+            <h3>Estado actual</h3>
+            <div class="number" id="cli-estado" style="font-size:1.1rem;">-</div>
+            <p class="sub">Último servicio</p>
+          </div>
+          <div class="card kpi-card kpi-green">
+            <div class="kpi-icon"><i class="fas fa-percent"></i></div>
+            <h3>Avance</h3>
+            <div class="number" id="cli-avance">0%</div>
+            <p class="sub">Tareas completadas</p>
+          </div>
+          <div class="card kpi-card kpi-purple">
+            <div class="kpi-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <h3>Última factura</h3>
+            <div class="number" id="cli-factura-total" style="font-size:1.3rem;">₡0</div>
+            <p class="sub" id="cli-factura-estado">-</p>
+          </div>
+        </section>
+
+        <div class="two-col">
+          <!-- Servicio activo -->
+          <div>
+            <div class="card" id="card-servicio-activo">
+              <div class="card-header">
+                <div><h3>Servicio actual</h3><p id="cli-serv-fecha">-</p></div>
+                <span id="cli-serv-tag"></span>
+              </div>
+              <div id="cli-progreso-wrap">
+                <div class="progress" style="margin-bottom:8px;"><span id="cli-barra-prog" style="width:0%"></span></div>
+                <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:18px;" id="cli-prog-label">Sin tareas</p>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Tarea</th><th>Mecánico</th><th>Estado</th></tr></thead>
+                  <tbody id="cli-tareas">
+                    <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:20px;">Sin servicio activo</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Historial + Facturas -->
+          <div style="display:grid;gap:18px;align-content:start;">
+            <div class="card">
+              <div class="card-header">
+                <div><h3>Mis mantenimientos</h3><p>Estado y tareas de cada servicio</p></div>
+              </div>
+              <div class="list" id="cli-historial">
+                <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Sin historial registrado</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div><h3>Mis facturas</h3></div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+                  <tbody id="cli-facturas-tbody">
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Sin facturas</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Form registrar/editar (oculto) -->
-        <div id="veh-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;">
-          <div class="card-header"><div><h3 id="veh-form-titulo" style="font-size:1rem;">Registrar vehículo</h3></div></div>
+      </div><!-- /vista-panel -->
+
+      <!-- ══════ SUBMÓDULO: Mis vehículos ══════ -->
+      <div id="vista-misveh" class="vista" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header">
+            <div><h3>Mis vehículos</h3><p>Registra y mantén actualizada la información de tus vehículos</p></div>
+            <button class="btn btn-primary btn-sm" onclick="abrirFormVehiculo()"><i class="fas fa-plus"></i> Registrar vehículo</button>
+          </div>
+
+          <!-- Form registrar/editar (oculto) -->
+          <div id="veh-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;">
+            <div class="card-header"><div><h3 id="veh-form-titulo" style="font-size:1rem;">Registrar vehículo</h3></div></div>
+            <div class="form-grid">
+              <div class="field">
+                <label>Placa <span style="color:#dc2626;">*</span></label>
+                <input id="veh-f-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+              </div>
+              <div class="field">
+                <label>Marca <span style="color:#dc2626;">*</span></label>
+                <select id="veh-f-marca"><option value="">-- Seleccionar marca --</option></select>
+              </div>
+              <div class="field" style="grid-column:1/-1;">
+                <label>Modelo, año, tipo y notas <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+                <textarea id="veh-f-obs" placeholder="Ej: Corolla, 2018, Sedán, color gris" style="height:60px;"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
+              <button onclick="cerrarFormVehiculo()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+            </div>
+          </div>
+
+          <div id="veh-lista" class="list">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+        </div>
+      </div><!-- /vista-misveh -->
+
+      <!-- ══════ SUBMÓDULO: Nueva cita ══════ -->
+      <div id="vista-cita" class="vista" style="display:none;">
+        <div id="form-cita" class="card" style="margin-bottom:18px;">
+          <div class="card-header">
+            <div><h3>Agendar nueva cita</h3><p>Describe el servicio que necesitas</p></div>
+          </div>
           <div class="form-grid">
             <div class="field">
-              <label>Placa <span style="color:#dc2626;">*</span></label>
-              <input id="veh-f-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+              <label>Vehículo registrado</label>
+              <select id="cita-vehiculo">
+                <option value="">-- Sin vehículos registrados --</option>
+              </select>
+              <small style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:block;">Si tu vehículo no aparece, ingresa la placa abajo.</small>
             </div>
             <div class="field">
-              <label>Marca <span style="color:#dc2626;">*</span></label>
-              <select id="veh-f-marca"><option value="">-- Seleccionar marca --</option></select>
+              <label>O ingresa la placa directamente</label>
+              <input id="cita-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+              <small style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:block;">La placa tiene prioridad sobre el selector.</small>
             </div>
+
+            <!-- Sección de registro: aparece cuando la placa no está en el sistema -->
+            <div id="registro-vehiculo-section" style="display:none;grid-column:1/-1;">
+              <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:13px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
+                <i class="fas fa-triangle-exclamation" style="color:#f59e0b;margin-top:2px;"></i>
+                <div>
+                  <strong style="color:#92400e;">Vehículo no registrado.</strong>
+                  <span style="color:#78350f;font-size:0.88rem;"> Selecciona la marca para registrarlo y continuar con la cita.</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>Marca del vehículo <span style="color:#dc2626;">*</span></label>
+                <select id="cita-marca">
+                  <option value="">-- Seleccionar marca --</option>
+                </select>
+              </div>
+            </div>
+
             <div class="field" style="grid-column:1/-1;">
-              <label>Modelo, año, tipo y notas <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-              <textarea id="veh-f-obs" placeholder="Ej: Corolla, 2018, Sedán, color gris" style="height:60px;"></textarea>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
-            <button onclick="cerrarFormVehiculo()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
-          </div>
-        </div>
-
-        <div id="veh-lista" class="list">
-          <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
-        </div>
-      </div>
-
-      <!-- Formulario nueva cita (oculto por defecto) -->
-      <div id="form-cita" class="card" style="display:none;margin-bottom:18px;">
-        <div class="card-header">
-          <div><h3>Agendar nueva cita</h3><p>Describe el servicio que necesitas</p></div>
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label>Vehículo registrado</label>
-            <select id="cita-vehiculo">
-              <option value="">-- Sin vehículos registrados --</option>
-            </select>
-            <small style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:block;">Si tu vehículo no aparece, ingresa la placa abajo.</small>
-          </div>
-          <div class="field">
-            <label>O ingresa la placa directamente</label>
-            <input id="cita-placa" placeholder="ABC-123" style="text-transform:uppercase;">
-            <small style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:block;">La placa tiene prioridad sobre el selector.</small>
-          </div>
-
-          <!-- Sección de registro: aparece cuando la placa no está en el sistema -->
-          <div id="registro-vehiculo-section" style="display:none;grid-column:1/-1;">
-            <div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:13px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
-              <i class="fas fa-triangle-exclamation" style="color:#f59e0b;margin-top:2px;"></i>
-              <div>
-                <strong style="color:#92400e;">Vehículo no registrado.</strong>
-                <span style="color:#78350f;font-size:0.88rem;"> Selecciona la marca para registrarlo y continuar con la cita.</span>
+              <label>Servicios que necesitas <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(puedes elegir varios)</span></label>
+              <div id="cita-servicios" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:4px;">
+                <p style="color:#94a3b8;font-size:0.85rem;">Cargando servicios...</p>
               </div>
             </div>
             <div class="field">
-              <label>Marca del vehículo <span style="color:#dc2626;">*</span></label>
-              <select id="cita-marca">
-                <option value="">-- Seleccionar marca --</option>
-              </select>
+              <label>Fecha estimada de atención</label>
+              <input id="cita-fecha" type="date">
+            </div>
+            <div class="field" style="grid-column:1/-1;">
+              <label>Nota adicional <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+              <textarea id="cita-obs" placeholder="Algún detalle extra que quieras indicar al taller..." style="height:70px;"></textarea>
             </div>
           </div>
-
-          <div class="field" style="grid-column:1/-1;">
-            <label>Servicios que necesitas <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(puedes elegir varios)</span></label>
-            <div id="cita-servicios" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:4px;">
-              <p style="color:#94a3b8;font-size:0.85rem;">Cargando servicios...</p>
-            </div>
-          </div>
-          <div class="field">
-            <label>Fecha estimada de atención</label>
-            <input id="cita-fecha" type="date">
-          </div>
-          <div class="field" style="grid-column:1/-1;">
-            <label>Nota adicional <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-            <textarea id="cita-obs" placeholder="Algún detalle extra que quieras indicar al taller..." style="height:70px;"></textarea>
+          <div class="form-actions">
+            <button id="btn-guardar-cita" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Confirmar cita</button>
+            <button onclick="mostrarVista('panel')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
           </div>
         </div>
-        <div class="form-actions">
-          <button id="btn-guardar-cita" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Confirmar cita</button>
-          <button onclick="toggleFormCita()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
-        </div>
-      </div>
-
-      <div class="two-col">
-
-        <!-- Servicio activo -->
-        <div>
-          <div class="card" id="card-servicio-activo">
-            <div class="card-header">
-              <div><h3>Servicio actual</h3><p id="cli-serv-fecha">-</p></div>
-              <span id="cli-serv-tag"></span>
-            </div>
-            <div id="cli-progreso-wrap">
-              <div class="progress" style="margin-bottom:8px;"><span id="cli-barra-prog" style="width:0%"></span></div>
-              <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:18px;" id="cli-prog-label">Sin tareas</p>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Tarea</th><th>Mecánico</th><th>Estado</th></tr></thead>
-                <tbody id="cli-tareas">
-                  <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:20px;">Sin servicio activo</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Historial + Facturas -->
-        <div style="display:grid;gap:18px;align-content:start;">
-          <div class="card">
-            <div class="card-header">
-              <div><h3>Mis mantenimientos</h3><p>Estado y tareas de cada servicio</p></div>
-            </div>
-            <div class="list" id="cli-historial">
-              <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Sin historial registrado</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <div><h3>Mis facturas</h3></div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="cli-facturas-tbody">
-                  <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">Sin facturas</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      </div><!-- /vista-cita -->
 
     </div><!-- /vista-cliente -->
 

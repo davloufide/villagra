@@ -82,6 +82,44 @@ a { text-decoration: none; color: inherit; }
   color: #60a5fa; font-weight: 700;
 }
 
+/* ── Módulos con submódulos (menú desplegable) ── */
+.menu-group { display: flex; flex-direction: column; gap: 2px; }
+.menu-parent {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  color: #94a3b8; font-size: 0.87rem; font-weight: 500;
+  background: transparent; border: 1px solid transparent;
+  cursor: pointer; width: 100%; text-align: left;
+  transition: all .16s ease; font-family: inherit;
+}
+.menu-parent i { width: 17px; text-align: center; font-size: 0.9rem; flex-shrink: 0; }
+.menu-parent .chev { margin-left: auto; font-size: 0.7rem; transition: transform .2s ease; }
+.menu-parent:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.menu-parent.active { color: #60a5fa; font-weight: 700; }
+.menu-group.open > .menu-parent .chev { transform: rotate(180deg); }
+
+.submenu {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 0; overflow: hidden;
+  transition: max-height .22s ease;
+  margin-left: 12px; padding-left: 12px;
+  border-left: 1px solid rgba(255,255,255,0.08);
+}
+.menu-group.open > .submenu { max-height: 320px; margin-top: 2px; }
+.submenu a.subitem {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; border-radius: 8px;
+  color: #94a3b8; font-size: 0.82rem; font-weight: 500;
+  border: 1px solid transparent; transition: all .16s ease;
+}
+.submenu a.subitem i { width: 15px; text-align: center; font-size: 0.78rem; flex-shrink: 0; }
+.submenu a.subitem:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.submenu a.subitem.active {
+  background: rgba(37,99,235,0.18);
+  border-color: rgba(96,165,250,0.20);
+  color: #60a5fa; font-weight: 700;
+}
+
 .sidebar-footer {
   padding: 14px 10px;
   border-top: 1px solid rgba(255,255,255,0.07);

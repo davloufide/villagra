@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // VISTA ADMIN
   // ══════════════════════════════════════════════════════
   async function iniciarVistaAdmin() {
+    // El admin no usa los submódulos del cliente
+    document.querySelectorAll('.cliente-only').forEach(el => { el.style.display = 'none'; });
     document.getElementById('vista-admin').style.display = 'block';
     let todosClientes = [];
 
@@ -154,10 +156,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function iniciarVistaCliente() {
     // Adaptar sidebar: ocultar items de admin
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.cliente-only').forEach(el => { el.style.display = ''; });
     document.querySelector('.menu-text-admin').style.display   = 'none';
     document.querySelector('.menu-text-cliente').style.display = '';
 
     document.getElementById('vista-cliente').style.display = 'block';
+    mostrarVista('panel');   // submódulo por defecto del cliente
     await cargarDatosCliente();
     await cargarServiciosCita();
 
@@ -228,7 +232,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         toast(resp?.aviso || `Cita agendada con ${serviciosSel.length} servicio(s). Asignada a un mecánico del taller.`);
-        document.getElementById('form-cita').style.display = 'none';
+        mostrarVista('panel');
         document.getElementById('registro-vehiculo-section').style.display = 'none';
         document.getElementById('cita-placa').value = '';
         document.getElementById('cita-marca').value = '';
@@ -388,11 +392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Toggle formulario de cita
-  window.toggleFormCita = () => {
-    const f = document.getElementById('form-cita');
-    f.style.display = f.style.display === 'none' ? '' : 'none';
-    if (f.style.display !== 'none') f.scrollIntoView({ behavior: 'smooth' });
-  };
+  // "Nueva cita" es ahora un submódulo (mostrarVista('cita') en ui.js).
 
   // ══════════════════════════════════════════════════════
   // MIS VEHÍCULOS (registrar / editar — solo los propios)

@@ -92,11 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ══════════════════════════════════════════════════════
   // OPE-002: crear mantenimiento
   // ══════════════════════════════════════════════════════
-  window.toggleFormNuevoMec = () => {
-    const f = document.getElementById('form-nuevo-mec');
-    f.style.display = f.style.display === 'none' ? 'block' : 'none';
-  };
-
+  // La navegación entre "lista" y "nuevo" la maneja mostrarVista (ui.js).
   document.getElementById('btn-crear-mant-mec').addEventListener('click', async () => {
     const btn = document.getElementById('btn-crear-mant-mec');
     const id_cliente = document.getElementById('mec-n-cliente').value;
@@ -132,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('mec-n-fecha').value   = '';
       document.getElementById('mec-n-obs').value     = '';
       document.querySelectorAll('.mec-serv-check:checked').forEach(c => { c.checked = false; });
-      document.getElementById('form-nuevo-mec').style.display = 'none';
+      mostrarVista('lista');
       await cargarMisMantenimientos();
     } catch (e) {
       toast(e.message, 'error');

@@ -1,3 +1,30 @@
+// ── Navegación por submódulos (menú lateral desplegable) ──
+// Compartido por todos los módulos. Cada submódulo es un <a class="subitem"
+// data-vista="X" data-titulo="..." data-sub="..."> y su contenido un
+// <div id="vista-X" class="vista">. El topbar usa #modulo-titulo / #modulo-sub.
+function toggleMenuGrupo(btn) { btn.parentElement.classList.toggle('open'); }
+
+function mostrarVista(vista) {
+  document.querySelectorAll('.vista').forEach(v => { v.style.display = 'none'; });
+  const el = document.getElementById('vista-' + vista);
+  if (el) el.style.display = 'block';
+
+  let activo = null;
+  document.querySelectorAll('.submenu .subitem').forEach(a => {
+    const on = a.dataset.vista === vista;
+    a.classList.toggle('active', on);
+    if (on) activo = a;
+  });
+
+  const t = document.getElementById('modulo-titulo');
+  const s = document.getElementById('modulo-sub');
+  if (activo) {
+    if (t && activo.dataset.titulo != null) t.textContent = activo.dataset.titulo;
+    if (s && activo.dataset.sub != null)    s.textContent = activo.dataset.sub;
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // Toast de notificaciones
 function toast(msg, tipo = 'success') {
   const t = document.createElement('div');

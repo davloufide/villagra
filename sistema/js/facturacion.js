@@ -166,6 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderLineas();
       renderPreview(null);
       await Promise.all([cargarFacturables(), cargarHistorial()]);
+      mostrarVista('historial');
     } catch (e) {
       toast(e.message, 'error');
     } finally {

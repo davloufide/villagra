@@ -90,13 +90,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // ── Form (registrar / editar) ─────────────────────────────
-  window.toggleFormVeh = () => {
-    const f = document.getElementById('form-vehiculo');
-    const abrir = f.style.display === 'none';
-    if (abrir) ponerModoNuevo();
-    f.style.display = abrir ? 'block' : 'none';
-  };
+  // ── Navegación por submódulos (usa helper compartido de ui.js) ──
+  // Ir al submódulo "Registrar" en modo nuevo (limpio)
+  window.nuevoVehiculoVista = () => { ponerModoNuevo(); mostrarVista('registrar'); };
 
   function ponerModoNuevo() {
     editandoId = null;
@@ -123,9 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selM = document.getElementById('v-marca');
     const opt = [...selM.options].find(o => o.textContent === v.marcas?.nombre_marca);
     selM.value = opt ? opt.value : '';
-    const f = document.getElementById('form-vehiculo');
-    f.style.display = 'block';
-    f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Cambiar al submódulo Registrar/Editar (sin resetear los campos ya cargados)
+    mostrarVista('registrar');
+    document.getElementById('modulo-titulo').textContent = 'Editar vehículo';
   };
 
   document.getElementById('btn-guardar-vehiculo').addEventListener('click', async () => {
@@ -148,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast('Vehículo registrado correctamente');
       }
       document.getElementById('v-propietario').disabled = false;
-      document.getElementById('form-vehiculo').style.display = 'none';
+      mostrarVista('lista');
       await cargarVehiculos();
     } catch (e) {
       toast(e.message, 'error');

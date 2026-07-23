@@ -93,25 +93,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  window.toggleFormProd = () => {
-    document.getElementById('form-stock').style.display = 'none';
-    const f = document.getElementById('form-producto');
-    f.style.display = f.style.display === 'none' ? 'block' : 'none';
-  };
-
-  window.toggleFormStock = () => {
-    document.getElementById('form-producto').style.display = 'none';
-    const f = document.getElementById('form-stock');
-    const abrir = f.style.display === 'none';
-    f.style.display = abrir ? 'block' : 'none';
-    if (abrir) {
-      // Llenar el selector con los productos actuales
-      const sel = document.getElementById('stock-producto');
-      sel.innerHTML = '<option value="">-- Seleccionar producto --</option>' +
-        todos.map(p => `<option value="${p.id_producto}">${p.nombre} (${p.codigo}) · ${p.cantidad_stock} uds.</option>`).join('');
-      document.getElementById('stock-cantidad').value = '';
-      document.getElementById('stock-actual').value   = '';
-    }
+  // Ir al submódulo "Ajustar stock" y llenar el selector con los productos actuales
+  window.irAjustarStock = () => {
+    const sel = document.getElementById('stock-producto');
+    sel.innerHTML = '<option value="">-- Seleccionar producto --</option>' +
+      todos.map(p => `<option value="${p.id_producto}">${p.nombre} (${p.codigo}) · ${p.cantidad_stock} uds.</option>`).join('');
+    document.getElementById('stock-cantidad').value = '';
+    document.getElementById('stock-actual').value   = '';
+    mostrarVista('stock');
   };
 
   // Mostrar el stock actual del producto seleccionado
@@ -134,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? await inventario.entrada(idProd, cantidad)
         : await inventario.salida(idProd, cantidad);
       toast(`Stock actualizado: ahora hay ${actualizado.cantidad_stock} uds.`);
-      document.getElementById('form-stock').style.display = 'none';
+      mostrarVista('lista');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');
@@ -158,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const actualizado = await inventario.ajuste(idProd, cantidad);
       toast(`Stock corregido: ahora hay ${actualizado.cantidad_stock} uds.`);
-      document.getElementById('form-stock').style.display = 'none';
+      mostrarVista('lista');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');
@@ -295,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ['inv-nombre','inv-codigo','inv-marca','inv-stock','inv-minimo','inv-costo','inv-precio'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
       });
-      document.getElementById('form-producto').style.display = 'none';
+      mostrarVista('lista');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -27,7 +27,18 @@
       <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
       <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
       <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
-      <a href="administrador.html" class="active"><i class="fas fa-shield-halved"></i> Administrador</a>
+      <div class="menu-group open">
+        <button type="button" class="menu-parent active" onclick="toggleMenuGrupo(this)">
+          <i class="fas fa-shield-halved"></i> Administrador
+          <i class="fas fa-chevron-down chev"></i>
+        </button>
+        <div class="submenu">
+          <a href="#" class="subitem active" data-vista="empleados" data-titulo="Empleados" data-sub="Registro y personal del taller" onclick="mostrarVista('empleados');return false;"><i class="fas fa-users"></i> Empleados</a>
+          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Vacaciones" data-sub="Solicitudes y registro de días" onclick="mostrarVista('vacaciones');return false;"><i class="fas fa-umbrella-beach"></i> Vacaciones</a>
+          <a href="#" class="subitem" data-vista="clientes" data-titulo="Registrar cliente" data-sub="Crea la cuenta de un cliente" onclick="mostrarVista('clientes');return false;"><i class="fas fa-user-plus"></i> Registrar cliente</a>
+          <a href="#" class="subitem" data-vista="usuarios" data-titulo="Usuarios del sistema" data-sub="Crear, editar, activar/desactivar y eliminar cuentas" onclick="mostrarVista('usuarios');return false;"><i class="fas fa-user-gear"></i> Usuarios del sistema</a>
+        </div>
+      </div>
       <a href="reportes.html"><i class="fas fa-chart-bar"></i> Reportes</a>
       <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
     </nav>
@@ -48,103 +59,104 @@
   <main class="main">
     <div class="topbar">
       <div class="page-title">
-        <h2>Módulo Administrador</h2>
-        <p>Gestión de empleados, roles, vacaciones y control del sistema</p>
+        <h2 id="modulo-titulo">Empleados</h2>
+        <p id="modulo-sub">Registro y personal del taller</p>
       </div>
       <div class="top-actions">
         <a href="index.html" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Volver</a>
       </div>
     </div>
 
-    <!-- KPIs -->
-    <section class="grid kpi">
-      <div class="card kpi-card kpi-blue">
-        <div class="kpi-icon"><i class="fas fa-users"></i></div>
-        <h3>Total empleados</h3>
-        <div class="number" id="adm-total">6</div>
-        <p class="sub">Personal registrado</p>
-      </div>
-      <div class="card kpi-card kpi-green">
-        <div class="kpi-icon"><i class="fas fa-user-check"></i></div>
-        <h3>Activos hoy</h3>
-        <div class="number" id="adm-activos">4</div>
-        <p class="sub">En el taller ahora</p>
-      </div>
-      <div class="card kpi-card kpi-orange">
-        <div class="kpi-icon"><i class="fas fa-umbrella-beach"></i></div>
-        <h3>Vacaciones pendientes</h3>
-        <div class="number" id="adm-vac-pendientes">2</div>
-        <p class="sub">Solicitudes por aprobar</p>
-      </div>
-      <div class="card kpi-card kpi-purple">
-        <div class="kpi-icon"><i class="fas fa-shield-halved"></i></div>
-        <h3>Roles activos</h3>
-        <div class="number">3</div>
-        <p class="sub">Admin · Mecánico · Cliente</p>
-      </div>
-    </section>
+    <!-- ══════════ SUBMÓDULO: Empleados ══════════ -->
+    <div id="vista-empleados" class="vista">
 
-    <div class="two-col">
+      <!-- KPIs -->
+      <section class="grid kpi">
+        <div class="card kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="fas fa-users"></i></div>
+          <h3>Total empleados</h3>
+          <div class="number" id="adm-total">6</div>
+          <p class="sub">Personal registrado</p>
+        </div>
+        <div class="card kpi-card kpi-green">
+          <div class="kpi-icon"><i class="fas fa-user-check"></i></div>
+          <h3>Activos hoy</h3>
+          <div class="number" id="adm-activos">4</div>
+          <p class="sub">En el taller ahora</p>
+        </div>
+        <div class="card kpi-card kpi-orange">
+          <div class="kpi-icon"><i class="fas fa-umbrella-beach"></i></div>
+          <h3>Vacaciones pendientes</h3>
+          <div class="number" id="adm-vac-pendientes">2</div>
+          <p class="sub">Solicitudes por aprobar</p>
+        </div>
+        <div class="card kpi-card kpi-purple">
+          <div class="kpi-icon"><i class="fas fa-shield-halved"></i></div>
+          <h3>Roles activos</h3>
+          <div class="number">3</div>
+          <p class="sub">Admin · Mecánico · Cliente</p>
+        </div>
+      </section>
 
-      <!-- Form -->
-      <div class="card">
-        <div class="card-header">
-          <div><h3>Registrar empleado</h3><p>Añade personal al sistema</p></div>
+      <div class="two-col">
+        <!-- Form registrar empleado -->
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Registrar empleado</h3><p>Añade personal al sistema</p></div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Nombre completo</label>
+              <input id="adm-nombre" placeholder="Nombre del empleado">
+            </div>
+            <div class="field">
+              <label>Correo electrónico</label>
+              <input id="adm-correo" type="email" placeholder="empleado@correo.com">
+            </div>
+            <div class="field">
+              <label>Teléfono</label>
+              <input id="adm-telefono" placeholder="8888-8888">
+            </div>
+            <div class="field">
+              <label>Rol en el sistema</label>
+              <select id="adm-rol">
+                <option value="2">Mecánico</option>
+                <option value="1">Administrador</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tipo de empleo</label>
+              <select id="adm-tipo">
+                <option value="tiempo_completo">Tiempo completo</option>
+                <option value="medio_tiempo">Medio tiempo</option>
+                <option value="por_servicios">Por servicios</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Fecha de ingreso</label>
+              <input id="adm-fecha" type="date">
+            </div>
+            <div class="field">
+              <label>Días de vacaciones</label>
+              <input id="adm-dias" type="number" placeholder="12">
+            </div>
+            <div class="field">
+              <label>Especialidad</label>
+              <select id="adm-especialidad">
+                <option value="General">General</option>
+                <option value="Motor y lubricación">Motor y lubricación</option>
+                <option value="Frenos y suspensión">Frenos y suspensión</option>
+                <option value="Sistema eléctrico">Sistema eléctrico</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-guardar-empleado" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar empleado</button>
+            <button class="btn btn-outline"><i class="fas fa-rotate-left"></i> Limpiar</button>
+          </div>
         </div>
-        <div class="form-grid">
-          <div class="field">
-            <label>Nombre completo</label>
-            <input id="adm-nombre" placeholder="Nombre del empleado">
-          </div>
-          <div class="field">
-            <label>Correo electrónico</label>
-            <input id="adm-correo" type="email" placeholder="empleado@correo.com">
-          </div>
-          <div class="field">
-            <label>Teléfono</label>
-            <input id="adm-telefono" placeholder="8888-8888">
-          </div>
-          <div class="field">
-            <label>Rol en el sistema</label>
-            <select id="adm-rol">
-              <option value="2">Mecánico</option>
-              <option value="1">Administrador</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Tipo de empleo</label>
-            <select id="adm-tipo">
-              <option value="tiempo_completo">Tiempo completo</option>
-              <option value="medio_tiempo">Medio tiempo</option>
-              <option value="por_servicios">Por servicios</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Fecha de ingreso</label>
-            <input id="adm-fecha" type="date">
-          </div>
-          <div class="field">
-            <label>Días de vacaciones</label>
-            <input id="adm-dias" type="number" placeholder="12">
-          </div>
-          <div class="field">
-            <label>Especialidad</label>
-            <select id="adm-especialidad">
-              <option value="General">General</option>
-              <option value="Motor y lubricación">Motor y lubricación</option>
-              <option value="Frenos y suspensión">Frenos y suspensión</option>
-              <option value="Sistema eléctrico">Sistema eléctrico</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button id="btn-guardar-empleado" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar empleado</button>
-          <button class="btn btn-outline"><i class="fas fa-rotate-left"></i> Limpiar</button>
-        </div>
-      </div>
 
-      <!-- Staff list -->
-      <div style="display:grid;gap:18px;align-content:start;">
+        <!-- Personal registrado -->
         <div class="card">
           <div class="card-header">
             <div><h3>Personal registrado</h3><p>Equipo actual del taller</p></div>
@@ -158,7 +170,14 @@
             </table>
           </div>
         </div>
+      </div>
 
+    </div><!-- /vista-empleados -->
+
+    <!-- ══════════ SUBMÓDULO: Vacaciones ══════════ -->
+    <div id="vista-vacaciones" class="vista" style="display:none;">
+      <div class="two-col">
+        <!-- Solicitudes de vacaciones -->
         <div class="card">
           <h3 style="margin-bottom:14px;">Solicitudes de vacaciones</h3>
           <div class="list" id="adm-vac-list">
@@ -199,81 +218,85 @@
           <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">Al registrar, los días hábiles se restan del saldo del empleado. No se permite dejar el saldo en negativo.</p>
         </div>
       </div>
-    </div>
+    </div><!-- /vista-vacaciones -->
 
-    <!-- ════════ REGISTRAR CLIENTE MANUALMENTE ════════ -->
-    <div class="card" style="margin-top:18px;">
-      <div class="card-header">
-        <div><h3>Registrar cliente</h3><p>Crea la cuenta de un cliente que no se registró por su cuenta</p></div>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label>Nombre completo <span style="color:#dc2626;">*</span></label>
-          <input id="ncli-nombre" placeholder="Nombre del cliente">
+    <!-- ══════════ SUBMÓDULO: Registrar cliente ══════════ -->
+    <div id="vista-clientes" class="vista" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Registrar cliente</h3><p>Crea la cuenta de un cliente que no se registró por su cuenta</p></div>
         </div>
-        <div class="field">
-          <label>Correo electrónico <span style="color:#dc2626;">*</span></label>
-          <input id="ncli-correo" type="email" placeholder="cliente@correo.com">
-        </div>
-        <div class="field">
-          <label>Teléfono <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-          <input id="ncli-telefono" placeholder="8888-8888">
-        </div>
-        <div class="field">
-          <label>Contraseña temporal <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-          <input id="ncli-password" placeholder="Por defecto: Cliente123!">
-        </div>
-      </div>
-      <div class="form-actions">
-        <button id="btn-registrar-cliente" class="btn btn-success" style="flex:1;"><i class="fas fa-user-plus"></i> Registrar cliente</button>
-      </div>
-    </div>
-
-    <!-- ════════ GESTIÓN DE USUARIOS (CRUD) ════════ -->
-    <div class="card" style="margin-top:18px;">
-      <div class="card-header">
-        <div><h3>Usuarios del sistema</h3><p>Crear, editar, activar/desactivar y eliminar cuentas</p></div>
-        <div style="display:flex;gap:8px;">
-          <input id="usr-buscar" placeholder="Buscar..." oninput="filtrarUsuarios(this.value)"
-            style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:200px;">
-          <button class="btn btn-primary btn-sm" onclick="abrirEdicionUsuario()"><i class="fas fa-user-plus"></i> Nuevo usuario</button>
-        </div>
-      </div>
-
-      <!-- Panel de edición/creación (oculto) -->
-      <div id="usr-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:16px;">
-        <div class="card-header"><div><h3 id="usr-form-titulo" style="font-size:1rem;">Nuevo usuario</h3></div></div>
         <div class="form-grid">
-          <div class="field"><label>Nombre completo <span style="color:#dc2626;">*</span></label><input id="usr-nombre" placeholder="Nombre"></div>
-          <div class="field"><label>Correo <span style="color:#dc2626;">*</span></label><input id="usr-correo" type="email" placeholder="correo@ejemplo.com"></div>
           <div class="field">
-            <label>Rol <span style="color:#dc2626;">*</span></label>
-            <select id="usr-rol"><option value="1">Administrador</option><option value="2">Mecánico</option><option value="3">Cliente</option></select>
+            <label>Nombre completo <span style="color:#dc2626;">*</span></label>
+            <input id="ncli-nombre" placeholder="Nombre del cliente">
           </div>
           <div class="field">
-            <label>Estado</label>
-            <select id="usr-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select>
+            <label>Correo electrónico <span style="color:#dc2626;">*</span></label>
+            <input id="ncli-correo" type="email" placeholder="cliente@correo.com">
           </div>
-          <div class="field" style="grid-column:1/-1;">
-            <label id="usr-pass-label">Contraseña <span style="color:#dc2626;">*</span></label>
-            <input id="usr-password" type="password" placeholder="Mínimo 8 caracteres">
+          <div class="field">
+            <label>Teléfono <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+            <input id="ncli-telefono" placeholder="8888-8888">
+          </div>
+          <div class="field">
+            <label>Contraseña temporal <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+            <input id="ncli-password" placeholder="Por defecto: Cliente123!">
           </div>
         </div>
         <div class="form-actions">
-          <button id="btn-guardar-usuario" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
-          <button onclick="cerrarEdicionUsuario()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          <button id="btn-registrar-cliente" class="btn btn-success" style="flex:1;"><i class="fas fa-user-plus"></i> Registrar cliente</button>
         </div>
       </div>
+    </div><!-- /vista-clientes -->
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody id="usr-tbody">
-            <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
-          </tbody>
-        </table>
+    <!-- ══════════ SUBMÓDULO: Usuarios del sistema ══════════ -->
+    <div id="vista-usuarios" class="vista" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Usuarios del sistema</h3><p>Crear, editar, activar/desactivar y eliminar cuentas</p></div>
+          <div style="display:flex;gap:8px;">
+            <input id="usr-buscar" placeholder="Buscar..." oninput="filtrarUsuarios(this.value)"
+              style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:200px;">
+            <button class="btn btn-primary btn-sm" onclick="abrirEdicionUsuario()"><i class="fas fa-user-plus"></i> Nuevo usuario</button>
+          </div>
+        </div>
+
+        <!-- Panel de edición/creación (oculto) -->
+        <div id="usr-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:16px;">
+          <div class="card-header"><div><h3 id="usr-form-titulo" style="font-size:1rem;">Nuevo usuario</h3></div></div>
+          <div class="form-grid">
+            <div class="field"><label>Nombre completo <span style="color:#dc2626;">*</span></label><input id="usr-nombre" placeholder="Nombre"></div>
+            <div class="field"><label>Correo <span style="color:#dc2626;">*</span></label><input id="usr-correo" type="email" placeholder="correo@ejemplo.com"></div>
+            <div class="field">
+              <label>Rol <span style="color:#dc2626;">*</span></label>
+              <select id="usr-rol"><option value="1">Administrador</option><option value="2">Mecánico</option><option value="3">Cliente</option></select>
+            </div>
+            <div class="field">
+              <label>Estado</label>
+              <select id="usr-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select>
+            </div>
+            <div class="field" style="grid-column:1/-1;">
+              <label id="usr-pass-label">Contraseña <span style="color:#dc2626;">*</span></label>
+              <input id="usr-password" type="password" placeholder="Mínimo 8 caracteres">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-guardar-usuario" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
+            <button onclick="cerrarEdicionUsuario()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="usr-tbody">
+              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </div><!-- /vista-usuarios -->
 
   </main>
 </div>

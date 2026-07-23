@@ -22,7 +22,16 @@
       <a href="index.html"><i class="fas fa-house"></i> Inicio</a>
       <span class="menu-label">Módulos</span>
       <a href="cliente.html"><i class="fas fa-car"></i> Clientes</a>
-      <a href="vehiculos.html" class="active"><i class="fas fa-car-side"></i> Vehículos</a>
+      <div class="menu-group open">
+        <button type="button" class="menu-parent active" onclick="toggleMenuGrupo(this)">
+          <i class="fas fa-car-side"></i> Vehículos
+          <i class="fas fa-chevron-down chev"></i>
+        </button>
+        <div class="submenu">
+          <a href="#" class="subitem active" data-vista="lista" data-titulo="Lista de vehículos" data-sub="Consulta y edición de los vehículos registrados" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Lista de vehículos</a>
+          <a href="#" class="subitem" data-vista="registrar" data-titulo="Registrar vehículo" data-sub="Asigna un vehículo a un cliente" onclick="nuevoVehiculoVista();return false;"><i class="fas fa-plus"></i> Registrar vehículo</a>
+        </div>
+      </div>
       <a href="operacion.html"><i class="fas fa-screwdriver-wrench"></i> Operación</a>
       <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
       <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
@@ -47,95 +56,103 @@
   <main class="main">
     <div class="topbar">
       <div class="page-title">
-        <h2>Módulo Vehículos</h2>
-        <p>Registro y consulta de vehículos de los clientes</p>
+        <h2 id="modulo-titulo">Lista de vehículos</h2>
+        <p id="modulo-sub">Consulta y edición de los vehículos registrados</p>
       </div>
       <div class="top-actions">
-        <button class="btn btn-primary btn-sm" onclick="toggleFormVeh()"><i class="fas fa-plus"></i> Registrar vehículo</button>
+        <button class="btn btn-primary btn-sm" onclick="nuevoVehiculoVista()"><i class="fas fa-plus"></i> Registrar vehículo</button>
       </div>
     </div>
 
-    <!-- KPIs -->
-    <section class="grid kpi">
-      <div class="card kpi-card kpi-blue">
-        <div class="kpi-icon"><i class="fas fa-car-side"></i></div>
-        <h3>Total vehículos</h3>
-        <div class="number" id="v-total">-</div>
-        <p class="sub">Registrados en el sistema</p>
-      </div>
-      <div class="card kpi-card kpi-purple">
-        <div class="kpi-icon"><i class="fas fa-layer-group"></i></div>
-        <h3>Marcas distintas</h3>
-        <div class="number" id="v-marcas">-</div>
-        <p class="sub">En la flota de clientes</p>
-      </div>
-      <div class="card kpi-card kpi-green">
-        <div class="kpi-icon"><i class="fas fa-users"></i></div>
-        <h3>Clientes con vehículo</h3>
-        <div class="number" id="v-clientes">-</div>
-        <p class="sub">Propietarios registrados</p>
-      </div>
-    </section>
+    <!-- ══════════ SUBMÓDULO: Lista de vehículos ══════════ -->
+    <div id="vista-lista" class="vista">
 
-    <!-- Form registrar (oculto por defecto) -->
-    <div id="form-vehiculo" class="card" style="display:none;margin-bottom:18px;">
-      <div class="card-header">
-        <div><h3 id="v-form-titulo">Registrar vehículo</h3><p>Asigna un vehículo a un cliente</p></div>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label>Placa <span style="color:#dc2626;">*</span></label>
-          <input id="v-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+      <!-- KPIs -->
+      <section class="grid kpi">
+        <div class="card kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="fas fa-car-side"></i></div>
+          <h3>Total vehículos</h3>
+          <div class="number" id="v-total">-</div>
+          <p class="sub">Registrados en el sistema</p>
         </div>
-        <div class="field">
-          <label>Propietario <span style="color:#dc2626;">*</span></label>
-          <select id="v-propietario"><option value="">-- Seleccionar cliente --</option></select>
+        <div class="card kpi-card kpi-purple">
+          <div class="kpi-icon"><i class="fas fa-layer-group"></i></div>
+          <h3>Marcas distintas</h3>
+          <div class="number" id="v-marcas">-</div>
+          <p class="sub">En la flota de clientes</p>
         </div>
-        <div class="field">
-          <label>Marca <span style="color:#dc2626;">*</span></label>
-          <select id="v-marca"><option value="">-- Seleccionar marca --</option></select>
+        <div class="card kpi-card kpi-green">
+          <div class="kpi-icon"><i class="fas fa-users"></i></div>
+          <h3>Clientes con vehículo</h3>
+          <div class="number" id="v-clientes">-</div>
+          <p class="sub">Propietarios registrados</p>
         </div>
-        <div class="field" style="grid-column:1/-1;">
-          <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-          <textarea id="v-obs" placeholder="Color, modelo, año u otras notas del vehículo..." style="height:70px;"></textarea>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar vehículo</button>
-        <button onclick="toggleFormVeh()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
-      </div>
-    </div>
+      </section>
 
-    <!-- Lista -->
-    <div class="card">
-      <div class="card-header">
-        <div><h3>Vehículos registrados</h3><p>Haz clic en "Ver" para el historial</p></div>
-        <input id="v-buscar" placeholder="Buscar por placa, marca o cliente..." oninput="filtrarVehiculos(this.value)"
-          style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:260px;">
+      <!-- Lista -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Vehículos registrados</h3><p>Haz clic en "Ver" para el historial</p></div>
+          <input id="v-buscar" placeholder="Buscar por placa, marca o cliente..." oninput="filtrarVehiculos(this.value)"
+            style="border:1px solid #e2e8f0;border-radius:9px;padding:8px 14px;font-size:0.85rem;outline:none;background:#f8fafc;width:260px;">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Placa</th><th>Marca</th><th>Propietario</th><th>Registrado</th><th></th></tr></thead>
+            <tbody id="v-tbody">
+              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Placa</th><th>Marca</th><th>Propietario</th><th>Registrado</th><th></th></tr></thead>
-          <tbody id="v-tbody">
-            <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
 
-    <!-- Detalle / historial -->
-    <div id="v-detalle" class="card" style="display:none;margin-top:18px;">
-      <div class="card-header">
-        <div><h3 id="vd-titulo">-</h3><p id="vd-sub">-</p></div>
-        <button onclick="cerrarDetalleVeh()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+      <!-- Detalle / historial -->
+      <div id="v-detalle" class="card" style="display:none;margin-top:18px;">
+        <div class="card-header">
+          <div><h3 id="vd-titulo">-</h3><p id="vd-sub">-</p></div>
+          <button onclick="cerrarDetalleVeh()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha ingreso</th><th>Estado</th><th>Avance</th></tr></thead>
+            <tbody id="vd-historial"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Fecha ingreso</th><th>Estado</th><th>Avance</th></tr></thead>
-          <tbody id="vd-historial"></tbody>
-        </table>
+
+    </div><!-- /vista-lista -->
+
+    <!-- ══════════ SUBMÓDULO: Registrar vehículo ══════════ -->
+    <div id="vista-registrar" class="vista" style="display:none;">
+      <div id="form-vehiculo" class="card" style="margin-bottom:18px;">
+        <div class="card-header">
+          <div><h3 id="v-form-titulo">Registrar vehículo</h3><p>Asigna un vehículo a un cliente</p></div>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Placa <span style="color:#dc2626;">*</span></label>
+            <input id="v-placa" placeholder="ABC-123" style="text-transform:uppercase;">
+          </div>
+          <div class="field">
+            <label>Propietario <span style="color:#dc2626;">*</span></label>
+            <select id="v-propietario"><option value="">-- Seleccionar cliente --</option></select>
+          </div>
+          <div class="field">
+            <label>Marca <span style="color:#dc2626;">*</span></label>
+            <select id="v-marca"><option value="">-- Seleccionar marca --</option></select>
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
+            <textarea id="v-obs" placeholder="Color, modelo, año u otras notas del vehículo..." style="height:70px;"></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar vehículo</button>
+          <button onclick="mostrarVista('lista')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+        </div>
       </div>
-    </div>
+    </div><!-- /vista-registrar -->
+
   </main>
 </div>
 <script src="api.js"></script>

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -28,7 +28,16 @@
       <a href="mecanicos.html"><i class="fas fa-user-gear"></i> Mecánicos</a>
       <a href="inventario.html"><i class="fas fa-boxes-stacked"></i> Inventario</a>
       <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
-      <a href="reportes.html" class="active"><i class="fas fa-chart-bar"></i> Reportes</a>
+      <div class="menu-group open">
+        <button type="button" class="menu-parent active" onclick="toggleMenuGrupo(this)">
+          <i class="fas fa-chart-bar"></i> Reportes
+          <i class="fas fa-chevron-down chev"></i>
+        </button>
+        <div class="submenu">
+          <a href="#" class="subitem active" data-vista="resumen" data-titulo="Resumen general" data-sub="Indicadores principales, ingresos y servicios" onclick="mostrarVista('resumen');return false;"><i class="fas fa-gauge-high"></i> Resumen general</a>
+          <a href="#" class="subitem" data-vista="mecanicos" data-titulo="Productividad de mecánicos" data-sub="Ranking y mantenimientos completados por mecánico" onclick="mostrarVista('mecanicos');return false;"><i class="fas fa-user-gear"></i> Productividad mecánicos</a>
+        </div>
+      </div>
       <a href="facturacion.html"><i class="fas fa-file-invoice-dollar"></i> Facturación</a>
     </nav>
     <div class="sidebar-footer">
@@ -48,8 +57,8 @@
   <main class="main">
     <div class="topbar">
       <div class="page-title">
-        <h2>Módulo Reportes</h2>
-        <p>Indicadores principales, historial e información resumida</p>
+        <h2 id="modulo-titulo">Resumen general</h2>
+        <p id="modulo-sub">Indicadores principales, ingresos y servicios</p>
       </div>
       <div class="top-actions">
         <button class="btn btn-outline btn-sm" onclick="exportarReportesPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
@@ -57,82 +66,89 @@
       </div>
     </div>
 
-    <!-- KPIs -->
-    <section class="grid kpi">
-      <div class="card kpi-card kpi-blue">
-        <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
-        <h3>Mantenimientos</h3>
-        <div class="number" id="rep-mantenimientos">48</div>
-        <p class="sub">Este mes</p>
-        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +6 vs mes anterior</div>
-      </div>
-      <div class="card kpi-card kpi-green">
-        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
-        <h3>Ingresos</h3>
-        <div class="number" id="rep-ingresos">₡1.25M</div>
-        <p class="sub">Facturación mensual</p>
-        <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
-      </div>
-      <div class="card kpi-card kpi-red">
-        <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
-        <h3>Stock bajo</h3>
-        <div class="number" id="rep-stock-bajo">4</div>
-        <p class="sub">Productos críticos</p>
-        <div class="kpi-trend trend-down"><i class="fas fa-arrow-up"></i> +1 nuevo</div>
-      </div>
-      <div class="card kpi-card kpi-purple">
-        <div class="kpi-icon"><i class="fas fa-trophy"></i></div>
-        <h3>Top mecánico</h3>
-        <div class="number" id="rep-top-num" style="font-size:1.6rem;">-</div>
-        <p class="sub" id="rep-top-nombre">Sin datos</p>
-      </div>
-    </section>
+    <!-- ══════════ SUBMÓDULO: Resumen general ══════════ -->
+    <div id="vista-resumen" class="vista">
 
-    <div class="two-col" style="margin-bottom:18px;">
-
-      <!-- Chart placeholder -->
-      <div class="card">
-        <div class="card-header">
-          <div><h3>Ingresos mensuales</h3><p>Últimos 6 meses</p></div>
-          <span class="tag info">2025</span>
+      <!-- KPIs -->
+      <section class="grid kpi">
+        <div class="card kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
+          <h3>Mantenimientos</h3>
+          <div class="number" id="rep-mantenimientos">48</div>
+          <p class="sub">Este mes</p>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +6 vs mes anterior</div>
         </div>
-        <div id="rep-chart" style="display:flex;align-items:flex-end;gap:10px;height:160px;padding:10px 0 0;">
-          <p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Cargando...</p>
+        <div class="card kpi-card kpi-green">
+          <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+          <h3>Ingresos</h3>
+          <div class="number" id="rep-ingresos">₡1.25M</div>
+          <p class="sub">Facturación mensual</p>
+          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
         </div>
-      </div>
+        <div class="card kpi-card kpi-red">
+          <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
+          <h3>Stock bajo</h3>
+          <div class="number" id="rep-stock-bajo">4</div>
+          <p class="sub">Productos críticos</p>
+          <div class="kpi-trend trend-down"><i class="fas fa-arrow-up"></i> +1 nuevo</div>
+        </div>
+        <div class="card kpi-card kpi-purple">
+          <div class="kpi-icon"><i class="fas fa-trophy"></i></div>
+          <h3>Top mecánico</h3>
+          <div class="number" id="rep-top-num" style="font-size:1.6rem;">-</div>
+          <p class="sub" id="rep-top-nombre">Sin datos</p>
+        </div>
+      </section>
 
-      <!-- Top mechanics & service breakdown -->
-      <div style="display:grid;gap:18px;align-content:start;">
+      <div class="two-col">
+        <!-- Chart -->
         <div class="card">
-          <div class="card-header"><h3>Ranking de mecánicos</h3><span class="tag info">Abril</span></div>
-          <div class="list" id="rep-ranking">
-            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          <div class="card-header">
+            <div><h3>Ingresos mensuales</h3><p>Últimos 6 meses</p></div>
+            <span class="tag info">2025</span>
+          </div>
+          <div id="rep-chart" style="display:flex;align-items:flex-end;gap:10px;height:160px;padding:10px 0 0;">
+            <p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Cargando...</p>
           </div>
         </div>
 
+        <!-- Servicios más solicitados -->
         <div class="card">
           <h3 style="margin-bottom:14px;">Servicios más solicitados</h3>
           <div id="rep-servicios">
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
           </div>
+        </div>
       </div>
-    </div>
-    </div>
 
-    <!-- RPS-004: total de mantenimientos completados por mecánico -->
-    <div class="card">
-      <div class="card-header">
-        <div><h3>Mantenimientos completados por mecánico</h3><p>Productividad histórica del equipo</p></div>
+    </div><!-- /vista-resumen -->
+
+    <!-- ══════════ SUBMÓDULO: Productividad de mecánicos ══════════ -->
+    <div id="vista-mecanicos" class="vista" style="display:none;">
+
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div><h3>Ranking de mecánicos</h3><p>Tareas completadas este mes</p></div></div>
+        <div class="list" id="rep-ranking">
+          <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+        </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th style="width:40px;">#</th><th>Mecánico</th><th style="text-align:right;">Mantenimientos completados</th></tr></thead>
-          <tbody id="rep-mant-mecanico">
-            <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
-          </tbody>
-        </table>
+
+      <!-- RPS-004: mantenimientos completados por mecánico -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Mantenimientos completados por mecánico</h3><p>Productividad histórica del equipo</p></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:40px;">#</th><th>Mecánico</th><th style="text-align:right;">Mantenimientos completados</th></tr></thead>
+            <tbody id="rep-mant-mecanico">
+              <tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+    </div><!-- /vista-mecanicos -->
 
   </main>
 </div>
