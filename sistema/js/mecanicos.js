@@ -20,29 +20,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('mec-completados').textContent = lista.filter(m => m.estado === 'terminado').length;
       document.getElementById('mec-pendientes').textContent  = activos.filter(m => m.estado === 'recibido').length;
 
-      const cont = document.getElementById('mec-lista');
-      cont.innerHTML = lista.length
-        ? lista.map(m => `
-            <div class="list-item" style="flex-direction:column;align-items:stretch;gap:10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-                <div>
-                  <strong>${m.vehiculos?.placa ?? '-'} · ${m.vehiculos?.marcas?.nombre_marca ?? ''}</strong>
-                  <div style="color:#64748b;font-size:0.82rem;margin-top:2px;">${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'}</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  ${tagEstado(m.estado)}
-                  <button class="btn btn-outline btn-sm" onclick="abrirModalRepuestos(${m.id_mantenimiento})"><i class="fas fa-boxes-stacked"></i> Repuesto</button>
-                  <button class="btn btn-outline btn-sm" onclick="gestionarMant(${m.id_mantenimiento})"><i class="fas fa-screwdriver-wrench"></i> Gestionar</button>
-                </div>
-              </div>
-              <div class="progress"><span style="width:${m.porcentaje_avance ?? 0}%"></span></div>
-              <small style="color:#94a3b8;">${m.porcentaje_avance ?? 0}% completado</small>
-            </div>`).join('')
-        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Sin mantenimientos. Usa "Nuevo mantenimiento" para registrar uno.</p>';
+      pagMecLista.set(lista);
     } catch (e) {
       toast('Error cargando mantenimientos: ' + e.message, 'error');
     }
   }
+
+  function renderMecLista(lista) {
+    const cont = document.getElementById('mec-lista');
+    cont.innerHTML = lista.length
+      ? lista.map(m => `
+          <div class="list-item" style="flex-direction:column;align-items:stretch;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <div>
+                <strong>${m.vehiculos?.placa ?? '-'} · ${m.vehiculos?.marcas?.nombre_marca ?? ''}</strong>
+                <div style="color:#64748b;font-size:0.82rem;margin-top:2px;">${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${tagEstado(m.estado)}
+                <button class="btn btn-outline btn-sm" onclick="abrirModalRepuestos(${m.id_mantenimiento})"><i class="fas fa-boxes-stacked"></i> Repuesto</button>
+                <button class="btn btn-outline btn-sm" onclick="gestionarMant(${m.id_mantenimiento})"><i class="fas fa-screwdriver-wrench"></i> Gestionar</button>
+              </div>
+            </div>
+            <div class="progress"><span style="width:${m.porcentaje_avance ?? 0}%"></span></div>
+            <small style="color:#94a3b8;">${m.porcentaje_avance ?? 0}% completado</small>
+          </div>`).join('')
+      : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Sin mantenimientos. Usa "Nuevo mantenimiento" para registrar uno.</p>';
+  }
+
+  const pagMecLista = crearPaginador('pag-mec-lista', renderMecLista, 5);
 
   // ── Cargar selectores (clientes, marcas, servicios) ───────
   async function cargarSelectores() {
@@ -128,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('mec-n-fecha').value   = '';
       document.getElementById('mec-n-obs').value     = '';
       document.querySelectorAll('.mec-serv-check:checked').forEach(c => { c.checked = false; });
-      mostrarVista('lista');
+      cerrarModal('modal-nuevo-mec');
       await cargarMisMantenimientos();
     } catch (e) {
       toast(e.message, 'error');
@@ -142,9 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ══════════════════════════════════════════════════════
   window.gestionarMant = async (id) => {
     panelMantId = id;
-    const panel = document.getElementById('mec-panel');
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirModal('modal-mec-panel');
     document.getElementById('mec-p-titulo').textContent = 'Cargando...';
     document.getElementById('mec-p-tareas').innerHTML = '';
     try {
@@ -195,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.target.id === 'rep-modal') cerrarModalRepuestos();
   });
 
-  window.cerrarPanelMec = () => { panelMantId = null; document.getElementById('mec-panel').style.display = 'none'; };
+  window.cerrarPanelMec = () => { panelMantId = null; cerrarModal('modal-mec-panel'); };
 
   // Guardar info editada
   document.getElementById('btn-guardar-mant-mec').addEventListener('click', async () => {
@@ -275,5 +279,130 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  await Promise.all([cargarMisMantenimientos(), cargarSelectores()]);
+  // ══════════════════════════════════════════════════════
+  // SOLICITUDES DE CITA (bolsa): el mecánico "toma" una cita (se autoasigna)
+  // ══════════════════════════════════════════════════════
+  window.cargarSolicitudesMec = async () => {
+    const cont = document.getElementById('mec-solicitudes');
+    if (!cont) return;
+    try {
+      const sols = await mantenimientos.solicitudes();
+      cont.innerHTML = sols.length
+        ? sols.map(m => {
+            const servs = (m.tareas ?? []).map(t => t.tipos_servicio?.nombre).filter(Boolean).join(', ') || '—';
+            const fecha = m.fecha_estimada_entrega
+              ? new Date(m.fecha_estimada_entrega + 'T00:00:00').toLocaleDateString('es-CR') : 'sin fecha';
+            return `
+              <div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;">
+                  <div>
+                    <strong>${m.vehiculos?.placa ?? '-'} · ${m.vehiculos?.marcas?.nombre_marca ?? ''}</strong>
+                    <div style="color:#64748b;font-size:0.82rem;">${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · ${fecha}</div>
+                    <div style="color:#475569;font-size:0.82rem;margin-top:3px;">Servicios: ${servs}</div>
+                  </div>
+                  <button class="btn btn-success btn-sm" onclick="tomarCita(${m.id_mantenimiento})"><i class="fas fa-hand"></i> Tomar</button>
+                </div>
+              </div>`;
+          }).join('')
+        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">No hay solicitudes disponibles.</p>';
+    } catch (e) {
+      const falta = /estado_cita|column|does not exist|solicitudes/i.test(e.message || '');
+      cont.innerHTML = `<p style="color:#dc2626;padding:12px;font-size:0.86rem;">No se pudieron cargar las solicitudes.${falta ? ' (Falta correr la migración migracion-citas.sql.)' : ' ' + e.message}</p>`;
+    }
+  };
+
+  window.tomarCita = async (id) => {
+    try {
+      await mantenimientos.confirmar(id);   // sin body: el backend la asigna al mecánico actual
+      toast('Cita tomada. Ya aparece en "Mis mantenimientos".');
+      await Promise.all([cargarSolicitudesMec(), cargarMisMantenimientos()]);
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  window.rechazarCitaMec = async () => {
+    if (!panelMantId) return;
+    if (!(await confirmar({ titulo: 'Rechazar cita', mensaje: 'La cita volverá a quedar disponible para otro mecánico (se te desasignará). ¿Continuar?', confirmar: 'Rechazar' }))) return;
+    try {
+      await mantenimientos.rechazar(panelMantId);
+      toast('Cita devuelta a solicitudes');
+      cerrarPanelMec();
+      await Promise.all([cargarMisMantenimientos(), cargarSolicitudesMec()]);
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  // ══════════════════════════════════════════════════════
+  // MIS VACACIONES: el empleado solicita días y ve el estado
+  // ══════════════════════════════════════════════════════
+  const ESTADO_VAC = {
+    pendiente: ['warning', 'Pendiente'],
+    aprobada:  ['success', 'Aprobada'],
+    rechazada: ['danger',  'Rechazada']
+  };
+
+  // Autocompleta los días hábiles (lun-vie) del rango elegido (editable).
+  window.autoCalcularDiasVac = () => {
+    const ini = document.getElementById('mvac-inicio').value;
+    const fin = document.getElementById('mvac-fin').value;
+    if (!ini || !fin) return;
+    const d1 = new Date(ini + 'T00:00:00'), d2 = new Date(fin + 'T00:00:00');
+    if (d2 < d1) return;
+    let habiles = 0;
+    for (let d = new Date(d1); d <= d2; d.setDate(d.getDate() + 1)) {
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) habiles++;
+    }
+    document.getElementById('mvac-dias').value = habiles;
+  };
+
+  window.cargarMisVacaciones = async () => {
+    const cont = document.getElementById('mvac-lista');
+    try {
+      const r = await empleados.misVacaciones();
+      const saldo = document.getElementById('mvac-saldo');
+      if (saldo) saldo.textContent = r.dias_vacaciones;
+      const sols = r.solicitudes ?? [];
+      if (cont) cont.innerHTML = sols.length
+        ? sols.map(v => {
+            const [cls, label] = ESTADO_VAC[v.estado] ?? ['neutral', v.estado];
+            return `
+              <div class="list-item">
+                <div>
+                  <strong style="font-size:0.9rem;">${v.fecha_inicio} al ${v.fecha_fin}</strong>
+                  <div style="color:#64748b;font-size:0.8rem;">${v.dias_habiles} día(s) hábiles</div>
+                </div>
+                <span class="tag ${cls}">${label}</span>
+              </div>`;
+          }).join('')
+        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no has solicitado vacaciones.</p>';
+    } catch (e) {
+      if (cont) cont.innerHTML = `<p style="color:#dc2626;padding:12px;font-size:0.86rem;">${e.message}</p>`;
+    }
+  };
+
+  const btnSolVac = document.getElementById('btn-solicitar-vac');
+  if (btnSolVac) {
+    btnSolVac.addEventListener('click', async () => {
+      const fecha_inicio = document.getElementById('mvac-inicio').value;
+      const fecha_fin    = document.getElementById('mvac-fin').value;
+      const dias_habiles = parseInt(document.getElementById('mvac-dias').value);
+      if (!fecha_inicio || !fecha_fin) { toast('Indica las fechas de inicio y fin', 'error'); return; }
+      if (new Date(fecha_fin) < new Date(fecha_inicio)) { toast('La fecha fin no puede ser anterior a la de inicio', 'error'); return; }
+      if (!dias_habiles || dias_habiles <= 0) { toast('Los días hábiles deben ser mayores a 0', 'error'); return; }
+      btnLoading(btnSolVac, true);
+      try {
+        await empleados.solicitarVac({ fecha_inicio, fecha_fin, dias_habiles });
+        toast('Solicitud enviada. Espera la aprobación del administrador.');
+        document.getElementById('mvac-inicio').value = '';
+        document.getElementById('mvac-fin').value    = '';
+        document.getElementById('mvac-dias').value   = '';
+        await cargarMisVacaciones();
+      } catch (e) {
+        toast(e.message, 'error');   // p.ej. "Días disponibles insuficientes"
+      } finally {
+        btnLoading(btnSolVac, false);
+      }
+    });
+  }
+
+  await Promise.all([cargarMisMantenimientos(), cargarSelectores(), cargarSolicitudesMec(), cargarMisVacaciones()]);
 });

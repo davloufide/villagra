@@ -260,6 +260,73 @@ th { color: #475569; background: #f8fafc; font-size: 0.74rem; font-weight: 700; 
 tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: #fafbfd; }
 
+/* ── PAGINADOR ── */
+.paginador {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding: 14px 4px 2px;
+}
+.pag-info { font-size: 0.82rem; color: #64748b; }
+.pag-info strong { color: #334155; }
+.pag-btns { display: flex; gap: 4px; align-items: center; }
+.pag-btn {
+  min-width: 34px; height: 34px; padding: 0 9px;
+  border: 1px solid var(--border); background: #fff; border-radius: 9px;
+  font-size: 0.85rem; font-weight: 600; color: #334155; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.pag-btn:hover:not(.disabled):not(.active):not(.gap) { background: #f1f5f9; border-color: #cbd5e1; }
+.pag-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.pag-btn.disabled { opacity: .45; cursor: not-allowed; }
+.pag-btn.gap { border: none; background: transparent; cursor: default; min-width: 20px; color: #94a3b8; }
+
+/* ── MODALES (ventanas emergentes de registro) ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9500;
+  background: rgba(15, 23, 42, 0.55);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 40px 20px; overflow-y: auto;
+}
+.modal-overlay .card {
+  max-width: 620px; width: 100%; margin: 0 !important;
+  max-height: calc(100vh - 80px); overflow-y: auto;
+  animation: modalIn .16s ease;
+}
+.modal-close {
+  border: none; background: transparent; font-size: 1.5rem; line-height: 1;
+  color: #94a3b8; cursor: pointer; padding: 0 4px; transition: color .12s;
+}
+.modal-close:hover { color: #334155; }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-10px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── CALENDARIO ── */
+.cal { user-select: none; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-title { font-weight: 800; color: #0f172a; font-size: 0.98rem; }
+.cal-nav { width: 32px; height: 32px; border: 1px solid var(--border); background: #fff; border-radius: 8px; cursor: pointer; color: #334155; }
+.cal-nav:hover { background: #f1f5f9; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal-labels { margin-bottom: 5px; }
+.cal-lbl { text-align: center; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+.cal-dia {
+  aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+  border-radius: 9px; font-size: 0.86rem; font-weight: 600; cursor: pointer;
+  border: 1px solid transparent; background: #f8fafc; color: #334155;
+  transition: background .12s, border-color .12s;
+}
+.cal-dia:hover:not(.vacio):not(.pasado):not(.bloqueado) { border-color: var(--primary); }
+.cal-dia.vacio { background: transparent; cursor: default; }
+.cal-dia.hoy { border-color: #cbd5e1; }
+.cal-dia.sel { background: var(--primary); color: #fff; border-color: var(--primary); }
+.cal-dia.bloqueado { background: var(--danger-soft); color: var(--danger); cursor: not-allowed; text-decoration: line-through; }
+.cal-dia.pasado { opacity: .35; cursor: not-allowed; }
+/* En modo admin (editable) los días bloqueados SÍ son clicables (para liberarlos) */
+.cal.editable .cal-dia.bloqueado { cursor: pointer; }
+.cal.editable .cal-dia:not(.vacio):hover { border-color: var(--primary); }
+
 /* ── TAGS ── */
 .tag {
   display: inline-flex; align-items: center; gap: 5px;

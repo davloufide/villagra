@@ -62,6 +62,22 @@ router.get('/vacaciones', verificarToken, soloRol('administrador'), async (req, 
   res.json(data);
 });
 
+// GET /api/empleados/mis-vacaciones — saldo + solicitudes del propio empleado
+// (mecánico o admin). DEBE IR ANTES DE /vacaciones/:id no aplica (ruta distinta).
+router.get('/mis-vacaciones', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
+  const { data: emp } = await supabase
+    .from('empleados').select('id_empleado, dias_vacaciones').eq('id_usuario', req.usuario.id).single();
+  if (!emp) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+  const { data: solicitudes, error } = await supabase
+    .from('vacaciones').select('*')
+    .eq('id_empleado', emp.id_empleado)
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ dias_vacaciones: emp.dias_vacaciones ?? 0, solicitudes: solicitudes ?? [] });
+});
+
 // POST /api/empleados/vacaciones — solicitar vacaciones (empleado)
 router.post('/vacaciones', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
   const { fecha_inicio, fecha_fin, dias_habiles } = req.body;

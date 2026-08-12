@@ -30,7 +30,9 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Mantenimientos" data-sub="Mantenimientos activos y asignación de tareas" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Mantenimientos</a>
-          <a href="#" class="subitem" data-vista="nuevo" data-titulo="Nuevo mantenimiento" data-sub="Cliente, placa y las tareas a realizar" onclick="mostrarVista('nuevo');return false;"><i class="fas fa-plus"></i> Nuevo mantenimiento</a>
+          <a href="#" class="subitem" onclick="abrirModal('modal-nuevo-mant');return false;"><i class="fas fa-plus"></i> Nuevo mantenimiento</a>
+          <a href="#" class="subitem" data-vista="solicitudes" data-titulo="Solicitudes de cita" data-sub="Citas pendientes de confirmar" onclick="mostrarVista('solicitudes');cargarSolicitudes();return false;"><i class="fas fa-calendar-check"></i> Solicitudes de cita</a>
+          <a href="#" class="subitem" data-vista="disponibilidad" data-titulo="Disponibilidad" data-sub="Calendario: bloquea o habilita días para citas" onclick="mostrarVista('disponibilidad');return false;"><i class="fas fa-calendar-days"></i> Disponibilidad</a>
           <a href="#" class="subitem" data-vista="catalogo" data-titulo="Catálogo de servicios" data-sub="Procesos y precios base del taller" onclick="mostrarVista('catalogo');return false;"><i class="fas fa-tags"></i> Catálogo de servicios</a>
         </div>
       </div>
@@ -62,7 +64,7 @@
         <p id="modulo-sub">Mantenimientos activos y asignación de tareas</p>
       </div>
       <div class="top-actions">
-        <button id="btn-toggle-nuevo" class="btn btn-primary btn-sm" onclick="mostrarVista('nuevo')">
+        <button id="btn-toggle-nuevo" class="btn btn-primary btn-sm" onclick="abrirModal('modal-nuevo-mant')">
           <i class="fas fa-plus"></i> Nuevo mantenimiento
         </button>
       </div>
@@ -147,18 +149,18 @@
             </tbody>
           </table>
         </div>
+        <div id="pag-mantenimientos" class="paginador" style="display:none;"></div>
       </div>
 
-      <!-- Panel de detalle y asignación de tareas -->
-      <div id="op-panel-tarea" class="card" style="display:none;">
+      <!-- MODAL: Detalle y asignación de tareas -->
+      <div id="modal-op-panel" class="modal-overlay" style="display:none;">
+      <div id="op-panel-tarea" class="card">
         <div class="card-header">
           <div>
             <h3 id="op-tarea-titulo">Detalle del mantenimiento</h3>
             <p id="op-tarea-sub" style="color:#64748b;font-size:0.85rem;">-</p>
           </div>
-          <button onclick="cerrarPanelTarea()" class="btn btn-outline btn-sm">
-            <i class="fas fa-xmark"></i> Cerrar
-          </button>
+          <button class="modal-close" onclick="cerrarModal('modal-op-panel')" title="Cerrar">&times;</button>
         </div>
 
         <!-- Editar información del mantenimiento -->
@@ -231,14 +233,16 @@
           </div>
         </div>
       </div>
+      </div><!-- /modal-op-panel -->
 
     </div><!-- /vista-lista -->
 
-    <!-- ══════════ SUBMÓDULO: Nuevo mantenimiento ══════════ -->
-    <div id="vista-nuevo" class="vista" style="display:none;">
-      <div id="form-nuevo-mant" class="card" style="margin-bottom:18px;">
+    <!-- ══════════ MODAL: Nuevo mantenimiento ══════════ -->
+    <div id="modal-nuevo-mant" class="modal-overlay" style="display:none;">
+      <div id="form-nuevo-mant" class="card">
         <div class="card-header">
           <div><h3>Nuevo mantenimiento</h3><p>Cliente, placa y las tareas a realizar</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-nuevo-mant')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field">
@@ -276,18 +280,70 @@
           <button id="btn-guardar-mant" class="btn btn-success" style="flex:1;">
             <i class="fas fa-floppy-disk"></i> Guardar mantenimiento
           </button>
-          <button onclick="mostrarVista('lista')" class="btn btn-outline">
+          <button onclick="cerrarModal('modal-nuevo-mant')" class="btn btn-outline">
             <i class="fas fa-xmark"></i> Cancelar
           </button>
         </div>
       </div>
-    </div><!-- /vista-nuevo -->
+    </div><!-- /modal-nuevo-mant -->
 
     <!-- ══════════ SUBMÓDULO: Catálogo de servicios (OPE-006) ══════════ -->
     <div id="vista-catalogo" class="vista" style="display:none;">
       <div class="card">
         <div class="card-header">
-          <div><h3>Catálogo de servicios</h3><p>Agrega procesos que no estén en la lista</p></div>
+          <div><h3>Catálogo de servicios</h3><p>Procesos y precios base del taller</p></div>
+          <button class="btn btn-primary btn-sm" onclick="nuevoServicio()"><i class="fas fa-plus"></i> Agregar servicio</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Servicio</th><th>Precio base</th><th style="text-align:right;">Acciones</th></tr></thead>
+            <tbody id="cat-tbody"><tr><td colspan="3" style="text-align:center;color:#94a3b8;">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+        <div id="pag-catalogo" class="paginador" style="display:none;"></div>
+      </div>
+    </div><!-- /vista-catalogo -->
+
+    <!-- ══════════ SUBMÓDULO: Solicitudes de cita ══════════ -->
+    <div id="vista-solicitudes" class="vista" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Solicitudes de cita</h3><p>Citas pedidas por clientes, pendientes de confirmar. Asigna un mecánico y confirma.</p></div>
+          <button class="btn btn-outline btn-sm" onclick="cargarSolicitudes()"><i class="fas fa-rotate"></i> Actualizar</button>
+        </div>
+        <div id="op-solicitudes-lista" class="list">
+          <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+        </div>
+      </div>
+    </div><!-- /vista-solicitudes -->
+
+    <!-- ══════════ SUBMÓDULO: Disponibilidad (calendario) ══════════ -->
+    <div id="vista-disponibilidad" class="vista" style="display:none;">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Calendario de disponibilidad</h3><p>Haz clic en un día para bloquearlo o volver a habilitarlo</p></div>
+          </div>
+          <div id="op-cal" style="max-width:440px;"></div>
+          <p style="font-size:0.8rem;color:#94a3b8;margin-top:12px;">Los días en <span style="color:#dc2626;font-weight:700;">rojo</span> no están disponibles: el cliente no podrá sacar cita ese día.</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Días no disponibles</h3><p>Bloqueados actualmente</p></div>
+          </div>
+          <div id="op-bloqueados-lista" class="list">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /vista-disponibilidad -->
+
+    <!-- ══════════ MODAL: Agregar / editar servicio ══════════ -->
+    <div id="modal-servicio" class="modal-overlay" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3 id="cat-form-titulo">Agregar servicio</h3><p>Agrega procesos que no estén en la lista</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-servicio')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field">
@@ -303,18 +359,12 @@
             <input id="cat-desc" placeholder="Detalle del servicio...">
           </div>
         </div>
-        <div class="form-actions" style="margin-bottom:8px;">
-          <button id="btn-crear-servicio" class="btn btn-primary"><i class="fas fa-plus"></i> Agregar al catálogo</button>
-          <button id="btn-cancelar-servicio" class="btn btn-outline" style="display:none;" onclick="cancelarEdicionServicio()"><i class="fas fa-xmark"></i> Cancelar edición</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Servicio</th><th>Precio base</th><th style="text-align:right;">Acciones</th></tr></thead>
-            <tbody id="cat-tbody"><tr><td colspan="3" style="text-align:center;color:#94a3b8;">Cargando...</td></tr></tbody>
-          </table>
+        <div class="form-actions">
+          <button id="btn-crear-servicio" class="btn btn-primary" style="flex:1;"><i class="fas fa-plus"></i> Agregar al catálogo</button>
+          <button id="btn-cancelar-servicio" class="btn btn-outline" onclick="cerrarModal('modal-servicio')"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
       </div>
-    </div><!-- /vista-catalogo -->
+    </div><!-- /modal-servicio -->
 
   </main>
 </div>
@@ -322,6 +372,7 @@
 <script src="api.js"></script>
 <script src="script.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/calendario.js"></script>
 <script src="js/operacion.js"></script>
 </body>
 </html>

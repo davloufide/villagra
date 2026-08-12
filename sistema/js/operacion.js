@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No hay mantenimientos en esta vista</td></tr>';
   }
 
+  const pagMant = crearPaginador('pag-mantenimientos', renderMant, 5);
+
   // ── Buscar y filtrar (OPE-014): cliente/placa + estado + rango de fechas ──
   window.aplicarFiltros = () => {
     const q     = (document.getElementById('op-buscar')?.value ?? '').trim().toLowerCase();
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return true;
     });
 
-    renderMant(lista);
+    pagMant.set(lista);
     const cnt = document.getElementById('op-count');
     if (cnt) cnt.textContent = `${lista.length} de ${mantsCache.length} mantenimiento(s)`;
   };
@@ -172,48 +174,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Tabla del catálogo (con editar / eliminar)
-      const tb = document.getElementById('cat-tbody');
-      if (tb) {
-        tb.innerHTML = serviciosCache.length
-          ? serviciosCache.map(s => `
-              <tr>
-                <td><strong>${s.nombre}</strong>${s.descripcion ? `<br><small style="color:#94a3b8;">${s.descripcion}</small>` : ''}</td>
-                <td>₡${Number(s.precio_base ?? 0).toLocaleString('es')}</td>
-                <td style="text-align:right;">
-                  <div style="display:inline-flex;gap:5px;">
-                    <button class="btn btn-outline btn-sm" onclick="editarServicio(${s.id_tipo_servicio})" title="Editar"><i class="fas fa-pen"></i></button>
-                    <button class="btn btn-outline btn-sm" onclick="eliminarServicio(${s.id_tipo_servicio}, '${(s.nombre || '').replace(/'/g, "\\'")}')" title="Eliminar"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
-                  </div>
-                </td>
-              </tr>`).join('')
-          : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin servicios</td></tr>';
-      }
+      pagCatalogo.set(serviciosCache);
     } catch (e) { console.error('[Operacion catalogo]', e); }
   }
 
+  function renderCatalogo(lista) {
+    const tb = document.getElementById('cat-tbody');
+    if (!tb) return;
+    tb.innerHTML = lista.length
+      ? lista.map(s => `
+          <tr>
+            <td><strong>${s.nombre}</strong>${s.descripcion ? `<br><small style="color:#94a3b8;">${s.descripcion}</small>` : ''}</td>
+            <td>₡${Number(s.precio_base ?? 0).toLocaleString('es')}</td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex;gap:5px;">
+                <button class="btn btn-outline btn-sm" onclick="editarServicio(${s.id_tipo_servicio})" title="Editar"><i class="fas fa-pen"></i></button>
+                <button class="btn btn-outline btn-sm" onclick="eliminarServicio(${s.id_tipo_servicio}, '${(s.nombre || '').replace(/'/g, "\\'")}')" title="Eliminar"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
+              </div>
+            </td>
+          </tr>`).join('')
+      : '<tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin servicios</td></tr>';
+  }
+
+  const pagCatalogo = crearPaginador('pag-catalogo', renderCatalogo, 5);
+
   // Crear / editar servicio del catálogo (OPE-006)
   let editServicioId = null;
+
+  // Abrir el modal en modo "crear" (limpio)
+  window.nuevoServicio = () => { cancelarEdicionServicio(); abrirModal('modal-servicio'); };
 
   window.editarServicio = (id) => {
     const s = serviciosCache.find(x => x.id_tipo_servicio === id);
     if (!s) return;
     editServicioId = id;
+    document.getElementById('cat-form-titulo').textContent = 'Editar servicio';
     document.getElementById('cat-nombre').value = s.nombre ?? '';
     document.getElementById('cat-precio').value = s.precio_base ?? '';
     document.getElementById('cat-desc').value   = s.descripcion ?? '';
     document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar cambios';
-    document.getElementById('btn-cancelar-servicio').style.display = '';
-    document.getElementById('cat-nombre').focus();
-    document.getElementById('cat-nombre').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    abrirModal('modal-servicio');
   };
 
   window.cancelarEdicionServicio = () => {
     editServicioId = null;
+    document.getElementById('cat-form-titulo').textContent = 'Agregar servicio';
     document.getElementById('cat-nombre').value = '';
     document.getElementById('cat-precio').value = '';
     document.getElementById('cat-desc').value   = '';
     document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-plus"></i> Agregar al catálogo';
-    document.getElementById('btn-cancelar-servicio').style.display = 'none';
   };
 
   window.eliminarServicio = async (id, nombre) => {
@@ -251,7 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast(e.message, 'error');
       } finally {
         btnLoading(btnCrearSvc, false);
-        if (ok) cancelarEdicionServicio();
+        if (ok) { cancelarEdicionServicio(); cerrarModal('modal-servicio'); }
       }
     });
   }
@@ -259,9 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Ver detalle de un mantenimiento ──────────────────────
   window.verDetalleMant = async (id) => {
     mantSeleccionado = id;
-    const panel = document.getElementById('op-panel-tarea');
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirModal('modal-op-panel');
     document.getElementById('op-tarea-titulo').textContent = 'Cargando...';
     document.getElementById('op-tareas-lista').innerHTML =
       '<p style="color:#94a3b8;padding:8px;font-size:0.88rem;">Cargando tareas...</p>';
@@ -323,7 +330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.cerrarPanelTarea = () => {
     mantSeleccionado = null;
-    document.getElementById('op-panel-tarea').style.display = 'none';
+    cerrarModal('modal-op-panel');
   };
 
   // ── Asociar repuesto al mantenimiento y descontar stock (IVO-008/009) ──
@@ -516,7 +523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('op-obs').value      = '';
         document.getElementById('op-fecha').value    = '';
         document.querySelectorAll('.op-serv-check:checked').forEach(c => { c.checked = false; });
-        mostrarVista('lista');
+        cerrarModal('modal-nuevo-mant');
         await cargarMantenimientos();
       } catch (e) {
         toast(e.message, 'error');
@@ -526,5 +533,109 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // ══════════════════════════════════════════════════════
+  // SOLICITUDES DE CITA (bolsa de pendientes) — el admin confirma/asigna
+  // ══════════════════════════════════════════════════════
+  window.cargarSolicitudes = async () => {
+    const cont = document.getElementById('op-solicitudes-lista');
+    if (!cont) return;
+    try {
+      const sols = await mantenimientos.solicitudes();
+      const mecs = empleadosCache.filter(e => e.usuarios?.roles?.nombre === 'mecanico');
+      const lista = mecs.length ? mecs : empleadosCache;
+      const opts = lista.map(e => `<option value="${e.id_empleado}">${e.usuarios?.nombre ?? 'Empleado ' + e.id_empleado}</option>`).join('');
+
+      cont.innerHTML = sols.length
+        ? sols.map(m => {
+            const servs = (m.tareas ?? []).map(t => t.tipos_servicio?.nombre).filter(Boolean).join(', ') || '—';
+            const fecha = m.fecha_estimada_entrega
+              ? new Date(m.fecha_estimada_entrega + 'T00:00:00').toLocaleDateString('es-CR') : 'sin fecha';
+            return `
+              <div class="list-item" style="flex-direction:column;align-items:stretch;gap:10px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                  <div>
+                    <strong>${m.vehiculos?.placa ?? '-'} · ${m.vehiculos?.marcas?.nombre_marca ?? ''}</strong>
+                    <div style="color:#64748b;font-size:0.82rem;">${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · ${fecha}</div>
+                    <div style="color:#475569;font-size:0.82rem;margin-top:3px;">Servicios: ${servs}</div>
+                    ${m.observaciones_cliente ? `<div style="color:#94a3b8;font-size:0.8rem;margin-top:2px;">"${m.observaciones_cliente}"</div>` : ''}
+                  </div>
+                  <span class="tag warning" style="align-self:flex-start;">Pendiente</span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <select id="op-sol-mec-${m.id_mantenimiento}" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.84rem;background:#f8fafc;">
+                    <option value="">-- Asignar mecánico --</option>${opts}
+                  </select>
+                  <button class="btn btn-success btn-sm" onclick="confirmarSolicitud(${m.id_mantenimiento})"><i class="fas fa-check"></i> Confirmar</button>
+                </div>
+              </div>`;
+          }).join('')
+        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">No hay solicitudes pendientes.</p>';
+    } catch (e) {
+      const falta = /estado_cita|column|does not exist|solicitudes/i.test(e.message || '');
+      cont.innerHTML = `<p style="color:#dc2626;padding:12px;font-size:0.86rem;">No se pudieron cargar las solicitudes.${falta ? ' ¿Ya corriste la migración <strong>migracion-citas.sql</strong> en Supabase?' : ' ' + e.message}</p>`;
+    }
+  };
+
+  window.confirmarSolicitud = async (id) => {
+    const sel = document.getElementById('op-sol-mec-' + id);
+    const id_empleado = sel?.value;
+    if (!id_empleado) { toast('Selecciona el mecánico a asignar', 'error'); return; }
+    try {
+      await mantenimientos.confirmar(id, { id_empleado: parseInt(id_empleado) });
+      toast('Cita confirmada y asignada');
+      await Promise.all([cargarSolicitudes(), cargarMantenimientos()]);
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  // ══════════════════════════════════════════════════════
+  // DISPONIBILIDAD (calendario de días bloqueados)
+  // ══════════════════════════════════════════════════════
+  let calAdmin = null;
+
+  async function initCalendarioAdmin() {
+    let dias = [];
+    try { dias = await diasBloqueados.lista(); } catch {}
+    calAdmin = crearCalendario('op-cal', {
+      editable: true,
+      bloqueados: dias.map(d => d.fecha),
+      onToggle: async (fecha, estaba) => {
+        try {
+          if (estaba) { await diasBloqueados.desbloquear(fecha); toast('Día habilitado'); }
+          else        { await diasBloqueados.bloquear({ fecha }); toast('Día bloqueado para citas'); }
+          await refrescarDisponibilidad();
+        } catch (e) { toast(e.message, 'error'); }
+      }
+    });
+    renderBloqueadosLista(dias);
+  }
+
+  async function refrescarDisponibilidad() {
+    let dias = [];
+    try { dias = await diasBloqueados.lista(); } catch {}
+    if (calAdmin) calAdmin.setBloqueados(dias.map(d => d.fecha));
+    renderBloqueadosLista(dias);
+  }
+
+  function renderBloqueadosLista(dias) {
+    const cont = document.getElementById('op-bloqueados-lista');
+    if (!cont) return;
+    cont.innerHTML = dias.length
+      ? dias.map(d => {
+          const [y, m, dd] = d.fecha.split('-');
+          return `
+            <div class="list-item">
+              <div><strong>${dd}/${m}/${y}</strong>${d.motivo ? `<div style="color:#64748b;font-size:0.8rem;">${d.motivo}</div>` : ''}</div>
+              <button class="btn btn-outline btn-sm" onclick="desbloquearDia('${d.fecha}')"><i class="fas fa-xmark" style="color:#dc2626;"></i> Habilitar</button>
+            </div>`;
+        }).join('')
+      : '<p style="color:#16a34a;padding:12px;font-size:0.88rem;"><i class="fas fa-check-circle"></i> Todos los días están disponibles.</p>';
+  }
+
+  window.desbloquearDia = async (fecha) => {
+    try { await diasBloqueados.desbloquear(fecha); toast('Día habilitado'); await refrescarDisponibilidad(); }
+    catch (e) { toast(e.message, 'error'); }
+  };
+
   await Promise.all([cargarMantenimientos(), cargarSelectores(), cargarCatalogo()]);
+  await Promise.all([cargarSolicitudes(), initCalendarioAdmin()]);
 });

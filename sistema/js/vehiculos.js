@@ -14,11 +14,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         new Set(todos.map(v => v.marcas?.nombre_marca).filter(Boolean)).size;
       document.getElementById('v-clientes').textContent =
         new Set(todos.map(v => v.clientes?.id_cliente).filter(Boolean)).size;
-      renderTabla(todos);
+      pagVehiculos.set(todos);
     } catch (e) {
       toast('Error cargando vehículos: ' + e.message, 'error');
     }
   }
+
+  const pagVehiculos = crearPaginador('pag-vehiculos', renderTabla, 5);
 
   function renderTabla(lista) {
     const tbody = document.getElementById('v-tbody');
@@ -44,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.filtrarVehiculos = (q) => {
     const l = q.toLowerCase();
-    renderTabla(todos.filter(v =>
+    pagVehiculos.set(todos.filter(v =>
       (v.placa ?? '').toLowerCase().includes(l) ||
       (v.marcas?.nombre_marca ?? '').toLowerCase().includes(l) ||
       (v.clientes?.usuarios?.nombre ?? '').toLowerCase().includes(l)
@@ -53,9 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Historial de un vehículo ──────────────────────────────
   window.verHistorialVeh = async (id) => {
-    const panel = document.getElementById('v-detalle');
-    panel.style.display = 'block';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirModal('modal-veh-detalle');
     document.getElementById('vd-titulo').textContent = 'Cargando...';
     document.getElementById('vd-historial').innerHTML = '';
     try {
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       toast('Error: ' + e.message, 'error');
     }
   };
-  window.cerrarDetalleVeh = () => { document.getElementById('v-detalle').style.display = 'none'; };
+  window.cerrarDetalleVeh = () => { cerrarModal('modal-veh-detalle'); };
 
   // ── Cargar clientes y marcas en selects ───────────────────
   async function cargarSelects() {
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Navegación por submódulos (usa helper compartido de ui.js) ──
   // Ir al submódulo "Registrar" en modo nuevo (limpio)
-  window.nuevoVehiculoVista = () => { ponerModoNuevo(); mostrarVista('registrar'); };
+  window.nuevoVehiculoVista = () => { ponerModoNuevo(); abrirModal('modal-vehiculo'); };
 
   function ponerModoNuevo() {
     editandoId = null;
@@ -122,9 +122,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const selM = document.getElementById('v-marca');
     const opt = [...selM.options].find(o => o.textContent === v.marcas?.nombre_marca);
     selM.value = opt ? opt.value : '';
-    // Cambiar al submódulo Registrar/Editar (sin resetear los campos ya cargados)
-    mostrarVista('registrar');
-    document.getElementById('modulo-titulo').textContent = 'Editar vehículo';
+    // Abrir el modal en modo edición (sin resetear los campos ya cargados)
+    abrirModal('modal-vehiculo');
   };
 
   document.getElementById('btn-guardar-vehiculo').addEventListener('click', async () => {
@@ -147,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         toast('Vehículo registrado correctamente');
       }
       document.getElementById('v-propietario').disabled = false;
-      mostrarVista('lista');
+      cerrarModal('modal-vehiculo');
       await cargarVehiculos();
     } catch (e) {
       toast(e.message, 'error');

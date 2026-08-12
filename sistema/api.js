@@ -74,7 +74,18 @@ const mantenimientos = {
   agregarTarea: (id, body)    => apiFetch(`/mantenimientos/${id}/tareas`, { method: 'POST', body: JSON.stringify(body) }),
   actualizarTarea: (id, body) => apiFetch(`/mantenimientos/tareas/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   eliminarTarea:   (id)       => apiFetch(`/mantenimientos/tareas/${id}`, { method: 'DELETE' }),
-  reordenarTareas: (id, orden) => apiFetch(`/mantenimientos/${id}/reordenar`, { method: 'POST', body: JSON.stringify({ orden }) })
+  reordenarTareas: (id, orden) => apiFetch(`/mantenimientos/${id}/reordenar`, { method: 'POST', body: JSON.stringify({ orden }) }),
+  // Citas: bolsa de solicitudes + confirmar/rechazar
+  solicitudes:  ()         => apiFetch('/mantenimientos/solicitudes'),
+  confirmar:    (id, body) => apiFetch(`/mantenimientos/${id}/confirmar`, { method: 'PATCH', body: JSON.stringify(body || {}) }),
+  rechazar:     (id)       => apiFetch(`/mantenimientos/${id}/rechazar`, { method: 'PATCH' })
+};
+
+// ── Días bloqueados (calendario de disponibilidad) ────────
+const diasBloqueados = {
+  lista:       ()       => apiFetch('/dias-bloqueados'),
+  bloquear:    (body)   => apiFetch('/dias-bloqueados', { method: 'POST', body: JSON.stringify(body) }),
+  desbloquear: (fecha)  => apiFetch(`/dias-bloqueados/${fecha}`, { method: 'DELETE' })
 };
 
 // ── Catálogo de servicios (tipos_servicio) ────────────────
@@ -126,6 +137,7 @@ const empleados = {
   lista:             ()       => apiFetch('/empleados'),
   crear:             (body)   => apiFetch('/empleados', { method: 'POST', body: JSON.stringify(body) }),
   vacaciones:        ()       => apiFetch('/empleados/vacaciones'),
+  misVacaciones:     ()       => apiFetch('/empleados/mis-vacaciones'),
   solicitarVac:      (body)   => apiFetch('/empleados/vacaciones', { method: 'POST', body: JSON.stringify(body) }),
   registrarVac:      (body)   => apiFetch('/empleados/vacaciones/registrar', { method: 'POST', body: JSON.stringify(body) }),
   responderVac:      (id, b)  => apiFetch(`/empleados/vacaciones/${id}`, { method: 'PATCH', body: JSON.stringify(b) })

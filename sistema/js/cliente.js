@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   let misVehiculos = [];
   let marcasCache  = [];
   let editandoVehId = null;
+  let calCita = null;   // calendario del formulario de cita
+
+  // Paginadores (las funciones render están hoisteadas, se pueden referenciar
+  // aquí aunque se definan más abajo). pag-clientes = tabla admin; pag-cli-facturas = facturas del cliente.
+  const pagClientes    = crearPaginador('pag-clientes', renderTablaClientes, 5);
+  const pagCliFacturas = crearPaginador('pag-cli-facturas', renderFacturasCli, 5);
 
   if (rol === 'administrador') {
     iniciarVistaAdmin();
@@ -46,11 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('adm-con-vehiculo').textContent = '-';
     document.getElementById('adm-en-servicio').textContent  = '-';
 
-    renderTablaClientes(todosClientes);
+    pagClientes.set(todosClientes);
 
     window.filtrarClientes = (q) => {
       const lower = q.toLowerCase();
-      renderTablaClientes(todosClientes.filter(c =>
+      pagClientes.set(todosClientes.filter(c =>
         (c.usuarios?.nombre ?? '').toLowerCase().includes(lower) ||
         (c.usuarios?.correo ?? '').toLowerCase().includes(lower)
       ));
@@ -89,13 +95,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   window.verDetalleCliente = async (id, nombre, correo) => {
-    const panel = document.getElementById('cli-detalle');
     document.getElementById('det-nombre').textContent = nombre;
     document.getElementById('det-correo').textContent = correo;
     document.getElementById('det-vehiculos').innerHTML      = '<p style="color:#94a3b8;font-size:0.85rem;padding:8px;">Cargando...</p>';
     document.getElementById('det-mantenimientos').innerHTML = '<tr><td colspan="3" style="color:#94a3b8;text-align:center;">Cargando...</td></tr>';
-    panel.style.display = '';
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    abrirModal('modal-cli-detalle');
 
     try {
       const cli = await apiFetch(`/clientes/${id}`);
@@ -146,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.cerrarDetalle = () => {
-    document.getElementById('cli-detalle').style.display = 'none';
+    cerrarModal('modal-cli-detalle');
   };
 
 
@@ -164,6 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     mostrarVista('panel');   // submódulo por defecto del cliente
     await cargarDatosCliente();
     await cargarServiciosCita();
+    await initCalendarioCita();
 
     // Listener del botón de cita (una sola vez)
     const btnCita = document.getElementById('btn-guardar-cita');
@@ -177,6 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!placa && !idVehSelect) { toast('Selecciona un vehículo o ingresa tu placa', 'error'); return; }
       if (!serviciosSel.length) { toast('Selecciona al menos un servicio', 'error'); return; }
+      if (!fecha) { toast('Elige el día de la cita en el calendario', 'error'); return; }
 
       btnLoading(btnCita, true);
       try {
@@ -231,14 +237,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           body: JSON.stringify({ id_vehiculo, fecha_estimada_entrega: fecha || null, observaciones_cliente: obs, servicios: serviciosSel })
         });
 
-        toast(resp?.aviso || `Cita agendada con ${serviciosSel.length} servicio(s). Asignada a un mecánico del taller.`);
-        mostrarVista('panel');
+        toast(resp?.aviso || `Cita solicitada con ${serviciosSel.length} servicio(s). Quedará pendiente hasta que el taller la confirme.`);
+        cerrarModal('modal-cita');
         document.getElementById('registro-vehiculo-section').style.display = 'none';
         document.getElementById('cita-placa').value = '';
         document.getElementById('cita-marca').value = '';
         document.querySelectorAll('.cita-serv-check:checked').forEach(c => { c.checked = false; });
         document.getElementById('cita-obs').value   = '';
         document.getElementById('cita-fecha').value = '';
+        document.getElementById('cita-fecha-label').textContent = 'Ningún día seleccionado.';
+        if (calCita) calCita.setSeleccion(null);
         await cargarDatosCliente();
       } catch (e) {
         toast(e.message, 'error');
@@ -248,6 +256,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     };
   }
+
+  // Calendario del formulario de cita: días bloqueados por el admin en rojo.
+  async function initCalendarioCita() {
+    let dias = [];
+    try { dias = await diasBloqueados.lista(); } catch {}
+    calCita = crearCalendario('cita-cal', {
+      soloFuturo: true,
+      bloqueados: dias.map(d => d.fecha),
+      onSelect: (f) => {
+        document.getElementById('cita-fecha').value = f;
+        const [y, m, d] = f.split('-');
+        document.getElementById('cita-fecha-label').innerHTML =
+          `Día elegido: <strong style="color:#0f172a;">${d}/${m}/${y}</strong>`;
+      }
+    });
+  }
+
+  // Abrir el modal de cita refrescando los días bloqueados (por si el admin
+  // cambió la disponibilidad mientras el cliente tenía la página abierta).
+  window.abrirCitaModal = async () => {
+    abrirModal('modal-cita');
+    if (calCita) {
+      try { const dias = await diasBloqueados.lista(); calCita.setBloqueados(dias.map(d => d.fecha)); } catch {}
+    }
+  };
 
   async function cargarServiciosCita() {
     const cont = document.getElementById('cita-servicios');
@@ -368,7 +401,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <strong style="font-size:0.9rem;">${m.placa} · ${m.marca ?? ''}</strong>
                   <div style="color:#94a3b8;font-size:0.78rem;">${new Date(m.fecha_ingreso).toLocaleDateString('es-CR')}${fac ? ' · ₡' + Number(fac.total).toLocaleString('es') : ''}</div>
                 </div>
-                ${tagEstado(m.estado)}
+                ${m.estado_cita === 'solicitada'
+                  ? '<span class="tag warning">Pendiente de confirmación</span>'
+                  : tagEstado(m.estado)}
               </div>
               <div class="progress" style="margin-bottom:6px;"><span style="width:${avance}%"></span></div>
               <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:8px;">${comp} de ${tareas.length} tareas completadas (${avance}%)</div>
@@ -378,9 +413,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('')
       : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no tienes mantenimientos registrados</p>';
 
-    // Tabla facturas
-    document.getElementById('cli-facturas-tbody').innerHTML = todasFacturas.length
-      ? todasFacturas.map(f => `
+    // Tabla facturas (paginada)
+    pagCliFacturas.set(todasFacturas);
+  }
+
+  function renderFacturasCli(lista) {
+    document.getElementById('cli-facturas-tbody').innerHTML = lista.length
+      ? lista.map(f => `
           <tr>
             <td style="font-size:0.84rem;">${f._fecha ? new Date(f._fecha).toLocaleDateString('es-CR') : '-'}</td>
             <td style="font-weight:700;">₡${Number(f.total).toLocaleString('es')}</td>
@@ -392,7 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Toggle formulario de cita
-  // "Nueva cita" es ahora un submódulo (mostrarVista('cita') en ui.js).
+  // "Nueva cita" es ahora un modal (abrirModal('modal-cita')).
 
   // ══════════════════════════════════════════════════════
   // MIS VEHÍCULOS (registrar / editar — solo los propios)
@@ -431,7 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('veh-f-marca').value = '';
     document.getElementById('veh-f-obs').value   = '';
     await cargarMarcasVehiculo();
-    document.getElementById('veh-form').style.display = 'block';
+    abrirModal('modal-veh-cli');
   };
 
   window.editarVehiculo = async (id) => {
@@ -445,12 +484,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const marca = marcasCache.find(m => m.nombre_marca === v.marcas?.nombre_marca);
     document.getElementById('veh-f-marca').value = marca ? marca.id_marca : '';
     document.getElementById('veh-f-obs').value   = v.observaciones ?? '';
-    document.getElementById('veh-form').style.display = 'block';
-    document.getElementById('veh-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    abrirModal('modal-veh-cli');
   };
 
   window.cerrarFormVehiculo = () => {
-    document.getElementById('veh-form').style.display = 'none';
+    cerrarModal('modal-veh-cli');
     editandoVehId = null;
   };
 

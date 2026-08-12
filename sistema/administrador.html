@@ -35,7 +35,7 @@
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="empleados" data-titulo="Empleados" data-sub="Registro y personal del taller" onclick="mostrarVista('empleados');return false;"><i class="fas fa-users"></i> Empleados</a>
           <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Vacaciones" data-sub="Solicitudes y registro de días" onclick="mostrarVista('vacaciones');return false;"><i class="fas fa-umbrella-beach"></i> Vacaciones</a>
-          <a href="#" class="subitem" data-vista="clientes" data-titulo="Registrar cliente" data-sub="Crea la cuenta de un cliente" onclick="mostrarVista('clientes');return false;"><i class="fas fa-user-plus"></i> Registrar cliente</a>
+          <a href="#" class="subitem" onclick="abrirModal('modal-cliente');return false;"><i class="fas fa-user-plus"></i> Registrar cliente</a>
           <a href="#" class="subitem" data-vista="usuarios" data-titulo="Usuarios del sistema" data-sub="Crear, editar, activar/desactivar y eliminar cuentas" onclick="mostrarVista('usuarios');return false;"><i class="fas fa-user-gear"></i> Usuarios del sistema</a>
         </div>
       </div>
@@ -98,97 +98,106 @@
         </div>
       </section>
 
-      <div class="two-col">
-        <!-- Form registrar empleado -->
-        <div class="card">
-          <div class="card-header">
-            <div><h3>Registrar empleado</h3><p>Añade personal al sistema</p></div>
-          </div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Nombre completo</label>
-              <input id="adm-nombre" placeholder="Nombre del empleado">
-            </div>
-            <div class="field">
-              <label>Correo electrónico</label>
-              <input id="adm-correo" type="email" placeholder="empleado@correo.com">
-            </div>
-            <div class="field">
-              <label>Teléfono</label>
-              <input id="adm-telefono" placeholder="8888-8888">
-            </div>
-            <div class="field">
-              <label>Rol en el sistema</label>
-              <select id="adm-rol">
-                <option value="2">Mecánico</option>
-                <option value="1">Administrador</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Tipo de empleo</label>
-              <select id="adm-tipo">
-                <option value="tiempo_completo">Tiempo completo</option>
-                <option value="medio_tiempo">Medio tiempo</option>
-                <option value="por_servicios">Por servicios</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Fecha de ingreso</label>
-              <input id="adm-fecha" type="date">
-            </div>
-            <div class="field">
-              <label>Días de vacaciones</label>
-              <input id="adm-dias" type="number" placeholder="12">
-            </div>
-            <div class="field">
-              <label>Especialidad</label>
-              <select id="adm-especialidad">
-                <option value="General">General</option>
-                <option value="Motor y lubricación">Motor y lubricación</option>
-                <option value="Frenos y suspensión">Frenos y suspensión</option>
-                <option value="Sistema eléctrico">Sistema eléctrico</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button id="btn-guardar-empleado" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar empleado</button>
-            <button class="btn btn-outline"><i class="fas fa-rotate-left"></i> Limpiar</button>
-          </div>
+      <!-- Personal registrado (ancho completo; el formulario ahora es modal) -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Personal registrado</h3><p>Equipo actual del taller</p></div>
+          <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-empleado')"><i class="fas fa-user-plus"></i> Registrar empleado</button>
         </div>
-
-        <!-- Personal registrado -->
-        <div class="card">
-          <div class="card-header">
-            <div><h3>Personal registrado</h3><p>Equipo actual del taller</p></div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Empleado</th><th>Rol</th><th>Estado</th><th>Vacaciones</th></tr></thead>
-              <tbody id="adm-tbody">
-                <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Empleado</th><th>Rol</th><th>Estado</th><th>Vacaciones</th></tr></thead>
+            <tbody id="adm-tbody">
+              <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
         </div>
+        <div id="pag-empleados" class="paginador" style="display:none;"></div>
       </div>
 
     </div><!-- /vista-empleados -->
 
-    <!-- ══════════ SUBMÓDULO: Vacaciones ══════════ -->
-    <div id="vista-vacaciones" class="vista" style="display:none;">
-      <div class="two-col">
-        <!-- Solicitudes de vacaciones -->
-        <div class="card">
-          <h3 style="margin-bottom:14px;">Solicitudes de vacaciones</h3>
-          <div class="list" id="adm-vac-list">
-            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+    <!-- ══════════ MODAL: Registrar empleado ══════════ -->
+    <div id="modal-empleado" class="modal-overlay" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Registrar empleado</h3><p>Añade personal al sistema</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-empleado')" title="Cerrar">&times;</button>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre completo</label>
+            <input id="adm-nombre" placeholder="Nombre del empleado">
+          </div>
+          <div class="field">
+            <label>Correo electrónico</label>
+            <input id="adm-correo" type="email" placeholder="empleado@correo.com">
+          </div>
+          <div class="field">
+            <label>Teléfono</label>
+            <input id="adm-telefono" placeholder="8888-8888">
+          </div>
+          <div class="field">
+            <label>Rol en el sistema</label>
+            <select id="adm-rol">
+              <option value="2">Mecánico</option>
+              <option value="1">Administrador</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de empleo</label>
+            <select id="adm-tipo">
+              <option value="tiempo_completo">Tiempo completo</option>
+              <option value="medio_tiempo">Medio tiempo</option>
+              <option value="por_servicios">Por servicios</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fecha de ingreso</label>
+            <input id="adm-fecha" type="date">
+          </div>
+          <div class="field">
+            <label>Días de vacaciones</label>
+            <input id="adm-dias" type="number" placeholder="12">
+          </div>
+          <div class="field">
+            <label>Especialidad</label>
+            <select id="adm-especialidad">
+              <option value="General">General</option>
+              <option value="Motor y lubricación">Motor y lubricación</option>
+              <option value="Frenos y suspensión">Frenos y suspensión</option>
+              <option value="Sistema eléctrico">Sistema eléctrico</option>
+            </select>
           </div>
         </div>
+        <div class="form-actions">
+          <button id="btn-guardar-empleado" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar empleado</button>
+          <button class="btn btn-outline" onclick="cerrarModal('modal-empleado')"><i class="fas fa-xmark"></i> Cancelar</button>
+        </div>
+      </div>
+    </div><!-- /modal-empleado -->
 
+    <!-- ══════════ SUBMÓDULO: Vacaciones ══════════ -->
+    <div id="vista-vacaciones" class="vista" style="display:none;">
+      <!-- Solicitudes de vacaciones (ancho completo; el registro es modal) -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Solicitudes de vacaciones</h3><p>Aprobar o rechazar solicitudes pendientes</p></div>
+          <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-vacaciones')"><i class="fas fa-umbrella-beach"></i> Registrar vacaciones</button>
+        </div>
+        <div class="list" id="adm-vac-list">
+          <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+        </div>
+      </div>
+    </div><!-- /vista-vacaciones -->
+
+    <!-- ══════════ MODAL: Registrar vacaciones ══════════ -->
+    <div id="modal-vacaciones" class="modal-overlay" style="display:none;">
         <!-- ADM-004/005: registrar uso de vacaciones y descontar del saldo -->
         <div class="card">
           <div class="card-header">
             <div><h3>Registrar vacaciones</h3><p>Descuenta días del saldo del empleado</p></div>
+            <button class="modal-close" onclick="cerrarModal('modal-vacaciones')" title="Cerrar">&times;</button>
           </div>
           <div class="form-grid">
             <div class="field" style="grid-column:1/-1;">
@@ -217,14 +226,14 @@
           </div>
           <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">Al registrar, los días hábiles se restan del saldo del empleado. No se permite dejar el saldo en negativo.</p>
         </div>
-      </div>
-    </div><!-- /vista-vacaciones -->
+    </div><!-- /modal-vacaciones -->
 
-    <!-- ══════════ SUBMÓDULO: Registrar cliente ══════════ -->
-    <div id="vista-clientes" class="vista" style="display:none;">
+    <!-- ══════════ MODAL: Registrar cliente ══════════ -->
+    <div id="modal-cliente" class="modal-overlay" style="display:none;">
       <div class="card">
         <div class="card-header">
           <div><h3>Registrar cliente</h3><p>Crea la cuenta de un cliente que no se registró por su cuenta</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-cliente')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field">
@@ -246,9 +255,10 @@
         </div>
         <div class="form-actions">
           <button id="btn-registrar-cliente" class="btn btn-success" style="flex:1;"><i class="fas fa-user-plus"></i> Registrar cliente</button>
+          <button onclick="cerrarModal('modal-cliente')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
       </div>
-    </div><!-- /vista-clientes -->
+    </div><!-- /modal-cliente -->
 
     <!-- ══════════ SUBMÓDULO: Usuarios del sistema ══════════ -->
     <div id="vista-usuarios" class="vista" style="display:none;">
@@ -262,9 +272,12 @@
           </div>
         </div>
 
-        <!-- Panel de edición/creación (oculto) -->
-        <div id="usr-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:16px;">
-          <div class="card-header"><div><h3 id="usr-form-titulo" style="font-size:1rem;">Nuevo usuario</h3></div></div>
+        <!-- MODAL: Nuevo / editar usuario -->
+        <div id="modal-usuario" class="modal-overlay" style="display:none;">
+        <div id="usr-form" class="card">
+          <div class="card-header"><div><h3 id="usr-form-titulo">Nuevo usuario</h3></div>
+            <button class="modal-close" onclick="cerrarModal('modal-usuario')" title="Cerrar">&times;</button>
+          </div>
           <div class="form-grid">
             <div class="field"><label>Nombre completo <span style="color:#dc2626;">*</span></label><input id="usr-nombre" placeholder="Nombre"></div>
             <div class="field"><label>Correo <span style="color:#dc2626;">*</span></label><input id="usr-correo" type="email" placeholder="correo@ejemplo.com"></div>
@@ -283,9 +296,10 @@
           </div>
           <div class="form-actions">
             <button id="btn-guardar-usuario" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
-            <button onclick="cerrarEdicionUsuario()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+            <button onclick="cerrarModal('modal-usuario')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
           </div>
         </div>
+        </div><!-- /modal-usuario -->
 
         <div class="table-wrap">
           <table>
@@ -295,6 +309,7 @@
             </tbody>
           </table>
         </div>
+        <div id="pag-usuarios" class="paginador" style="display:none;"></div>
       </div>
     </div><!-- /vista-usuarios -->
 

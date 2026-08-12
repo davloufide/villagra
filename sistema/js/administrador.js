@@ -4,32 +4,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let empleadosCache = [];
 
+  function renderEmpleados(lista) {
+    const tbody = document.getElementById('adm-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = lista.map(e => {
+      const ini = (e.usuarios?.nombre ?? '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      const colors = ['#2563eb,#7c3aed','#16a34a,#4ade80','#f59e0b,#fbbf24','#64748b,#94a3b8'];
+      const col = colors[e.id_empleado % colors.length];
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,${col});display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0;">${ini}</div>
+              <div><strong style="font-size:0.88rem;">${e.usuarios?.nombre}</strong><br>
+                <small style="color:#94a3b8;">${e.especialidad ?? '-'}</small></div>
+            </div>
+          </td>
+          <td><span class="tag ${e.usuarios?.roles?.nombre === 'administrador' ? 'info' : 'purple'}">${e.usuarios?.roles?.nombre ?? '-'}</span></td>
+          <td><span class="tag ${e.usuarios?.activo ? 'success' : 'danger'}">${e.usuarios?.activo ? 'Activo' : 'Inactivo'}</span></td>
+          <td>${e.dias_vacaciones} días</td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Sin empleados</td></tr>';
+  }
+
+  const pagEmpleados = crearPaginador('pag-empleados', renderEmpleados, 5);
+
   async function cargarEmpleados() {
     try {
       const lista = await empleados.lista();
       empleadosCache = lista;
       llenarSelectVac(lista);
-      const tbody = document.getElementById('adm-tbody');
-      if (!tbody) return;
-      tbody.innerHTML = lista.map(e => {
-        const ini = (e.usuarios?.nombre ?? '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-        const colors = ['#2563eb,#7c3aed','#16a34a,#4ade80','#f59e0b,#fbbf24','#64748b,#94a3b8'];
-        const col = colors[e.id_empleado % colors.length];
-        return `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:9px;">
-                <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,${col});display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0;">${ini}</div>
-                <div><strong style="font-size:0.88rem;">${e.usuarios?.nombre}</strong><br>
-                  <small style="color:#94a3b8;">${e.especialidad ?? '-'}</small></div>
-              </div>
-            </td>
-            <td><span class="tag ${e.usuarios?.roles?.nombre === 'administrador' ? 'info' : 'purple'}">${e.usuarios?.roles?.nombre ?? '-'}</span></td>
-            <td><span class="tag ${e.usuarios?.activo ? 'success' : 'danger'}">${e.usuarios?.activo ? 'Activo' : 'Inactivo'}</span></td>
-            <td>${e.dias_vacaciones} días</td>
-          </tr>
-        `;
-      }).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Sin empleados</td></tr>';
+      pagEmpleados.set(lista);
 
       document.getElementById('adm-total').textContent  = lista.length;
       document.getElementById('adm-activos').textContent = lista.filter(e => e.usuarios?.activo).length;
@@ -145,6 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('rvac-dias').value   = '';
         document.getElementById('rvac-inicio').value = '';
         document.getElementById('rvac-fin').value    = '';
+        cerrarModal('modal-vacaciones');
         await cargarEmpleados();
       } catch (e) {
         toast(e.message, 'error');
@@ -176,6 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ['adm-nombre','adm-correo','adm-telefono','adm-fecha'].forEach(id => {
           const el = document.getElementById(id); if (el) el.value = '';
         });
+        cerrarModal('modal-empleado');
         cargarEmpleados();
       } catch (e) {
         toast(e.message, 'error');
@@ -203,6 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ['ncli-nombre', 'ncli-correo', 'ncli-telefono', 'ncli-password'].forEach(id => {
           const el = document.getElementById(id); if (el) el.value = '';
         });
+        cerrarModal('modal-cliente');
         await cargarUsuarios();
       } catch (e) {
         toast(e.message, 'error');
@@ -242,10 +251,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin usuarios</td></tr>';
   }
 
+  const pagUsuarios = crearPaginador('pag-usuarios', renderUsuarios, 5);
+
   async function cargarUsuarios() {
     try {
       usuariosCache = await usuarios.lista();
-      renderUsuarios(usuariosCache);
+      pagUsuarios.set(usuariosCache);
     } catch (e) {
       toast('Error cargando usuarios: ' + e.message, 'error');
     }
@@ -253,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.filtrarUsuarios = (q) => {
     const l = q.toLowerCase();
-    renderUsuarios(usuariosCache.filter(u =>
+    pagUsuarios.set(usuariosCache.filter(u =>
       (u.nombre ?? '').toLowerCase().includes(l) || (u.correo ?? '').toLowerCase().includes(l)
     ));
   };
@@ -267,7 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('usr-activo').value   = 'true';
     document.getElementById('usr-password').value = '';
     document.getElementById('usr-pass-label').innerHTML = 'Contraseña <span style="color:#dc2626;">*</span>';
-    document.getElementById('usr-form').style.display = 'block';
+    abrirModal('modal-usuario');
   };
 
   window.editarUsuario = (id) => {
@@ -281,12 +292,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('usr-activo').value   = String(u.activo);
     document.getElementById('usr-password').value = '';
     document.getElementById('usr-pass-label').innerHTML = 'Nueva contraseña <span style="color:#94a3b8;font-weight:400;">(dejar vacío para no cambiar)</span>';
-    document.getElementById('usr-form').style.display = 'block';
-    document.getElementById('usr-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    abrirModal('modal-usuario');
   };
 
   window.cerrarEdicionUsuario = () => {
-    document.getElementById('usr-form').style.display = 'none';
+    cerrarModal('modal-usuario');
     editandoId = null;
   };
 

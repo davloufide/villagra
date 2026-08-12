@@ -25,6 +25,118 @@ function mostrarVista(vista) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── Paginador reutilizable para tablas ────────────────────
+// Uso:
+//   const pag = crearPaginador('id-contenedor', renderFilas, 5);
+//   pag.set(listaCompleta);              // al cargar o al filtrar (vuelve a pág. 1)
+//   pag.set(listaCompleta, true);        // conservando la página actual
+// renderFilas(items) pinta SOLO las filas de la página actual (reusa el render
+// existente de cada módulo; si recibe [] debe mostrar su fila de "vacío").
+function crearPaginador(contenedorId, renderFilas, porPagina = 5) {
+  let datos = [];
+  let pagina = 1;
+  let bound = false;
+
+  const cont = () => document.getElementById(contenedorId);
+  const totalPag = () => Math.max(1, Math.ceil(datos.length / porPagina));
+
+  function bind() {
+    const c = cont();
+    if (!c || bound) return;
+    bound = true;
+    c.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-pag]');
+      if (!b || b.classList.contains('disabled') || b.classList.contains('gap')) return;
+      const v = b.dataset.pag;
+      if (v === 'prev') pagina--;
+      else if (v === 'next') pagina++;
+      else pagina = parseInt(v);
+      dibujar();
+    });
+  }
+
+  // Números de página a mostrar (con "…" cuando hay muchas)
+  function numeros(tp, act) {
+    const out = [];
+    const ini = Math.max(1, act - 1);
+    const fin = Math.min(tp, act + 1);
+    if (ini > 1) { out.push(1); if (ini > 2) out.push('…'); }
+    for (let i = ini; i <= fin; i++) out.push(i);
+    if (fin < tp) { if (fin < tp - 1) out.push('…'); out.push(tp); }
+    return out;
+  }
+
+  function dibujar() {
+    const tp = totalPag();
+    pagina = Math.min(Math.max(1, pagina), tp);
+    const desde = (pagina - 1) * porPagina;
+    renderFilas(datos.slice(desde, desde + porPagina));
+
+    const c = cont();
+    if (!c) return;
+    if (datos.length <= porPagina) { c.innerHTML = ''; c.style.display = 'none'; return; }
+    c.style.display = 'flex';
+    const hasta = Math.min(desde + porPagina, datos.length);
+    const nums = numeros(tp, pagina).map(n =>
+      n === '…'
+        ? '<span class="pag-btn gap">…</span>'
+        : `<button class="pag-btn ${n === pagina ? 'active' : ''}" data-pag="${n}">${n}</button>`
+    ).join('');
+    c.innerHTML = `
+      <span class="pag-info">Mostrando <strong>${desde + 1}-${hasta}</strong> de <strong>${datos.length}</strong></span>
+      <div class="pag-btns">
+        <button class="pag-btn ${pagina === 1 ? 'disabled' : ''}" data-pag="prev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+        ${nums}
+        <button class="pag-btn ${pagina === tp ? 'disabled' : ''}" data-pag="next" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+      </div>`;
+  }
+
+  return {
+    set(lista, mantenerPagina) {
+      datos = Array.isArray(lista) ? lista : [];
+      if (!mantenerPagina) pagina = 1;
+      bind();
+      dibujar();
+    }
+  };
+}
+
+// ── Ventanas emergentes (modales) para los formularios de registro ──
+// El modal es un <div id="modal-X" class="modal-overlay" style="display:none;">
+// con una .card adentro (el formulario). abrirModal lo muestra; se cierra al
+// hacer clic en el fondo, con Escape, o con los botones Cancelar/×.
+function abrirModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  const yaAbierto = m.style.display === 'flex';   // re-abrir (refresco) no debe saltar foco/scroll
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';   // evita scroll del fondo
+  if (!m._bound) {
+    m._bound = true;
+    m.addEventListener('click', (e) => { if (e.target === m) cerrarModal(id); });
+  }
+  if (!yaAbierto) {
+    m.scrollTop = 0;
+    const first = m.querySelector('input:not([type=hidden]):not([disabled]), select, textarea');
+    if (first) setTimeout(() => first.focus(), 40);
+  }
+}
+
+function cerrarModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.style.display = 'none';
+  // Restaurar el scroll solo si no queda ningún otro modal abierto
+  if (!document.querySelector('.modal-overlay[style*="flex"]')) document.body.style.overflow = '';
+}
+
+// Escape cierra el modal abierto (una sola vez, a nivel global)
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const abierto = [...document.querySelectorAll('.modal-overlay')].find(m => m.style.display === 'flex');
+  if (abierto) cerrarModal(abierto.id);
+});
+
 // ── Diálogo de confirmación propio (reemplaza el confirm() del navegador) ──
 // Uso: if (!(await confirmar('¿Seguro?'))) return;
 //   o: await confirmar({ titulo, mensaje, confirmar, cancelar, peligro })

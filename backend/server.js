@@ -14,6 +14,7 @@ app.use('/api/vehiculos',      require('./routes/vehiculos'));
 app.use('/api/clientes',       require('./routes/clientes'));
 app.use('/api/tipos-servicio', require('./routes/tiposServicio'));
 app.use('/api/mantenimientos', require('./routes/mantenimientos'));
+app.use('/api/dias-bloqueados', require('./routes/diasBloqueados'));
 app.use('/api/inventario',     require('./routes/inventario'));
 app.use('/api/empleados',      require('./routes/empleados'));
 app.use('/api/usuarios',       require('./routes/usuarios'));

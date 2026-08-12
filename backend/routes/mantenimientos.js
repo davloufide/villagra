@@ -56,11 +56,12 @@ async function elegirMecanico() {
 // GET /api/mantenimientos — lista según rol
 router.get('/', verificarToken, async (req, res) => {
   const { rol, id } = req.usuario;
+  // `*` incluye estado_cita cuando la columna existe (y no rompe si aún no se
+  // corrió la migración, ya que solo devuelve las columnas presentes).
   let query = supabase
     .from('mantenimientos')
     .select(`
-      id_mantenimiento, fecha_ingreso, fecha_estimada_entrega,
-      estado, porcentaje_avance, observaciones_cliente,
+      *,
       vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre)))
     `)
     .order('fecha_ingreso', { ascending: false });
@@ -90,6 +91,23 @@ router.get('/', verificarToken, async (req, res) => {
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// GET /api/mantenimientos/solicitudes — citas pendientes de confirmación ("bolsa")
+// Visible para admin y mecánicos. DEBE IR ANTES DE /:id.
+router.get('/solicitudes', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
+  const { data, error } = await supabase
+    .from('mantenimientos')
+    .select(`
+      id_mantenimiento, fecha_ingreso, fecha_estimada_entrega, observaciones_cliente, estado_cita,
+      vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre))),
+      tareas(id_tarea, tipos_servicio(nombre))
+    `)
+    .eq('estado_cita', 'solicitada')
+    .order('fecha_ingreso', { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
 });
 
 // GET /api/mantenimientos/:id — detalle con tareas
@@ -151,32 +169,49 @@ router.post('/', verificarToken, soloRol('administrador', 'cliente', 'mecanico')
     if (!veh) return res.status(403).json({ error: 'Este vehículo no te pertenece' });
   }
 
-  const { data, error } = await supabase
-    .from('mantenimientos')
-    .insert({ id_vehiculo, fecha_estimada_entrega: fecha_estimada_entrega || null, observaciones_cliente: observaciones_cliente || null })
-    .select()
-    .single();
+  // Validar disponibilidad del día pedido (si existe la tabla de días bloqueados)
+  if (fecha_estimada_entrega) {
+    try {
+      const { data: bloq } = await supabase
+        .from('dias_bloqueados').select('fecha').eq('fecha', fecha_estimada_entrega).maybeSingle();
+      if (bloq) return res.status(409).json({ error: 'Ese día no está disponible para citas. Elige otra fecha.' });
+    } catch { /* si la tabla aún no existe, no se valida */ }
+  }
 
+  // El cliente crea una SOLICITUD (pendiente de confirmación); el personal crea
+  // citas ya confirmadas. estado_cita es una columna nueva: si aún no se corrió
+  // la migración, se reintenta el insert sin ella.
+  const esCliente = req.usuario.rol === 'cliente';
+  const estado_cita = esCliente ? 'solicitada' : 'confirmada';
+  const registro = {
+    id_vehiculo,
+    fecha_estimada_entrega: fecha_estimada_entrega || null,
+    observaciones_cliente: observaciones_cliente || null
+  };
+
+  let data, error;
+  ({ data, error } = await supabase
+    .from('mantenimientos').insert({ ...registro, estado_cita }).select().single());
+  if (error && (error.code === 'PGRST204' || /estado_cita/i.test(error.message || ''))) {
+    ({ data, error } = await supabase.from('mantenimientos').insert(registro).select().single());
+  }
   if (error) return res.status(500).json({ error: error.message });
 
-  // Asignación automática: una tarea por servicio, repartiendo entre mecánicos
+  // Una tarea por servicio. El cliente NO asigna mecánico: la cita entra a la
+  // "bolsa" para que un mecánico la confirme (o el admin la asigne). El personal
+  // sí puede auto-asignar al menos cargado (compatibilidad).
   let tareasCreadas = 0;
   let aviso = null;
   if (listaServicios.length) {
     for (const sid of listaServicios) {
-      const id_empleado = await elegirMecanico();
-      if (!id_empleado) { aviso = 'Cita registrada. No hay mecánicos disponibles; el administrador asignará el trabajo.'; break; }
+      const id_empleado = esCliente ? null : await elegirMecanico();
       const { error: tErr } = await supabase
         .from('tareas')
         .insert({ id_mantenimiento: data.id_mantenimiento, id_empleado, id_tipo_servicio: sid });
       if (!tErr) tareasCreadas++;
     }
-    if (tareasCreadas) {
-      const est = await recalcularMantenimiento(data.id_mantenimiento);
-      data.estado = est.estado;
-      data.porcentaje_avance = est.porcentaje_avance;
-    }
   }
+  if (esCliente) aviso = 'Cita solicitada. Un mecánico o el administrador la confirmará pronto.';
 
   res.status(201).json({ ...data, tareas_creadas: tareasCreadas, aviso });
 });
@@ -334,6 +369,52 @@ router.delete('/tareas/:idTarea', verificarToken, soloRol('administrador', 'meca
 
   const mant = await recalcularMantenimiento(tarea.id_mantenimiento);
   res.json({ ok: true, mantenimiento: mant });
+});
+
+// PATCH /api/mantenimientos/:id/confirmar — aceptar una cita (admin o mecánico)
+// - mecánico: se autoasigna todas las tareas de la cita.
+// - admin: debe enviar { id_empleado } (a qué mecánico se asigna).
+// La cita pasa a estado_cita='confirmada'.
+router.patch('/:id/confirmar', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
+  const id = parseInt(req.params.id);
+  let id_empleado;
+
+  if (req.usuario.rol === 'mecanico') {
+    const { data: emp } = await supabase
+      .from('empleados').select('id_empleado').eq('id_usuario', req.usuario.id).single();
+    if (!emp) return res.status(403).json({ error: 'Empleado no encontrado' });
+    id_empleado = emp.id_empleado;
+  } else {
+    id_empleado = req.body.id_empleado ? parseInt(req.body.id_empleado) : null;
+    if (!id_empleado) return res.status(400).json({ error: 'Selecciona el mecánico a asignar' });
+  }
+
+  // Asignar todas las tareas de la cita a ese mecánico
+  const { error: eT } = await supabase
+    .from('tareas').update({ id_empleado }).eq('id_mantenimiento', id);
+  if (eT) return res.status(500).json({ error: eT.message });
+
+  const { data, error } = await supabase
+    .from('mantenimientos').update({ estado_cita: 'confirmada' })
+    .eq('id_mantenimiento', id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// PATCH /api/mantenimientos/:id/rechazar — rechazar/soltar una cita (admin o mecánico)
+// Devuelve la cita a la "bolsa": estado_cita='solicitada' y desasigna las tareas.
+router.patch('/:id/rechazar', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  const { error: eT } = await supabase
+    .from('tareas').update({ id_empleado: null }).eq('id_mantenimiento', id);
+  if (eT) return res.status(500).json({ error: eT.message });
+
+  const { data, error } = await supabase
+    .from('mantenimientos').update({ estado_cita: 'solicitada' })
+    .eq('id_mantenimiento', id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 module.exports = router;

@@ -33,7 +33,7 @@
           <!-- Submódulos cliente -->
           <a href="#" class="subitem cliente-only" data-vista="panel" data-titulo="Mi vehículo" data-sub="Seguimiento de tu servicio" onclick="mostrarVista('panel');return false;" style="display:none;"><i class="fas fa-gauge-high"></i> Mi panel</a>
           <a href="#" class="subitem cliente-only" data-vista="misveh" data-titulo="Mis vehículos" data-sub="Registra y gestiona tus vehículos" onclick="mostrarVista('misveh');return false;" style="display:none;"><i class="fas fa-car-side"></i> Mis vehículos</a>
-          <a href="#" class="subitem cliente-only" data-vista="cita" data-titulo="Nueva cita" data-sub="Agenda un servicio en el taller" onclick="mostrarVista('cita');return false;" style="display:none;"><i class="fas fa-calendar-plus"></i> Nueva cita</a>
+          <a href="#" class="subitem cliente-only" onclick="abrirCitaModal();return false;" style="display:none;"><i class="fas fa-calendar-plus"></i> Nueva cita</a>
         </div>
       </div>
 
@@ -126,16 +126,18 @@
             </tbody>
           </table>
         </div>
+        <div id="pag-clientes" class="paginador" style="display:none;"></div>
       </div>
 
-      <!-- Panel de detalle del cliente -->
-      <div id="cli-detalle" class="card" style="display:none;">
+      <!-- MODAL: Detalle del cliente -->
+      <div id="modal-cli-detalle" class="modal-overlay" style="display:none;">
+      <div id="cli-detalle" class="card">
         <div class="card-header">
           <div>
             <h3 id="det-nombre">-</h3>
             <p id="det-correo">-</p>
           </div>
-          <button onclick="cerrarDetalle()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+          <button class="modal-close" onclick="cerrarModal('modal-cli-detalle')" title="Cerrar">&times;</button>
         </div>
 
         <div class="two-col" style="margin-top:0;">
@@ -158,6 +160,7 @@
           </div>
         </div>
       </div>
+      </div><!-- /modal-cli-detalle -->
 
     </div><!-- /vista-admin -->
 
@@ -173,7 +176,7 @@
           <p id="modulo-sub">Seguimiento de tu servicio y gestión de citas</p>
         </div>
         <div class="top-actions">
-          <button id="btn-nueva-cita" class="btn btn-primary btn-sm" onclick="mostrarVista('cita')">
+          <button id="btn-nueva-cita" class="btn btn-primary btn-sm" onclick="abrirCitaModal()">
             <i class="fas fa-calendar-plus"></i> Nueva cita
           </button>
         </div>
@@ -256,6 +259,7 @@
                   </tbody>
                 </table>
               </div>
+              <div id="pag-cli-facturas" class="paginador" style="display:none;"></div>
             </div>
           </div>
         </div>
@@ -270,9 +274,12 @@
             <button class="btn btn-primary btn-sm" onclick="abrirFormVehiculo()"><i class="fas fa-plus"></i> Registrar vehículo</button>
           </div>
 
-          <!-- Form registrar/editar (oculto) -->
-          <div id="veh-form" class="card" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:14px;">
-            <div class="card-header"><div><h3 id="veh-form-titulo" style="font-size:1rem;">Registrar vehículo</h3></div></div>
+          <!-- MODAL: Registrar / editar vehículo del cliente -->
+          <div id="modal-veh-cli" class="modal-overlay" style="display:none;">
+          <div id="veh-form" class="card">
+            <div class="card-header"><div><h3 id="veh-form-titulo">Registrar vehículo</h3></div>
+              <button class="modal-close" onclick="cerrarModal('modal-veh-cli')" title="Cerrar">&times;</button>
+            </div>
             <div class="form-grid">
               <div class="field">
                 <label>Placa <span style="color:#dc2626;">*</span></label>
@@ -289,9 +296,10 @@
             </div>
             <div class="form-actions">
               <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar</button>
-              <button onclick="cerrarFormVehiculo()" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+              <button onclick="cerrarModal('modal-veh-cli')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
             </div>
           </div>
+          </div><!-- /modal-veh-cli -->
 
           <div id="veh-lista" class="list">
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
@@ -299,11 +307,12 @@
         </div>
       </div><!-- /vista-misveh -->
 
-      <!-- ══════ SUBMÓDULO: Nueva cita ══════ -->
-      <div id="vista-cita" class="vista" style="display:none;">
-        <div id="form-cita" class="card" style="margin-bottom:18px;">
+      <!-- ══════ MODAL: Nueva cita ══════ -->
+      <div id="modal-cita" class="modal-overlay" style="display:none;">
+        <div id="form-cita" class="card">
           <div class="card-header">
             <div><h3>Agendar nueva cita</h3><p>Describe el servicio que necesitas</p></div>
+            <button class="modal-close" onclick="cerrarModal('modal-cita')" title="Cerrar">&times;</button>
           </div>
           <div class="form-grid">
             <div class="field">
@@ -342,9 +351,11 @@
                 <p style="color:#94a3b8;font-size:0.85rem;">Cargando servicios...</p>
               </div>
             </div>
-            <div class="field">
-              <label>Fecha estimada de atención</label>
-              <input id="cita-fecha" type="date">
+            <div class="field" style="grid-column:1/-1;">
+              <label>Fecha de la cita <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(los días en rojo no están disponibles)</span></label>
+              <div id="cita-cal" style="border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fff;max-width:420px;"></div>
+              <input id="cita-fecha" type="hidden">
+              <p id="cita-fecha-label" style="font-size:0.83rem;color:#64748b;margin-top:7px;">Ningún día seleccionado.</p>
             </div>
             <div class="field" style="grid-column:1/-1;">
               <label>Nota adicional <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
@@ -353,10 +364,10 @@
           </div>
           <div class="form-actions">
             <button id="btn-guardar-cita" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Confirmar cita</button>
-            <button onclick="mostrarVista('panel')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+            <button onclick="cerrarModal('modal-cita')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
           </div>
         </div>
-      </div><!-- /vista-cita -->
+      </div><!-- /modal-cita -->
 
     </div><!-- /vista-cliente -->
 
@@ -366,6 +377,7 @@
 <script src="api.js"></script>
 <script src="script.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/calendario.js"></script>
 <script src="js/cliente.js"></script>
 </body>
 </html>

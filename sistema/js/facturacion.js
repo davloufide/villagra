@@ -195,35 +195,41 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('fac-pendientes').textContent = pendientes.length;
       document.getElementById('fac-ticket').textContent    = money(Math.round(ticket));
 
-      const tbody = document.getElementById('fac-historial');
-      tbody.innerHTML = lista.length
-        ? lista.map(f => {
-            const cli = f.mantenimientos?.vehiculos?.clientes?.usuarios?.nombre ?? '-';
-            const veh = f.mantenimientos?.vehiculos?.placa ?? '-';
-            const pagar = f.estado === 'pendiente'
-              ? `<button class="btn btn-success btn-sm" onclick="marcarPagada(${f.id_factura})"><i class="fas fa-check"></i> Cobrar</button>`
-              : '';
-            return `
-              <tr>
-                <td><strong>${f.numero_orden ?? '#' + f.id_factura}</strong></td>
-                <td>${cli}</td>
-                <td>${veh}</td>
-                <td style="font-size:0.82rem;color:#64748b;">${new Date(f.fecha_emision).toLocaleDateString('es-CR')}</td>
-                <td style="font-weight:700;">${money(f.total)}</td>
-                <td>${tagEstado(f.estado)}</td>
-                <td>
-                  <div style="display:flex;gap:5px;">
-                    <button class="btn btn-outline btn-sm" onclick="descargarPDF(${f.id_factura})"><i class="fas fa-file-pdf"></i> PDF</button>
-                    ${pagar}
-                  </div>
-                </td>
-              </tr>`;
-          }).join('')
-        : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">Sin facturas emitidas</td></tr>';
+      pagFacturas.set(lista);
     } catch (e) {
       toast('Error cargando historial: ' + e.message, 'error');
     }
   }
+
+  function renderHistorial(lista) {
+    const tbody = document.getElementById('fac-historial');
+    tbody.innerHTML = lista.length
+      ? lista.map(f => {
+          const cli = f.mantenimientos?.vehiculos?.clientes?.usuarios?.nombre ?? '-';
+          const veh = f.mantenimientos?.vehiculos?.placa ?? '-';
+          const pagar = f.estado === 'pendiente'
+            ? `<button class="btn btn-success btn-sm" onclick="marcarPagada(${f.id_factura})"><i class="fas fa-check"></i> Cobrar</button>`
+            : '';
+          return `
+            <tr>
+              <td><strong>${f.numero_orden ?? '#' + f.id_factura}</strong></td>
+              <td>${cli}</td>
+              <td>${veh}</td>
+              <td style="font-size:0.82rem;color:#64748b;">${new Date(f.fecha_emision).toLocaleDateString('es-CR')}</td>
+              <td style="font-weight:700;">${money(f.total)}</td>
+              <td>${tagEstado(f.estado)}</td>
+              <td>
+                <div style="display:flex;gap:5px;">
+                  <button class="btn btn-outline btn-sm" onclick="descargarPDF(${f.id_factura})"><i class="fas fa-file-pdf"></i> PDF</button>
+                  ${pagar}
+                </div>
+              </td>
+            </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">Sin facturas emitidas</td></tr>';
+  }
+
+  const pagFacturas = crearPaginador('pag-facturas', renderHistorial, 5);
 
   window.descargarPDF = (id) => descargarFacturaPDF(id);
 

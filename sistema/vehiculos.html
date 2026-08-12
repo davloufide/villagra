@@ -104,13 +104,15 @@
             </tbody>
           </table>
         </div>
+        <div id="pag-vehiculos" class="paginador" style="display:none;"></div>
       </div>
 
-      <!-- Detalle / historial -->
-      <div id="v-detalle" class="card" style="display:none;margin-top:18px;">
+      <!-- MODAL: Detalle / historial del vehículo -->
+      <div id="modal-veh-detalle" class="modal-overlay" style="display:none;">
+      <div id="v-detalle" class="card">
         <div class="card-header">
           <div><h3 id="vd-titulo">-</h3><p id="vd-sub">-</p></div>
-          <button onclick="cerrarDetalleVeh()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+          <button class="modal-close" onclick="cerrarModal('modal-veh-detalle')" title="Cerrar">&times;</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -119,14 +121,16 @@
           </table>
         </div>
       </div>
+      </div><!-- /modal-veh-detalle -->
 
     </div><!-- /vista-lista -->
 
-    <!-- ══════════ SUBMÓDULO: Registrar vehículo ══════════ -->
-    <div id="vista-registrar" class="vista" style="display:none;">
-      <div id="form-vehiculo" class="card" style="margin-bottom:18px;">
+    <!-- ══════════ MODAL: Registrar vehículo ══════════ -->
+    <div id="modal-vehiculo" class="modal-overlay" style="display:none;">
+      <div id="form-vehiculo" class="card">
         <div class="card-header">
           <div><h3 id="v-form-titulo">Registrar vehículo</h3><p>Asigna un vehículo a un cliente</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-vehiculo')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field">
@@ -148,10 +152,10 @@
         </div>
         <div class="form-actions">
           <button id="btn-guardar-vehiculo" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar vehículo</button>
-          <button onclick="mostrarVista('lista')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          <button onclick="cerrarModal('modal-vehiculo')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
       </div>
-    </div><!-- /vista-registrar -->
+    </div><!-- /modal-vehiculo -->
 
   </main>
 </div>

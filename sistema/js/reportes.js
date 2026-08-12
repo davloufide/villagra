@@ -45,31 +45,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ── RPS-004: mantenimientos completados por mecánico ──────
-  async function cargarMantPorMecanico() {
+  let mantMecFull = [];   // lista completa (para ranking global y escala de barras)
+  let mantMecMax  = 1;
+
+  function renderMantMec(items) {
     const tbody = document.getElementById('rep-mant-mecanico');
     if (!tbody) return;
-    try {
-      const lista = await reportes.mantenimientosPorMecanico();
-      R.mantMec = lista;
-      if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">Aún no hay mecánicos registrados</td></tr>';
-        return;
-      }
-      const max = Math.max(...lista.map(m => m.completados), 1);
-      tbody.innerHTML = lista.map((m, i) => `
+    if (!mantMecFull.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">Aún no hay mecánicos registrados</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(m => {
+      const i = mantMecFull.indexOf(m);   // posición global (no la de la página)
+      return `
         <tr>
           <td><span style="width:24px;height:24px;background:${i === 0 && m.completados > 0 ? '#fef3c7' : '#f1f5f9'};color:${i === 0 && m.completados > 0 ? '#b45309' : '#475569'};border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;">${i + 1}</span></td>
           <td><strong style="font-size:0.88rem;">${m.nombre}</strong></td>
           <td style="text-align:right;">
             <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
               <div style="width:120px;height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;">
-                <div style="height:100%;width:${(m.completados / max * 100).toFixed(0)}%;background:#2563eb;border-radius:99px;"></div>
+                <div style="height:100%;width:${(m.completados / mantMecMax * 100).toFixed(0)}%;background:#2563eb;border-radius:99px;"></div>
               </div>
               <span class="tag ${m.completados > 0 ? 'success' : 'neutral'}" style="min-width:34px;text-align:center;">${m.completados}</span>
             </div>
           </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
+  }
+
+  const pagMantMec = crearPaginador('pag-mant-mecanico', renderMantMec, 5);
+
+  async function cargarMantPorMecanico() {
+    const tbody = document.getElementById('rep-mant-mecanico');
+    if (!tbody) return;
+    try {
+      const lista = await reportes.mantenimientosPorMecanico();
+      R.mantMec = lista;
+      mantMecFull = lista;
+      mantMecMax  = Math.max(...lista.map(m => m.completados), 1);
+      pagMantMec.set(lista);
     } catch (e) {
+      mantMecFull = [];
       tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:24px;">No se pudo cargar</td></tr>';
       console.error('[Reportes mant/mecánico]', e);
     }

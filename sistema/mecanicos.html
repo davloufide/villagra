@@ -31,7 +31,8 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Mis mantenimientos" data-sub="Trabajos asignados y gestión de servicios" onclick="mostrarVista('lista');return false;"><i class="fas fa-list-check"></i> Mis mantenimientos</a>
-          <a href="#" class="subitem" data-vista="nuevo" data-titulo="Nuevo mantenimiento" data-sub="Cliente, placa y las tareas que vas a realizar" onclick="mostrarVista('nuevo');return false;"><i class="fas fa-plus"></i> Nuevo mantenimiento</a>
+          <a href="#" class="subitem" onclick="abrirModal('modal-nuevo-mec');return false;"><i class="fas fa-plus"></i> Nuevo mantenimiento</a>
+          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Mis vacaciones" data-sub="Solicita días libres y consulta el estado" onclick="mostrarVista('vacaciones');cargarMisVacaciones();return false;"><i class="fas fa-umbrella-beach"></i> Mis vacaciones</a>
         </div>
       </div>
       <a href="inventario.html" class="admin-only"><i class="fas fa-boxes-stacked"></i> Inventario</a>
@@ -61,7 +62,7 @@
         <p id="modulo-sub">Trabajos asignados, registro y gestión de servicios</p>
       </div>
       <div class="top-actions">
-        <button class="btn btn-primary btn-sm" onclick="mostrarVista('nuevo')"><i class="fas fa-plus"></i> Nuevo mantenimiento</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-nuevo-mec')"><i class="fas fa-plus"></i> Nuevo mantenimiento</button>
       </div>
     </div>
 
@@ -90,6 +91,17 @@
         </div>
       </section>
 
+      <!-- Solicitudes de cita disponibles (bolsa) -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header">
+          <div><h3>Solicitudes de cita disponibles</h3><p>Citas sin asignar · "Tomar" para encargarte</p></div>
+          <button class="btn btn-outline btn-sm" onclick="cargarSolicitudesMec()"><i class="fas fa-rotate"></i> Actualizar</button>
+        </div>
+        <div class="list" id="mec-solicitudes">
+          <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+        </div>
+      </div>
+
       <!-- Lista de mantenimientos -->
       <div class="card" style="margin-bottom:18px;">
         <div class="card-header">
@@ -98,18 +110,21 @@
         <div class="list" id="mec-lista">
           <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
         </div>
+        <div id="pag-mec-lista" class="paginador" style="display:none;"></div>
       </div>
 
-      <!-- Panel de gestión (OPE-004) -->
-      <div id="mec-panel" class="card" style="display:none;">
+      <!-- MODAL: Panel de gestión (OPE-004) -->
+      <div id="modal-mec-panel" class="modal-overlay" style="display:none;">
+      <div id="mec-panel" class="card">
         <div class="card-header">
           <div>
             <h3 id="mec-p-titulo">Gestionar mantenimiento</h3>
             <p id="mec-p-sub" style="color:#64748b;font-size:0.85rem;">-</p>
           </div>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;">
             <button onclick="abrirModalRepuestos()" class="btn btn-primary btn-sm"><i class="fas fa-boxes-stacked"></i> Solicitar repuesto</button>
-            <button onclick="cerrarPanelMec()" class="btn btn-outline btn-sm"><i class="fas fa-xmark"></i> Cerrar</button>
+            <button onclick="rechazarCitaMec()" class="btn btn-outline btn-sm" title="Devolver la cita a pendientes"><i class="fas fa-xmark" style="color:#dc2626;"></i> Rechazar cita</button>
+            <button class="modal-close" onclick="cerrarModal('modal-mec-panel')" title="Cerrar">&times;</button>
           </div>
         </div>
 
@@ -148,14 +163,54 @@
           </div>
         </div>
       </div>
+      </div><!-- /modal-mec-panel -->
 
     </div><!-- /vista-lista -->
 
-    <!-- ══════════ SUBMÓDULO: Nuevo mantenimiento (OPE-002) ══════════ -->
-    <div id="vista-nuevo" class="vista" style="display:none;">
-      <div id="form-nuevo-mec" class="card" style="margin-bottom:18px;">
+    <!-- ══════════ SUBMÓDULO: Mis vacaciones ══════════ -->
+    <div id="vista-vacaciones" class="vista" style="display:none;">
+      <section class="grid kpi">
+        <div class="card kpi-card kpi-blue">
+          <div class="kpi-icon"><i class="fas fa-umbrella-beach"></i></div>
+          <h3>Días disponibles</h3>
+          <div class="number" id="mvac-saldo">-</div>
+          <p class="sub">Saldo de vacaciones</p>
+        </div>
+      </section>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Solicitar vacaciones</h3><p>Elige el rango de fechas; los días hábiles se calculan solos</p></div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Desde <span style="color:#dc2626;">*</span></label><input id="mvac-inicio" type="date" onchange="autoCalcularDiasVac()"></div>
+            <div class="field"><label>Hasta <span style="color:#dc2626;">*</span></label><input id="mvac-fin" type="date" onchange="autoCalcularDiasVac()"></div>
+            <div class="field"><label>Días hábiles <span style="color:#dc2626;">*</span></label><input id="mvac-dias" type="number" min="1" placeholder="Ej: 5"></div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-solicitar-vac" class="btn btn-success" style="flex:1;"><i class="fas fa-paper-plane"></i> Enviar solicitud</button>
+          </div>
+          <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">El administrador revisa la solicitud. Los días se descuentan del saldo cuando la aprueba.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Mis solicitudes</h3><p>Estado de tus pedidos de vacaciones</p></div>
+          </div>
+          <div class="list" id="mvac-lista">
+            <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /vista-vacaciones -->
+
+    <!-- ══════════ MODAL: Nuevo mantenimiento (OPE-002) ══════════ -->
+    <div id="modal-nuevo-mec" class="modal-overlay" style="display:none;">
+      <div id="form-nuevo-mec" class="card">
         <div class="card-header">
           <div><h3>Nuevo mantenimiento</h3><p>Cliente, placa y las tareas que vas a realizar</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-nuevo-mec')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field">
@@ -187,10 +242,10 @@
         </div>
         <div class="form-actions">
           <button id="btn-crear-mant-mec" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Crear mantenimiento</button>
-          <button onclick="mostrarVista('lista')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          <button onclick="cerrarModal('modal-nuevo-mec')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
       </div>
-    </div><!-- /vista-nuevo -->
+    </div><!-- /modal-nuevo-mec -->
 
     <!-- Modal: Solicitar repuesto (GM-006) — fuera de las vistas -->
     <div id="rep-modal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9998;align-items:center;justify-content:center;padding:20px;">

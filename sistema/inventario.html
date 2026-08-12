@@ -32,9 +32,9 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Inventario actual" data-sub="Control de productos, stock y alertas de reposición" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Inventario</a>
-          <a href="#" class="subitem" data-vista="producto" data-titulo="Registrar producto" data-sub="Agrega un producto al inventario" onclick="mostrarVista('producto');return false;"><i class="fas fa-plus"></i> Registrar producto</a>
-          <a href="#" class="subitem" data-vista="stock" data-titulo="Ajustar stock" data-sub="Aumentar, disminuir o corregir el stock de un producto" onclick="irAjustarStock();return false;"><i class="fas fa-plus-minus"></i> Ajustar stock</a>
-          <a href="#" class="subitem" data-vista="categorias" data-titulo="Categorías" data-sub="Crea y elimina las categorías de productos" onclick="mostrarVista('categorias');return false;"><i class="fas fa-tags"></i> Categorías</a>
+          <a href="#" class="subitem" onclick="abrirModal('modal-producto');return false;"><i class="fas fa-plus"></i> Registrar producto</a>
+          <a href="#" class="subitem" onclick="irAjustarStock();return false;"><i class="fas fa-plus-minus"></i> Ajustar stock</a>
+          <a href="#" class="subitem" onclick="abrirModal('modal-categorias');return false;"><i class="fas fa-tags"></i> Categorías</a>
         </div>
       </div>
       <a href="administrador.html"><i class="fas fa-shield-halved"></i> Administrador</a>
@@ -64,7 +64,7 @@
       <div class="top-actions">
         <button class="btn btn-outline btn-sm" onclick="exportarInventarioPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
         <button class="btn btn-outline btn-sm" onclick="irAjustarStock()"><i class="fas fa-plus-minus"></i> Ajustar stock</button>
-        <button class="btn btn-primary btn-sm" onclick="mostrarVista('producto')"><i class="fas fa-plus"></i> Producto nuevo</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-producto')"><i class="fas fa-plus"></i> Producto nuevo</button>
       </div>
     </div>
 
@@ -113,41 +113,51 @@
             </tbody>
           </table>
         </div>
+        <div id="pag-inventario" class="paginador" style="display:none;"></div>
       </div>
 
     </div><!-- /vista-lista -->
 
-    <!-- ══════════ SUBMÓDULO: Registrar producto ══════════ -->
-    <div id="vista-producto" class="vista" style="display:none;">
-      <div id="form-producto" class="card" style="margin-bottom:18px;">
+    <!-- ══════════ MODAL: Registrar producto ══════════ -->
+    <div id="modal-producto" class="modal-overlay" style="display:none;">
+      <div id="form-producto" class="card">
         <div class="card-header">
           <div><h3>Registrar producto</h3><p>Agrega un producto al inventario</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-producto')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field"><label>Nombre <span style="color:#dc2626;">*</span></label><input id="inv-nombre" placeholder="Filtro de aceite"></div>
           <div class="field"><label>Código <span style="color:#dc2626;">*</span></label><input id="inv-codigo" placeholder="FA-001"></div>
           <div class="field"><label>Marca</label><input id="inv-marca" placeholder="Castrol, Bosch..."></div>
           <div class="field">
-            <label>Categoría <button type="button" onclick="mostrarVista('categorias')" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">gestionar categorías</button></label>
+            <label>Categoría <button type="button" onclick="abrirModal('modal-categorias')" style="border:none;background:transparent;color:#2563eb;font-weight:600;font-size:0.76rem;cursor:pointer;padding:0;">gestionar categorías</button></label>
             <select id="inv-categoria"><option value="">Seleccionar</option></select>
           </div>
           <div class="field"><label>Cantidad en stock</label><input id="inv-stock" type="number" placeholder="10"></div>
           <div class="field"><label>Stock mínimo</label><input id="inv-minimo" type="number" placeholder="5"></div>
           <div class="field"><label>Costo unitario</label><input id="inv-costo" placeholder="5000"></div>
-          <div class="field"><label>Precio de venta</label><input id="inv-precio" placeholder="7500"></div>
+          <div class="field"><label>Precio de venta <span style="color:#94a3b8;font-weight:400;">(sin IVA)</span></label><input id="inv-precio" placeholder="7500" oninput="calcularIVAProducto()"></div>
+          <div class="field" style="grid-column:1/-1;">
+            <div id="inv-iva-box" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 15px;font-size:0.87rem;">
+              <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:#475569;">Precio base</span><span id="inv-iva-base">₡0</span></div>
+              <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:#475569;">IVA (13%)</span><span id="inv-iva-monto" style="color:#2563eb;font-weight:600;">₡0</span></div>
+              <div style="display:flex;justify-content:space-between;border-top:1px solid #bfdbfe;margin-top:5px;padding-top:6px;font-weight:800;color:#0f172a;"><span>Precio de venta final (con IVA)</span><span id="inv-iva-final">₡0</span></div>
+            </div>
+          </div>
         </div>
         <div class="form-actions">
           <button id="btn-guardar-producto" class="btn btn-success" style="flex:1;"><i class="fas fa-floppy-disk"></i> Guardar producto</button>
-          <button onclick="mostrarVista('lista')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          <button onclick="cerrarModal('modal-producto')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
       </div>
-    </div><!-- /vista-producto -->
+    </div><!-- /modal-producto -->
 
-    <!-- ══════════ SUBMÓDULO: Ajustar stock ══════════ -->
-    <div id="vista-stock" class="vista" style="display:none;">
-      <div id="form-stock" class="card" style="margin-bottom:18px;">
+    <!-- ══════════ MODAL: Ajustar stock ══════════ -->
+    <div id="modal-stock" class="modal-overlay" style="display:none;">
+      <div id="form-stock" class="card">
         <div class="card-header">
           <div><h3>Ajustar stock</h3><p>Suma (entrada) o resta (salida/consumo) unidades de un producto</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-stock')" title="Cerrar">&times;</button>
         </div>
         <div class="form-grid">
           <div class="field" style="grid-column:1/-1;">
@@ -167,17 +177,18 @@
           <button id="btn-aumentar-stock" class="btn btn-success" style="flex:1;"><i class="fas fa-arrow-up"></i> Aumentar (entrada)</button>
           <button id="btn-disminuir-stock" class="btn btn-warning" style="flex:1;"><i class="fas fa-arrow-down"></i> Disminuir (salida)</button>
           <button id="btn-corregir-stock" class="btn btn-secondary" style="flex:1;"><i class="fas fa-pen"></i> Corregir (valor exacto)</button>
-          <button onclick="mostrarVista('lista')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
+          <button onclick="cerrarModal('modal-stock')" class="btn btn-outline"><i class="fas fa-xmark"></i> Cancelar</button>
         </div>
         <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;"><strong>Corregir</strong>: fija el stock exactamente a la cantidad ingresada (para conteos físicos, errores o devoluciones).</p>
       </div>
-    </div><!-- /vista-stock -->
+    </div><!-- /modal-stock -->
 
-    <!-- ══════════ SUBMÓDULO: Categorías ══════════ -->
-    <div id="vista-categorias" class="vista" style="display:none;">
-      <div class="card" style="max-width:560px;">
+    <!-- ══════════ MODAL: Categorías ══════════ -->
+    <div id="modal-categorias" class="modal-overlay" style="display:none;">
+      <div class="card">
         <div class="card-header">
           <div><h3>Categorías</h3><p>Crea nuevas categorías o elimina las que no uses</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-categorias')" title="Cerrar">&times;</button>
         </div>
         <div class="field" style="margin-bottom:16px;">
           <label>Nueva categoría</label>

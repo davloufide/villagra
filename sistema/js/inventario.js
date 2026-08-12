@@ -3,6 +3,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!_rol) return;
 
   let todos = [];
+  const IVA_RATE = 0.13;
+
+  // Desglose de IVA en vivo al registrar un producto: se ingresa el precio
+  // SIN IVA y se guarda el precio de venta CON IVA (base × 1.13).
+  window.calcularIVAProducto = () => {
+    const base = parseFloat((document.getElementById('inv-precio').value || '').replace(/[^\d.]/g, '')) || 0;
+    const box  = document.getElementById('inv-iva-box');
+    if (!box) return;
+    if (base <= 0) { box.style.display = 'none'; return; }
+    const money = n => '₡' + Math.round(n).toLocaleString('es');
+    box.style.display = 'block';
+    document.getElementById('inv-iva-base').textContent  = money(base);
+    document.getElementById('inv-iva-monto').textContent = money(base * IVA_RATE);
+    document.getElementById('inv-iva-final').textContent = money(base * (1 + IVA_RATE));
+  };
 
   function nivelStock(p) {
     if (p.cantidad_stock < p.stock_minimo) return 'danger';
@@ -24,10 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin productos</td></tr>';
   }
 
+  const pagInventario = crearPaginador('pag-inventario', renderTabla, 5);
+
   async function cargarProductos() {
     try {
       todos = await inventario.lista();
-      renderTabla(todos);
+      pagInventario.set(todos);
 
       const bajos = todos.filter(p => p.cantidad_stock < p.stock_minimo);
       const valor = todos.reduce((s, p) => s + (p.cantidad_stock * Number(p.costo_unitario ?? 0)), 0);
@@ -51,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.filtrarProductos = (q) => {
     const l = q.toLowerCase();
-    renderTabla(todos.filter(p =>
+    pagInventario.set(todos.filter(p =>
       (p.nombre ?? '').toLowerCase().includes(l) ||
       (p.codigo ?? '').toLowerCase().includes(l) ||
       (p.marca ?? '').toLowerCase().includes(l)
@@ -122,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       todos.map(p => `<option value="${p.id_producto}">${p.nombre} (${p.codigo}) · ${p.cantidad_stock} uds.</option>`).join('');
     document.getElementById('stock-cantidad').value = '';
     document.getElementById('stock-actual').value   = '';
-    mostrarVista('stock');
+    abrirModal('modal-stock');
   };
 
   // Mostrar el stock actual del producto seleccionado
@@ -145,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? await inventario.entrada(idProd, cantidad)
         : await inventario.salida(idProd, cantidad);
       toast(`Stock actualizado: ahora hay ${actualizado.cantidad_stock} uds.`);
-      mostrarVista('lista');
+      cerrarModal('modal-stock');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');
@@ -169,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const actualizado = await inventario.ajuste(idProd, cantidad);
       toast(`Stock corregido: ahora hay ${actualizado.cantidad_stock} uds.`);
-      mostrarVista('lista');
+      cerrarModal('modal-stock');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');
@@ -291,8 +308,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const id_cat = document.getElementById('inv-categoria').value;
     const stock  = parseInt(document.getElementById('inv-stock').value) || 0;
     const minimo = parseInt(document.getElementById('inv-minimo').value) || 5;
-    const costo  = parseFloat(document.getElementById('inv-costo').value.replace(/[^\d.]/g, '')) || 0;
-    const precio = parseFloat(document.getElementById('inv-precio').value.replace(/[^\d.]/g, '')) || 0;
+    const costo      = parseFloat(document.getElementById('inv-costo').value.replace(/[^\d.]/g, '')) || 0;
+    const precioBase = parseFloat(document.getElementById('inv-precio').value.replace(/[^\d.]/g, '')) || 0;
+    // Se guarda el precio de venta CON IVA incluido (13%).
+    const precioConIVA = Math.round(precioBase * (1 + IVA_RATE));
 
     if (!nombre || !codigo) { toast('Nombre y código son requeridos', 'error'); return; }
 
@@ -300,13 +319,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await inventario.crear({
         nombre, codigo, marca: marca || null, id_categoria: id_cat || null,
-        cantidad_stock: stock, stock_minimo: minimo, costo_unitario: costo, precio_venta: precio
+        cantidad_stock: stock, stock_minimo: minimo, costo_unitario: costo, precio_venta: precioConIVA
       });
       toast('Producto guardado correctamente');
       ['inv-nombre','inv-codigo','inv-marca','inv-stock','inv-minimo','inv-costo','inv-precio'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
       });
-      mostrarVista('lista');
+      document.getElementById('inv-iva-box').style.display = 'none';
+      cerrarModal('modal-producto');
       await cargarProductos();
     } catch (e) {
       toast(e.message, 'error');
