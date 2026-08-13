@@ -34,9 +34,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             <td>${p.codigo}</td>
             <td>${p.marca ?? '-'}</td>
             <td><span class="tag ${nivelStock(p)}">${p.cantidad_stock} uds.</span></td>
+            <td style="text-align:center;color:#64748b;">${p.stock_minimo ?? '-'}</td>
             <td>₡${Number(p.costo_unitario ?? 0).toLocaleString('es')}</td>
+            <td style="text-align:right;"><button class="btn btn-outline btn-sm" onclick="editarProducto(${p.id_producto})" title="Editar / configurar mínimo"><i class="fas fa-pen"></i></button></td>
           </tr>`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin productos</td></tr>';
+      : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">Sin productos</td></tr>';
   }
 
   const pagInventario = crearPaginador('pag-inventario', renderTabla, 5);
@@ -334,6 +336,154 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnLoading(btn, false);
     }
   });
+
+  // ══════════════════════════════════════════════════════
+  // EDITAR PRODUCTO (incluye configurar el umbral mínimo de stock)
+  // ══════════════════════════════════════════════════════
+  window.editarProducto = async (id) => {
+    const p = todos.find(x => x.id_producto === id);
+    if (!p) return;
+    document.getElementById('edit-prod-id').value     = id;
+    document.getElementById('edit-prod-nombre').value = p.nombre ?? '';
+    document.getElementById('edit-prod-marca').value  = p.marca ?? '';
+    document.getElementById('edit-prod-minimo').value = p.stock_minimo ?? 0;
+    try {
+      const cats = await inventario.categorias();
+      const sel = document.getElementById('edit-prod-categoria');
+      sel.innerHTML = '<option value="">Sin categoría</option>' +
+        cats.map(c => `<option value="${c.id_categoria}">${c.nombre}</option>`).join('');
+      sel.value = p.id_categoria ?? '';
+    } catch {}
+    abrirModal('modal-editar-producto');
+  };
+
+  document.getElementById('btn-editar-producto').addEventListener('click', async () => {
+    const btn    = document.getElementById('btn-editar-producto');
+    const id     = document.getElementById('edit-prod-id').value;
+    const nombre = document.getElementById('edit-prod-nombre').value.trim();
+    const marca  = document.getElementById('edit-prod-marca').value.trim();
+    const id_cat = document.getElementById('edit-prod-categoria').value;
+    const minimo = parseInt(document.getElementById('edit-prod-minimo').value);
+    if (!nombre) { toast('El nombre es requerido', 'error'); return; }
+    if (isNaN(minimo) || minimo < 0) { toast('El stock mínimo debe ser 0 o mayor', 'error'); return; }
+
+    btnLoading(btn, true);
+    try {
+      await inventario.actualizar(id, { nombre, marca: marca || null, id_categoria: id_cat || null, stock_minimo: minimo });
+      toast('Producto actualizado');
+      cerrarModal('modal-editar-producto');
+      await cargarProductos();
+      const vr = document.getElementById('vista-reposicion');
+      if (vr && vr.style.display !== 'none') cargarReposicion();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btnLoading(btn, false);
+    }
+  });
+
+  // ══════════════════════════════════════════════════════
+  // REPOSICIÓN: reporte de productos en/bajo el mínimo (IVO — anticipar compras)
+  // ══════════════════════════════════════════════════════
+  // Compra sugerida: llevar el stock hasta el doble del mínimo (buffer).
+  const sugeridoCompra = p => Math.max(0, (p.stock_minimo * 2) - p.cantidad_stock);
+  const productosAReponer = () => todos
+    .filter(p => p.cantidad_stock <= p.stock_minimo)
+    .sort((a, b) => (a.cantidad_stock - a.stock_minimo) - (b.cantidad_stock - b.stock_minimo));
+
+  window.cargarReposicion = () => {
+    const lista = productosAReponer();
+    const totalUnidades = lista.reduce((s, p) => s + sugeridoCompra(p), 0);
+    const costo = lista.reduce((s, p) => s + sugeridoCompra(p) * Number(p.costo_unitario ?? 0), 0);
+
+    document.getElementById('rep-inv-count').textContent    = lista.length;
+    document.getElementById('rep-inv-unidades').textContent = totalUnidades;
+    document.getElementById('rep-inv-costo').textContent    = '₡' + Math.round(costo).toLocaleString('es');
+
+    const tbody = document.getElementById('rep-inv-tbody');
+    tbody.innerHTML = lista.length
+      ? lista.map(p => {
+          const critico = p.cantidad_stock < p.stock_minimo;
+          return `
+            <tr>
+              <td><strong>${p.nombre}</strong><br><small style="color:#94a3b8;">${p.codigo}</small></td>
+              <td>${p.categorias?.nombre ?? '-'}</td>
+              <td style="text-align:center;">${p.cantidad_stock}</td>
+              <td style="text-align:center;">${p.stock_minimo}</td>
+              <td style="text-align:center;"><span class="tag ${critico ? 'danger' : 'warning'}">${critico ? 'Crítico' : 'En el mínimo'}</span></td>
+              <td style="text-align:center;font-weight:800;color:#2563eb;">${sugeridoCompra(p)} uds.</td>
+            </tr>`;
+        }).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;"><i class="fas fa-check-circle"></i> Todo el stock está sobre el mínimo. No hay nada que reponer.</td></tr>';
+  };
+
+  window.exportarReposicionPDF = () => {
+    const money = n => '₡' + Math.round(Number(n || 0)).toLocaleString('es');
+    const lista = productosAReponer();
+    if (!lista.length) { toast('No hay productos para reponer', 'error'); return; }
+    const totalUnidades = lista.reduce((s, p) => s + sugeridoCompra(p), 0);
+    const costo = lista.reduce((s, p) => s + sugeridoCompra(p) * Number(p.costo_unitario ?? 0), 0);
+
+    const filas = lista.map(p => `
+      <tr>
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.codigo ?? '-'}</td>
+        <td>${p.categorias?.nombre ?? '-'}</td>
+        <td style="text-align:center;">${p.cantidad_stock}</td>
+        <td style="text-align:center;">${p.stock_minimo}</td>
+        <td style="text-align:center;font-weight:700;">${sugeridoCompra(p)}</td>
+        <td style="text-align:right;">${money(sugeridoCompra(p) * Number(p.costo_unitario ?? 0))}</td>
+      </tr>`).join('');
+
+    const html = `
+      <html><head><meta charset="utf-8"><title>Lista de reposición</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;max-width:820px;margin:26px auto;padding:0 20px;}
+        .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2563eb;padding-bottom:16px;margin-bottom:18px;}
+        .brand{font-size:1.3rem;font-weight:800;color:#1e3a8a;}
+        .muted{color:#64748b;font-size:0.85rem;}
+        .kpis{display:flex;gap:12px;margin-bottom:16px;}
+        .kpi{flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;}
+        .kpi .lbl{color:#64748b;font-size:0.78rem;text-transform:uppercase;letter-spacing:.4px;}
+        .kpi .val{font-size:1.3rem;font-weight:800;margin-top:3px;}
+        table{width:100%;border-collapse:collapse;margin-top:6px;}
+        th,td{padding:8px 9px;border-bottom:1px solid #e2e8f0;font-size:0.84rem;}
+        th{background:#f8fafc;text-align:left;color:#475569;}
+        tfoot td{font-weight:800;border-top:2px solid #0f172a;}
+      </style></head>
+      <body>
+        <div class="head">
+          <div>
+            <div class="brand">Lubricentro Villagra</div>
+            <div class="muted">Moravia, San Vicente, San José, Costa Rica<br>Tel. 8413-2121 · lubricentrovillagra@gmail.com</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.35rem;font-weight:900;">LISTA DE REPOSICIÓN</div>
+            <div class="muted">Generado: ${new Date().toLocaleString('es-CR')}</div>
+          </div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="lbl">Productos a reponer</div><div class="val">${lista.length}</div></div>
+          <div class="kpi"><div class="lbl">Unidades sugeridas</div><div class="val">${totalUnidades}</div></div>
+          <div class="kpi"><div class="lbl">Costo estimado</div><div class="val">${money(costo)}</div></div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Producto</th><th>Código</th><th>Categoría</th>
+            <th style="text-align:center;">Stock</th><th style="text-align:center;">Mín.</th>
+            <th style="text-align:center;">Comprar</th><th style="text-align:right;">Costo est.</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+          <tfoot><tr><td colspan="6" style="text-align:right;">COSTO ESTIMADO TOTAL</td><td style="text-align:right;">${money(costo)}</td></tr></tfoot>
+        </table>
+        <p style="text-align:center;color:#94a3b8;font-size:0.8rem;margin-top:26px;">Sugerido: reponer hasta el doble del mínimo · Auto Service Pro · Lubricentro Villagra</p>
+      </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) { toast('Permite las ventanas emergentes para exportar el PDF', 'error'); return; }
+    w.document.write(html); w.document.close(); w.focus();
+    setTimeout(() => w.print(), 350);
+  };
 
   await Promise.all([cargarProductos(), cargarCategorias()]);
 });
