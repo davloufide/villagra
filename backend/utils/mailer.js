@@ -11,7 +11,12 @@ if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port,
     secure: port === 465, // 465 = SSL; 587 = STARTTLS
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    // Fallar rápido si el puerto SMTP está bloqueado (p. ej. plan free de Render
+    // bloquea 25/465/587). Así /recuperar cae a modo demo en vez de colgarse.
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 10000
   });
   console.log('[Mailer] SMTP configurado — los correos se enviarán por', process.env.SMTP_HOST || 'smtp.gmail.com');
 } else {
