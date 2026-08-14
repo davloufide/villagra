@@ -189,19 +189,7 @@
         <button class="auth-submit" id="btn-login" onclick="hacerLogin()">
           <i class="fas fa-right-to-bracket" style="margin-right:8px;"></i>Ingresar al sistema
         </button>
-        <div class="auth-divider">acceso rápido (demo)</div>
-        <div class="role-selector">
-          <div class="role-opt" onclick="demoLogin('admin@villagra.cr','Admin1234!')">
-            <i class="fas fa-shield-halved"></i><span>Admin</span>
-          </div>
-          <div class="role-opt" onclick="demoLogin('kevin@villagra.cr','Mecanico1!')">
-            <i class="fas fa-user-gear"></i><span>Mecánico</span>
-          </div>
-          <div class="role-opt" onclick="demoLogin('maria@cliente.cr','Cliente1!')">
-            <i class="fas fa-car"></i><span>Cliente</span>
-          </div>
-        </div>
-        <a href="landing.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+        <a href="landing.html" class="back-link" style="margin-top:22px;"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
       </div>
 
       <!-- RECUPERAR CONTRASEÑA -->
@@ -355,12 +343,6 @@
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-right-to-bracket" style="margin-right:8px;"></i>Ingresar al sistema';
       }
-    }
-
-    function demoLogin(correo, password) {
-      document.getElementById('login-correo').value = correo;
-      document.getElementById('login-password').value = password;
-      hacerLogin();
     }
 
     async function hacerRegistro() {
