@@ -19,6 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('inv-iva-final').textContent = money(base * (1 + IVA_RATE));
   };
 
+  // Abrir "Registrar producto" SIEMPRE con el form limpio y las categorías cargadas.
+  // Evita el estado a medio cargar que obligaba a refrescar el navegador (#7).
+  window.nuevoProducto = async () => {
+    ['inv-nombre','inv-codigo','inv-marca','inv-stock','inv-minimo','inv-costo','inv-precio'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const box = document.getElementById('inv-iva-box'); if (box) box.style.display = 'none';
+    try { await cargarCategorias(); } catch {}
+    abrirModal('modal-producto');
+  };
+
   function nivelStock(p) {
     if (p.cantidad_stock < p.stock_minimo) return 'danger';
     if (p.cantidad_stock <= p.stock_minimo + 2) return 'warning';
