@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       facturables.forEach(m => {
         const placa   = m.vehiculos?.placa ?? '-';
         const cliente = m.vehiculos?.clientes?.usuarios?.nombre ?? '-';
-        sel.innerHTML += `<option value="${m.id_mantenimiento}">${placa} · ${cliente}</option>`;
+        sel.innerHTML += `<option value="${m.id_mantenimiento}">#${m.id_mantenimiento} · ${placa} · ${cliente}</option>`;
       });
       document.getElementById('fac-vacio').style.display = facturables.length ? 'none' : 'block';
     } catch (e) {

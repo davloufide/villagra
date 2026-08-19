@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           return `
             <tr>
               <td>
-                <strong>${m.vehiculos?.placa ?? '-'}</strong><br>
+                <strong>${m.vehiculos?.placa ?? '-'}</strong> <small style="color:#94a3b8;">#${m.id_mantenimiento}</small><br>
                 <small style="color:#94a3b8;">${m.vehiculos?.marcas?.nombre_marca ?? ''}</small>
               </td>
               <td>${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'}</td>
@@ -325,6 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <td>${tagEstado(t.estado)}</td>
                     <td>
                       <div style="display:flex;gap:5px;">
+                        ${t.estado !== 'completada' ? `<button class="btn btn-success btn-sm" onclick="completarTareaOp(${t.id_tarea})" title="Marcar como completada"><i class="fas fa-check"></i></button>` : ''}
                         <button class="btn btn-outline btn-sm" onclick="editarTareaMant(${t.id_tarea})" title="Editar tarea"><i class="fas fa-pen"></i></button>
                         <button class="btn btn-outline btn-sm" onclick="eliminarTareaMant(${t.id_tarea})" title="Quitar tarea"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
                       </div>
@@ -346,6 +347,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.cerrarPanelTarea = () => {
     mantSeleccionado = null;
     cerrarModal('modal-op-panel');
+  };
+
+  // El admin marca una tarea como completada (cuando todas lo están, el
+  // mantenimiento pasa a "terminado" y queda disponible para facturar).
+  window.completarTareaOp = async (idTarea) => {
+    try {
+      await mantenimientos.actualizarTarea(idTarea, { estado: 'completada' });
+      toast('Tarea completada');
+      if (mantSeleccionado) verDetalleMant(mantSeleccionado);
+      cargarMantenimientos();
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   // ── Asociar repuesto al mantenimiento y descontar stock (IVO-008/009) ──
