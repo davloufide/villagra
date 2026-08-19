@@ -1,3 +1,8 @@
+// Tema claro/oscuro: aplicar lo antes posible para evitar parpadeo.
+(function () {
+  try { document.documentElement.setAttribute('data-theme', localStorage.getItem('tema') || 'dark'); } catch {}
+})();
+
 // ── Configuración ─────────────────────────────────────────
 // En producción (Render) el mismo servidor sirve frontend + API, así que se
 // usa una ruta relativa "/api". En local con Live Server (puerto 5500/5501)
@@ -214,6 +219,9 @@ function iniciarLayout(rolesPermitidos) {
     chip.title = 'Editar mi perfil';
     chip.addEventListener('click', () => abrirMiPerfil());
   }
+
+  // Botón para alternar tema claro/oscuro (definido en ui.js)
+  if (typeof montarToggleTema === 'function') montarToggleTema();
 
   return rol;
 }

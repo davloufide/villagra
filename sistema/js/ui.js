@@ -1,3 +1,31 @@
+// ── Tema claro / oscuro ───────────────────────────────────
+// El tema se aplica temprano en api.js (data-theme en <html>) leyendo
+// localStorage. Acá va el botón para alternarlo y su persistencia.
+function toggleTema() {
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const next = dark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('tema', next); } catch {}
+  actualizarBotonTema();
+}
+function actualizarBotonTema() {
+  const btn = document.getElementById('btn-tema');
+  if (!btn) return;
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  btn.innerHTML = dark ? '<i class="fas fa-sun"></i> Modo claro' : '<i class="fas fa-moon"></i> Modo oscuro';
+}
+function montarToggleTema() {
+  const footer = document.querySelector('.sidebar-footer');
+  if (!footer || document.getElementById('btn-tema')) return;
+  const btn = document.createElement('button');
+  btn.id = 'btn-tema';
+  btn.className = 'theme-toggle';
+  btn.type = 'button';
+  btn.addEventListener('click', toggleTema);
+  footer.insertBefore(btn, footer.firstChild);
+  actualizarBotonTema();
+}
+
 // ── Navegación por submódulos (menú lateral desplegable) ──
 // Compartido por todos los módulos. Cada submódulo es un <a class="subitem"
 // data-vista="X" data-titulo="..." data-sub="..."> y su contenido un
