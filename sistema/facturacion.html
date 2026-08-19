@@ -92,10 +92,16 @@
           </div>
 
           <div class="divider"></div>
-          <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
             <h3 style="font-size:1rem;">Líneas de la factura</h3>
-            <button class="btn btn-outline btn-sm" onclick="agregarLinea()"><i class="fas fa-plus"></i> Agregar línea</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="fac-add-servicio" onchange="agregarLineaServicio(this.value)" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:0.82rem;background:#f8fafc;outline:none;cursor:pointer;max-width:230px;">
+                <option value="">+ Servicio del catálogo…</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="agregarLinea()"><i class="fas fa-plus"></i> Línea manual</button>
+            </div>
           </div>
+          <p style="font-size:0.78rem;color:#94a3b8;margin:-4px 0 10px;">Al elegir un servicio se carga su nombre y su precio (sin IVA) automáticamente.</p>
           <div id="fac-lineas"></div>
 
           <div class="form-actions" style="margin-top:16px;">
@@ -133,7 +139,7 @@
 
           <div style="margin-top:14px;padding-top:14px;border-top:2px solid #e2e8f0;">
             <div style="display:flex;justify-content:space-between;font-size:0.84rem;margin-bottom:6px;">
-              <span style="color:#64748b;">Subtotal</span><span style="font-weight:600;" id="pv-subtotal">₡0</span>
+              <span style="color:#64748b;">Subtotal (sin IVA)</span><span style="font-weight:600;" id="pv-subtotal">₡0</span>
             </div>
             <div id="pv-descuento-row" style="display:none;justify-content:space-between;font-size:0.84rem;margin-bottom:6px;color:#dc2626;">
               <span id="pv-descuento-label">Descuento</span><span style="font-weight:600;" id="pv-descuento">-₡0</span>

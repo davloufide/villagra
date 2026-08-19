@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const IVA = 0.13;
   let facturables = [];   // mantenimientos terminados sin factura
   let lineas = [];        // líneas en edición [{descripcion, cantidad, precio_unitario}]
+  let serviciosCatalogo = [];   // catálogo de servicios (para precargar líneas)
 
   const money = n => '₡' + Number(n || 0).toLocaleString('es');
 
@@ -47,6 +48,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Edición de líneas ─────────────────────────────────────
   window.agregarLinea = () => { lineas.push({ descripcion: '', cantidad: 1, precio_unitario: 0 }); renderLineas(); renderPreview(mantActual()); };
+
+  // Precargar una línea desde el catálogo: carga el nombre y el precio SIN IVA
+  // automáticamente (el usuario no escribe nombre ni precio). El IVA y el total
+  // se calculan solos en el preview (subtotal → IVA 13% → total).
+  window.agregarLineaServicio = (idServ) => {
+    const s = serviciosCatalogo.find(x => String(x.id_tipo_servicio) === String(idServ));
+    if (s) {
+      lineas.push({ descripcion: s.nombre, cantidad: 1, precio_unitario: Number(s.precio_base) || 0 });
+      renderLineas();
+      renderPreview(mantActual());
+    }
+    const sel = document.getElementById('fac-add-servicio');
+    if (sel) sel.value = '';   // resetear para poder elegir el mismo servicio otra vez
+  };
+
+  async function cargarServiciosCatalogo() {
+    try {
+      serviciosCatalogo = await apiFetch('/tipos-servicio');
+      const sel = document.getElementById('fac-add-servicio');
+      if (sel) sel.innerHTML = '<option value="">+ Servicio del catálogo…</option>' +
+        serviciosCatalogo.map(s => `<option value="${s.id_tipo_servicio}">${s.nombre}${s.precio_base ? ' · ₡' + Number(s.precio_base).toLocaleString('es') : ''}</option>`).join('');
+    } catch (e) { console.error('[Factura catálogo]', e); }
+  }
   window.quitarLinea  = (i) => { lineas.splice(i, 1); renderLineas(); renderPreview(mantActual()); };
   window.editarLinea  = (i, campo, val) => {
     lineas[i][campo] = campo === 'descripcion' ? val : (parseFloat(val) || 0);
@@ -74,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <input type="number" min="1" value="${l.cantidad}" oninput="editarLinea(${i},'cantidad',this.value)">
         </div>
         <div class="field" style="margin:0;">
-          ${i === 0 ? '<label>Precio unit.</label>' : ''}
+          ${i === 0 ? '<label>Precio unit. (sin IVA)</label>' : ''}
           <input type="number" min="0" value="${l.precio_unitario}" oninput="editarLinea(${i},'precio_unitario',this.value)">
         </div>
         <button class="btn btn-outline btn-sm" onclick="quitarLinea(${i})" style="margin-bottom:1px;"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
@@ -244,5 +268,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   renderLineas();
-  await Promise.all([cargarFacturables(), cargarHistorial()]);
+  await Promise.all([cargarFacturables(), cargarHistorial(), cargarServiciosCatalogo()]);
 });
