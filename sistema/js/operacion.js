@@ -467,47 +467,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // ── Al elegir cliente, cargar SOLO sus vehículos (placas) en el select ──
+  window.cargarVehiculosCliente = async (idCliente) => {
+    const sel = document.getElementById('op-vehiculo');
+    document.getElementById('op-nuevo-placa-wrap').style.display = 'none';
+    document.getElementById('op-nuevo-marca-wrap').style.display = 'none';
+    if (!idCliente) { sel.innerHTML = '<option value="">-- Primero elige el cliente --</option>'; return; }
+    sel.innerHTML = '<option value="">Cargando...</option>';
+    try {
+      const vehs = await clientes.vehiculos(idCliente);
+      const opts = vehs.map(v => `<option value="${v.id_vehiculo}">${v.placa}${v.marcas?.nombre_marca ? ' · ' + v.marcas.nombre_marca : ''}</option>`).join('');
+      sel.innerHTML = '<option value="">-- Selecciona el vehículo --</option>' + opts +
+        '<option value="__nuevo__">+ Registrar vehículo nuevo…</option>';
+    } catch (e) {
+      sel.innerHTML = '<option value="">-- Selecciona el vehículo --</option><option value="__nuevo__">+ Registrar vehículo nuevo…</option>';
+    }
+  };
+
+  // Mostrar los campos de placa/marca solo si se va a registrar un vehículo nuevo
+  window.onOpVehiculoChange = (val) => {
+    const nuevo = val === '__nuevo__';
+    document.getElementById('op-nuevo-placa-wrap').style.display = nuevo ? '' : 'none';
+    document.getElementById('op-nuevo-marca-wrap').style.display = nuevo ? '' : 'none';
+  };
+
   // ── Nuevo mantenimiento (admin) — la navegación la maneja mostrarVista (ui.js) ──
   const btnGuardar = document.getElementById('btn-guardar-mant');
   if (btnGuardar) {
     btnGuardar.addEventListener('click', async () => {
       const id_cliente = document.getElementById('op-cliente').value;
-      const placa      = (document.getElementById('op-placa').value ?? '').trim().toUpperCase();
-      const id_marca   = document.getElementById('op-marca').value;
+      const vehSel     = document.getElementById('op-vehiculo').value;   // id_vehiculo | '__nuevo__' | ''
       const id_emp     = document.getElementById('op-mecanico').value;
       const fecha      = document.getElementById('op-fecha').value;
       const obs        = document.getElementById('op-obs').value.trim();
       const servicios  = [...document.querySelectorAll('.op-serv-check:checked')].map(c => parseInt(c.value));
 
       if (!id_cliente) { toast('Selecciona el cliente', 'error'); return; }
-      if (!placa)      { toast('Ingresa la placa del vehículo', 'error'); return; }
+      if (!vehSel)     { toast('Selecciona el vehículo del cliente', 'error'); return; }
       if (!servicios.length) { toast('Selecciona al menos una tarea', 'error'); return; }
 
       btnLoading(btnGuardar, true);
       try {
-        // 1. Resolver el vehículo por placa; si no existe, registrarlo bajo el cliente
+        // Vehículo: uno ya registrado del cliente, o registrar uno nuevo bajo su cuenta
         let id_vehiculo;
-        try {
-          const veh = await vehiculos.placa(placa);
-          id_vehiculo = veh.id_vehiculo;
-        } catch {
-          if (!id_marca) {
-            toast('Ese vehículo no está registrado. Selecciona la marca para crearlo.', 'error');
+        if (vehSel === '__nuevo__') {
+          const placa    = (document.getElementById('op-placa').value ?? '').trim().toUpperCase();
+          const id_marca = document.getElementById('op-marca').value;
+          if (!placa || !id_marca) {
+            toast('Ingresa la placa y la marca del vehículo nuevo', 'error');
             btnLoading(btnGuardar, false);
             return;
           }
           const nuevo = await vehiculos.crear({ id_cliente: parseInt(id_cliente), placa, id_marca: parseInt(id_marca) });
           id_vehiculo = nuevo.id_vehiculo;
+        } else {
+          id_vehiculo = parseInt(vehSel);
         }
 
-        // 2. Crear el mantenimiento
+        // Crear el mantenimiento
         const mant = await mantenimientos.crear({
           id_vehiculo,
           fecha_estimada_entrega: fecha || null,
           observaciones_cliente: obs || null
         });
 
-        // 3. Crear una tarea por cada servicio (mecánico elegido o auto-asignado)
+        // Una tarea por cada servicio (mecánico elegido o auto-asignado)
         for (const sid of servicios) {
           await mantenimientos.agregarTarea(mant.id_mantenimiento, {
             id_tipo_servicio: sid,
@@ -517,8 +541,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         toast(`Mantenimiento creado con ${servicios.length} tarea(s)`);
         document.getElementById('op-cliente').value  = '';
+        document.getElementById('op-vehiculo').innerHTML = '<option value="">-- Primero elige el cliente --</option>';
         document.getElementById('op-placa').value    = '';
         document.getElementById('op-marca').value    = '';
+        document.getElementById('op-nuevo-placa-wrap').style.display = 'none';
+        document.getElementById('op-nuevo-marca-wrap').style.display = 'none';
         document.getElementById('op-mecanico').value = '';
         document.getElementById('op-obs').value      = '';
         document.getElementById('op-fecha').value    = '';

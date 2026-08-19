@@ -94,6 +94,18 @@ router.get('/mi-perfil', verificarToken, soloRol('cliente'), async (req, res) =>
   res.json({ ...cliente, vehiculos: vehiculosConMants });
 });
 
+// GET /api/clientes/:id/vehiculos — solo los vehículos de un cliente (admin + mecánico)
+// Se usa al registrar un mantenimiento para cargar automáticamente sus placas.
+router.get('/:id/vehiculos', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
+  const { data, error } = await supabase
+    .from('vehiculos')
+    .select('id_vehiculo, placa, marcas(nombre_marca)')
+    .eq('id_cliente', req.params.id)
+    .order('placa');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
+});
+
 // GET /api/clientes/:id — detalle de un cliente con vehículos e historial (admin)
 router.get('/:id', verificarToken, soloRol('administrador'), async (req, res) => {
   const { data, error } = await supabase

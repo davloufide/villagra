@@ -215,14 +215,18 @@
         <div class="form-grid">
           <div class="field">
             <label>Cliente <span style="color:#dc2626;">*</span></label>
-            <select id="mec-n-cliente"><option value="">-- Seleccionar cliente --</option></select>
+            <select id="mec-n-cliente" onchange="cargarVehiculosClienteMec(this.value)"><option value="">-- Seleccionar cliente --</option></select>
           </div>
           <div class="field">
-            <label>Placa <span style="color:#dc2626;">*</span></label>
+            <label>Vehículo <span style="color:#dc2626;">*</span></label>
+            <select id="mec-n-vehiculo" onchange="onMecVehiculoChange(this.value)"><option value="">-- Primero elige el cliente --</option></select>
+          </div>
+          <div class="field" id="mec-nuevo-placa-wrap" style="display:none;">
+            <label>Placa del vehículo nuevo <span style="color:#dc2626;">*</span></label>
             <input id="mec-n-placa" placeholder="ABC-123" style="text-transform:uppercase;">
           </div>
-          <div class="field">
-            <label>Marca <span style="color:#94a3b8;font-weight:400;">(si el vehículo es nuevo)</span></label>
+          <div class="field" id="mec-nuevo-marca-wrap" style="display:none;">
+            <label>Marca del vehículo nuevo <span style="color:#dc2626;">*</span></label>
             <select id="mec-n-marca"><option value="">-- Seleccionar marca --</option></select>
           </div>
           <div class="field">

@@ -95,6 +95,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) { console.error('[Repuestos]', e); }
   }
 
+  // Al elegir cliente, cargar SOLO sus vehículos (placas) en el select
+  window.cargarVehiculosClienteMec = async (idCliente) => {
+    const sel = document.getElementById('mec-n-vehiculo');
+    document.getElementById('mec-nuevo-placa-wrap').style.display = 'none';
+    document.getElementById('mec-nuevo-marca-wrap').style.display = 'none';
+    if (!idCliente) { sel.innerHTML = '<option value="">-- Primero elige el cliente --</option>'; return; }
+    sel.innerHTML = '<option value="">Cargando...</option>';
+    try {
+      const vehs = await clientes.vehiculos(idCliente);
+      const opts = vehs.map(v => `<option value="${v.id_vehiculo}">${v.placa}${v.marcas?.nombre_marca ? ' · ' + v.marcas.nombre_marca : ''}</option>`).join('');
+      sel.innerHTML = '<option value="">-- Selecciona el vehículo --</option>' + opts +
+        '<option value="__nuevo__">+ Registrar vehículo nuevo…</option>';
+    } catch (e) {
+      sel.innerHTML = '<option value="">-- Selecciona el vehículo --</option><option value="__nuevo__">+ Registrar vehículo nuevo…</option>';
+    }
+  };
+  window.onMecVehiculoChange = (val) => {
+    const nuevo = val === '__nuevo__';
+    document.getElementById('mec-nuevo-placa-wrap').style.display = nuevo ? '' : 'none';
+    document.getElementById('mec-nuevo-marca-wrap').style.display = nuevo ? '' : 'none';
+  };
+
   // ══════════════════════════════════════════════════════
   // OPE-002: crear mantenimiento
   // ══════════════════════════════════════════════════════
@@ -102,26 +124,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-crear-mant-mec').addEventListener('click', async () => {
     const btn = document.getElementById('btn-crear-mant-mec');
     const id_cliente = document.getElementById('mec-n-cliente').value;
-    const placa      = document.getElementById('mec-n-placa').value.trim().toUpperCase();
-    const id_marca   = document.getElementById('mec-n-marca').value;
+    const vehSel     = document.getElementById('mec-n-vehiculo').value;
     const fecha      = document.getElementById('mec-n-fecha').value;
     const obs        = document.getElementById('mec-n-obs').value.trim();
     const servicios  = [...document.querySelectorAll('.mec-serv-check:checked')].map(c => parseInt(c.value));
 
     if (!id_cliente) { toast('Selecciona el cliente', 'error'); return; }
-    if (!placa)      { toast('Ingresa la placa', 'error'); return; }
+    if (!vehSel)     { toast('Selecciona el vehículo del cliente', 'error'); return; }
     if (!servicios.length) { toast('Selecciona al menos una tarea', 'error'); return; }
 
     btnLoading(btn, true);
     try {
       let id_vehiculo;
-      try {
-        const veh = await vehiculos.placa(placa);
-        id_vehiculo = veh.id_vehiculo;
-      } catch {
-        if (!id_marca) { toast('Ese vehículo no existe. Selecciona la marca para crearlo.', 'error'); btnLoading(btn, false); return; }
+      if (vehSel === '__nuevo__') {
+        const placa    = document.getElementById('mec-n-placa').value.trim().toUpperCase();
+        const id_marca = document.getElementById('mec-n-marca').value;
+        if (!placa || !id_marca) { toast('Ingresa la placa y la marca del vehículo nuevo', 'error'); btnLoading(btn, false); return; }
         const nuevo = await vehiculos.crear({ id_cliente: parseInt(id_cliente), placa, id_marca: parseInt(id_marca) });
         id_vehiculo = nuevo.id_vehiculo;
+      } else {
+        id_vehiculo = parseInt(vehSel);
       }
       const mant = await mantenimientos.crear({ id_vehiculo, fecha_estimada_entrega: fecha || null, observaciones_cliente: obs || null });
       for (const sid of servicios) {
@@ -129,8 +151,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       toast(`Mantenimiento creado con ${servicios.length} tarea(s)`);
       document.getElementById('mec-n-cliente').value = '';
+      document.getElementById('mec-n-vehiculo').innerHTML = '<option value="">-- Primero elige el cliente --</option>';
       document.getElementById('mec-n-placa').value   = '';
       document.getElementById('mec-n-marca').value   = '';
+      document.getElementById('mec-nuevo-placa-wrap').style.display = 'none';
+      document.getElementById('mec-nuevo-marca-wrap').style.display = 'none';
       document.getElementById('mec-n-fecha').value   = '';
       document.getElementById('mec-n-obs').value     = '';
       document.querySelectorAll('.mec-serv-check:checked').forEach(c => { c.checked = false; });

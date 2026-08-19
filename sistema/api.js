@@ -120,8 +120,9 @@ const perfil = {
 
 // ── Clientes ──────────────────────────────────────────────
 const clientes = {
-  lista: ()     => apiFetch('/clientes'),
-  crear: (body) => apiFetch('/clientes', { method: 'POST', body: JSON.stringify(body) })
+  lista:     ()     => apiFetch('/clientes'),
+  crear:     (body) => apiFetch('/clientes', { method: 'POST', body: JSON.stringify(body) }),
+  vehiculos: (id)   => apiFetch(`/clientes/${id}/vehiculos`)
 };
 
 // ── Usuarios (CRUD admin) ─────────────────────────────────

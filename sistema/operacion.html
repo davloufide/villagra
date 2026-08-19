@@ -247,14 +247,18 @@
         <div class="form-grid">
           <div class="field">
             <label>Cliente <span style="color:#dc2626;">*</span></label>
-            <select id="op-cliente"><option value="">-- Seleccionar cliente --</option></select>
+            <select id="op-cliente" onchange="cargarVehiculosCliente(this.value)"><option value="">-- Seleccionar cliente --</option></select>
           </div>
           <div class="field">
-            <label>Placa del vehículo <span style="color:#dc2626;">*</span></label>
+            <label>Vehículo <span style="color:#dc2626;">*</span></label>
+            <select id="op-vehiculo" onchange="onOpVehiculoChange(this.value)"><option value="">-- Primero elige el cliente --</option></select>
+          </div>
+          <div class="field" id="op-nuevo-placa-wrap" style="display:none;">
+            <label>Placa del vehículo nuevo <span style="color:#dc2626;">*</span></label>
             <input id="op-placa" placeholder="ABC-123" style="text-transform:uppercase;">
           </div>
-          <div class="field">
-            <label>Marca <span style="color:#94a3b8;font-weight:400;">(solo si el vehículo es nuevo)</span></label>
+          <div class="field" id="op-nuevo-marca-wrap" style="display:none;">
+            <label>Marca del vehículo nuevo <span style="color:#dc2626;">*</span></label>
             <select id="op-marca"><option value="">-- Seleccionar marca --</option></select>
           </div>
           <div class="field">
