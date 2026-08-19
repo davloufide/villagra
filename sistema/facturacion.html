@@ -35,7 +35,8 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="generar" data-titulo="Generar factura" data-sub="Genera facturas a partir de mantenimientos terminados" onclick="mostrarVista('generar');return false;"><i class="fas fa-file-circle-plus"></i> Generar factura</a>
-          <a href="#" class="subitem" data-vista="historial" data-titulo="Historial de facturas" data-sub="Facturas emitidas, cobros e indicadores" onclick="mostrarVista('historial');return false;"><i class="fas fa-clock-rotate-left"></i> Historial de facturas</a>
+          <a href="#" class="subitem" data-vista="pendientes" data-titulo="Facturas pendientes" data-sub="Facturas emitidas que aún no se han cobrado" onclick="mostrarVista('pendientes');return false;"><i class="fas fa-clock"></i> Pendientes</a>
+          <a href="#" class="subitem" data-vista="historial" data-titulo="Historial de facturas" data-sub="Facturas ya cobradas" onclick="mostrarVista('historial');return false;"><i class="fas fa-clock-rotate-left"></i> Historial</a>
         </div>
       </div>
     </nav>
@@ -157,6 +158,25 @@
     </div><!-- /vista-generar -->
 
     <!-- ══════════ SUBMÓDULO: Historial de facturas ══════════ -->
+    <!-- ══════════ SUBMÓDULO: Pendientes de cobro ══════════ -->
+    <div id="vista-pendientes" class="vista" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Facturas pendientes de cobro</h3><p>Emitidas pero aún sin pagar</p></div>
+          <button class="btn btn-outline btn-sm" onclick="cargarHistorial()"><i class="fas fa-rotate"></i> Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#Orden</th><th>Cliente</th><th>Vehículo</th><th>Fecha</th><th>Total</th><th>Acción</th></tr></thead>
+            <tbody id="fac-pendientes-tbody">
+              <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /vista-pendientes -->
+
+    <!-- ══════════ SUBMÓDULO: Historial (cobradas) ══════════ -->
     <div id="vista-historial" class="vista" style="display:none;">
 
       <!-- KPIs -->
@@ -190,7 +210,7 @@
       <!-- Historial -->
       <div class="card">
         <div class="card-header">
-          <div><h3>Historial de facturas</h3><p>Facturas emitidas</p></div>
+          <div><h3>Facturas cobradas</h3><p>Historial de facturas ya pagadas</p></div>
         </div>
         <div class="table-wrap">
           <table>

@@ -219,10 +219,37 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('fac-pendientes').textContent = pendientes.length;
       document.getElementById('fac-ticket').textContent    = money(Math.round(ticket));
 
-      pagFacturas.set(lista);
+      // Historial = facturas ya cobradas (pagadas). Pendientes = sin cobrar.
+      pagFacturas.set(lista.filter(f => f.estado === 'pagada'));
+      renderPendientes(pendientes);
     } catch (e) {
       toast('Error cargando historial: ' + e.message, 'error');
     }
+  }
+
+  function renderPendientes(lista) {
+    const tbody = document.getElementById('fac-pendientes-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = lista.length
+      ? lista.map(f => {
+          const cli = f.mantenimientos?.vehiculos?.clientes?.usuarios?.nombre ?? '-';
+          const veh = f.mantenimientos?.vehiculos?.placa ?? '-';
+          return `
+            <tr>
+              <td><strong>${f.numero_orden ?? '#' + f.id_factura}</strong></td>
+              <td>${cli}</td>
+              <td>${veh}</td>
+              <td style="font-size:0.82rem;color:#94a3b8;">${new Date(f.fecha_emision).toLocaleDateString('es-CR')}</td>
+              <td style="font-weight:700;">${money(f.total)}</td>
+              <td>
+                <div style="display:flex;gap:5px;">
+                  <button class="btn btn-success btn-sm" onclick="marcarPagada(${f.id_factura})"><i class="fas fa-check"></i> Cobrar</button>
+                  <button class="btn btn-outline btn-sm" onclick="descargarPDF(${f.id_factura})"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;"><i class="fas fa-check-circle"></i> No hay facturas pendientes de cobro</td></tr>';
   }
 
   function renderHistorial(lista) {
