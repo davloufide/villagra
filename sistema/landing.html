@@ -46,24 +46,21 @@
     /* ── HERO ── */
     .lp-hero {
       min-height: 100vh;
-      display: grid; grid-template-columns: 1.05fr 0.95fr; align-items: center; gap: 50px;
-      background: linear-gradient(135deg, #0b1220 0%, #14265e 55%, #0b1220 100%);
+      display: flex; align-items: center;
       position: relative; overflow: hidden;
       padding: 120px 60px 70px;
+      background-color: #0b1220;
+      background-image:
+        linear-gradient(100deg, rgba(9,14,26,0.95) 0%, rgba(9,14,26,0.82) 44%, rgba(9,14,26,0.42) 100%),
+        url('https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&w=1600&q=80');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
     .lp-hero::before {
       content: '';
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 70% 40%, rgba(37,99,235,0.35) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .lp-hero::after {
-      content: '';
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
-      background-size: 48px 48px;
+      background: radial-gradient(ellipse at 78% 45%, rgba(37,99,235,0.22) 0%, transparent 60%);
       pointer-events: none;
     }
     .lp-hero-content { position: relative; z-index: 1; max-width: 600px; }
@@ -315,18 +312,6 @@
       <div class="lp-hero-trust">
         <span class="stars">★★★★★</span>
         <span>+500 clientes confían en nosotros</span>
-      </div>
-    </div>
-
-    <div class="lp-hero-media">
-      <img src="https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&w=1100&q=80" alt="Mecánico trabajando en un vehículo en el taller">
-      <div class="lp-hero-float">
-        <div class="ic"><i class="fas fa-wrench"></i></div>
-        <div style="flex:1;">
-          <div class="t1">Servicio en proceso</div>
-          <div class="t2">Cambio de aceite · 75%</div>
-          <div class="bar"><span></span></div>
-        </div>
       </div>
     </div>
   </section>
