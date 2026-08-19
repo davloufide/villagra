@@ -75,6 +75,18 @@
         <div class="number" id="kpi-mant">-</div>
         <p class="sub" id="kpi-mant-sub">Total registrados</p>
       </div>
+      <div class="card kpi-card kpi-green">
+        <div class="kpi-icon"><i class="fas fa-circle-check"></i></div>
+        <h3>Terminados del mes</h3>
+        <div class="number" id="kpi-terminados">-</div>
+        <p class="sub">Servicios completados</p>
+      </div>
+      <div class="card kpi-card kpi-orange">
+        <div class="kpi-icon"><i class="fas fa-user-gear"></i></div>
+        <h3>Empleados activos</h3>
+        <div class="number" id="kpi-empleados">-</div>
+        <p class="sub">Personal del taller</p>
+      </div>
       <div class="card kpi-card kpi-red">
         <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
         <h3>Alertas de stock</h3>
@@ -82,6 +94,36 @@
         <p class="sub">Productos bajo mínimo</p>
       </div>
     </section>
+
+    <!-- Gráficos: fila 1 -->
+    <div class="two-col" style="margin-bottom:18px;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Ingresos mensuales</h3><p>Facturación de los últimos meses</p></div>
+          <select id="dash-ingresos-tipo" onchange="cambiarTipoIngresos(this.value)" style="border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:0.82rem;background:#f8fafc;outline:none;cursor:pointer;">
+            <option value="bar">Barras</option>
+            <option value="line">Línea</option>
+          </select>
+        </div>
+        <div style="position:relative;height:275px;"><canvas id="chart-ingresos"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><h3>Estado de mantenimientos</h3><p>Distribución actual del taller</p></div></div>
+        <div style="position:relative;height:275px;"><canvas id="chart-estados"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Gráficos: fila 2 -->
+    <div class="two-col" style="margin-bottom:18px;">
+      <div class="card">
+        <div class="card-header"><div><h3>Servicios más solicitados</h3><p>Top del taller</p></div></div>
+        <div style="position:relative;height:275px;"><canvas id="chart-servicios"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><h3>Mantenimientos por mecánico</h3><p>Completados por técnico</p></div></div>
+        <div style="position:relative;height:275px;"><canvas id="chart-mecanicos"></canvas></div>
+      </div>
+    </div>
 
     <div class="two-col" style="margin-bottom:18px;">
 
@@ -125,6 +167,7 @@
 </div>
 <script src="api.js"></script>
 <script src="js/ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
 </html>
