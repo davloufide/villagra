@@ -138,6 +138,7 @@ const empleados = {
   lista:             ()       => apiFetch('/empleados'),
   crear:             (body)   => apiFetch('/empleados', { method: 'POST', body: JSON.stringify(body) }),
   vacaciones:        ()       => apiFetch('/empleados/vacaciones'),
+  historialVac:      ()       => apiFetch('/empleados/vacaciones/historial'),
   misVacaciones:     ()       => apiFetch('/empleados/mis-vacaciones'),
   solicitarVac:      (body)   => apiFetch('/empleados/vacaciones', { method: 'POST', body: JSON.stringify(body) }),
   registrarVac:      (body)   => apiFetch('/empleados/vacaciones/registrar', { method: 'POST', body: JSON.stringify(body) }),

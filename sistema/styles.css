@@ -327,6 +327,9 @@ tbody tr:hover td { background: #fafbfd; }
 .cal.editable .cal-dia.bloqueado { cursor: pointer; }
 .cal.editable .cal-dia:not(.vacio):hover { border-color: var(--primary); }
 
+/* Chips de filtro (historial de vacaciones, etc.) */
+.vacf.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
 /* ── TAGS ── */
 .tag {
   display: inline-flex; align-items: center; gap: 5px;

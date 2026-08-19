@@ -3,6 +3,19 @@ const bcrypt   = require('bcryptjs');
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
 
+// Días de vacaciones que corresponden por antigüedad.
+// Regla: 1 día hábil por cada mes completo trabajado desde la fecha de ingreso
+// (≈12 días al año, en línea con el mínimo del Código de Trabajo de CR).
+function diasVacacionesPorAntiguedad(fecha_ingreso) {
+  if (!fecha_ingreso) return 0;
+  const ing = new Date(fecha_ingreso);
+  if (isNaN(ing)) return 0;
+  const hoy = new Date();
+  let meses = (hoy.getFullYear() - ing.getFullYear()) * 12 + (hoy.getMonth() - ing.getMonth());
+  if (hoy.getDate() < ing.getDate()) meses--;   // el mes en curso aún no se completó
+  return Math.max(0, meses);
+}
+
 // GET /api/empleados — lista de empleados (admin)
 router.get('/', verificarToken, soloRol('administrador'), async (req, res) => {
   const { data, error } = await supabase
@@ -40,9 +53,12 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
     return res.status(500).json({ error: errU.message });
   }
 
+  // Los días de vacaciones se calculan por antigüedad (no se ingresan a mano)
+  const dias_calculados = diasVacacionesPorAntiguedad(fecha_ingreso);
+
   const { data, error } = await supabase
     .from('empleados')
-    .insert({ id_usuario: usuario.id_usuario, telefono, tipo_empleo, fecha_ingreso, dias_vacaciones, especialidad })
+    .insert({ id_usuario: usuario.id_usuario, telefono, tipo_empleo, fecha_ingreso, dias_vacaciones: dias_calculados, especialidad })
     .select()
     .single();
 
@@ -60,6 +76,19 @@ router.get('/vacaciones', verificarToken, soloRol('administrador'), async (req, 
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// GET /api/empleados/vacaciones/historial — TODO el historial de vacaciones (admin) [#6]
+// Devuelve todas las solicitudes con el nombre del empleado y sus fechas. El
+// front las agrupa por estado (solicitadas / aprobadas / rechazadas) y calcula
+// las "próximas a tomar" y las "ya disfrutadas" según las fechas.
+router.get('/vacaciones/historial', verificarToken, soloRol('administrador'), async (req, res) => {
+  const { data, error } = await supabase
+    .from('vacaciones')
+    .select('*, empleados(usuarios(nombre))')
+    .order('fecha_inicio', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? []);
 });
 
 // GET /api/empleados/mis-vacaciones — saldo + solicitudes del propio empleado

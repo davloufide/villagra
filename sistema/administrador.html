@@ -34,7 +34,7 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="empleados" data-titulo="Empleados" data-sub="Registro y personal del taller" onclick="mostrarVista('empleados');return false;"><i class="fas fa-users"></i> Empleados</a>
-          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Vacaciones" data-sub="Solicitudes y registro de días" onclick="mostrarVista('vacaciones');return false;"><i class="fas fa-umbrella-beach"></i> Vacaciones</a>
+          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Vacaciones" data-sub="Solicitudes e historial del personal" onclick="mostrarVista('vacaciones');cargarVacaciones();cargarHistorialVac();return false;"><i class="fas fa-umbrella-beach"></i> Vacaciones</a>
           <a href="#" class="subitem" onclick="abrirModal('modal-cliente');return false;"><i class="fas fa-user-plus"></i> Registrar cliente</a>
           <a href="#" class="subitem" data-vista="usuarios" data-titulo="Usuarios del sistema" data-sub="Crear, editar, activar/desactivar y eliminar cuentas" onclick="mostrarVista('usuarios');return false;"><i class="fas fa-user-gear"></i> Usuarios del sistema</a>
         </div>
@@ -153,12 +153,12 @@
             </select>
           </div>
           <div class="field">
-            <label>Fecha de ingreso</label>
+            <label>Fecha de ingreso <span style="color:#94a3b8;font-weight:400;">(define las vacaciones)</span></label>
             <input id="adm-fecha" type="date">
           </div>
           <div class="field">
             <label>Días de vacaciones</label>
-            <input id="adm-dias" type="number" placeholder="12">
+            <input value="Se calcula por antigüedad" disabled style="background:#f1f5f9;color:#64748b;font-size:0.82rem;">
           </div>
           <div class="field">
             <label>Especialidad</label>
@@ -179,54 +179,41 @@
 
     <!-- ══════════ SUBMÓDULO: Vacaciones ══════════ -->
     <div id="vista-vacaciones" class="vista" style="display:none;">
-      <!-- Solicitudes de vacaciones (ancho completo; el registro es modal) -->
-      <div class="card">
+      <!-- Solicitudes pendientes (las crea el empleado desde su cuenta) -->
+      <div class="card" style="margin-bottom:18px;">
         <div class="card-header">
-          <div><h3>Solicitudes de vacaciones</h3><p>Aprobar o rechazar solicitudes pendientes</p></div>
-          <button class="btn btn-primary btn-sm" onclick="abrirModal('modal-vacaciones')"><i class="fas fa-umbrella-beach"></i> Registrar vacaciones</button>
+          <div><h3>Solicitudes de vacaciones</h3><p>Pendientes de los empleados · aprobá o rechazá</p></div>
+          <button class="btn btn-outline btn-sm" onclick="cargarVacaciones()"><i class="fas fa-rotate"></i> Actualizar</button>
         </div>
         <div class="list" id="adm-vac-list">
           <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
         </div>
       </div>
-    </div><!-- /vista-vacaciones -->
 
-    <!-- ══════════ MODAL: Registrar vacaciones ══════════ -->
-    <div id="modal-vacaciones" class="modal-overlay" style="display:none;">
-        <!-- ADM-004/005: registrar uso de vacaciones y descontar del saldo -->
-        <div class="card">
-          <div class="card-header">
-            <div><h3>Registrar vacaciones</h3><p>Descuenta días del saldo del empleado</p></div>
-            <button class="modal-close" onclick="cerrarModal('modal-vacaciones')" title="Cerrar">&times;</button>
-          </div>
-          <div class="form-grid">
-            <div class="field" style="grid-column:1/-1;">
-              <label>Empleado <span style="color:#dc2626;">*</span></label>
-              <select id="rvac-empleado"><option value="">-- Seleccionar empleado --</option></select>
-            </div>
-            <div class="field">
-              <label>Saldo disponible</label>
-              <input id="rvac-saldo" disabled placeholder="-" style="background:#f1f5f9;">
-            </div>
-            <div class="field">
-              <label>Días hábiles <span style="color:#dc2626;">*</span></label>
-              <input id="rvac-dias" type="number" min="1" placeholder="Ej: 5">
-            </div>
-            <div class="field">
-              <label>Desde <span style="color:#dc2626;">*</span></label>
-              <input id="rvac-inicio" type="date">
-            </div>
-            <div class="field">
-              <label>Hasta <span style="color:#dc2626;">*</span></label>
-              <input id="rvac-fin" type="date">
-            </div>
-          </div>
-          <div class="form-actions">
-            <button id="btn-registrar-vac" class="btn btn-success" style="flex:1;"><i class="fas fa-umbrella-beach"></i> Registrar y descontar</button>
-          </div>
-          <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">Al registrar, los días hábiles se restan del saldo del empleado. No se permite dejar el saldo en negativo.</p>
+      <!-- Historial de vacaciones -->
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Historial de vacaciones</h3><p>Todas las solicitudes por estado, con sus fechas</p></div>
+          <button class="btn btn-outline btn-sm" onclick="cargarHistorialVac()"><i class="fas fa-rotate"></i> Actualizar</button>
         </div>
-    </div><!-- /modal-vacaciones -->
+        <div id="adm-vac-filtros" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-outline btn-sm vacf active" data-f="todas" onclick="filtrarHistorialVac('todas',this)">Todas</button>
+          <button class="btn btn-outline btn-sm vacf" data-f="proximas" onclick="filtrarHistorialVac('proximas',this)">Próximas a tomar</button>
+          <button class="btn btn-outline btn-sm vacf" data-f="pendiente" onclick="filtrarHistorialVac('pendiente',this)">Solicitadas</button>
+          <button class="btn btn-outline btn-sm vacf" data-f="aprobada" onclick="filtrarHistorialVac('aprobada',this)">Aprobadas</button>
+          <button class="btn btn-outline btn-sm vacf" data-f="rechazada" onclick="filtrarHistorialVac('rechazada',this)">Rechazadas</button>
+          <button class="btn btn-outline btn-sm vacf" data-f="disfrutadas" onclick="filtrarHistorialVac('disfrutadas',this)">Disfrutadas</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Empleado</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th></tr></thead>
+            <tbody id="adm-vac-historial">
+              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /vista-vacaciones -->
 
     <!-- ══════════ MODAL: Registrar cliente ══════════ -->
     <div id="modal-cliente" class="modal-overlay" style="display:none;">

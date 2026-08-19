@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const lista = await empleados.lista();
       empleadosCache = lista;
-      llenarSelectVac(lista);
       pagEmpleados.set(lista);
 
       document.getElementById('adm-total').textContent  = lista.length;
@@ -62,8 +61,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       `).join('') || '<p style="color:#94a3b8;padding:12px;">Sin solicitudes pendientes</p>';
 
-      document.getElementById('adm-vac-pendientes').textContent = lista.length;
-    } catch {}
+      const kpi = document.getElementById('adm-vac-pendientes');
+      if (kpi) kpi.textContent = lista.length;
+    } catch (e) {
+      const cont = document.getElementById('adm-vac-list');
+      if (cont) cont.innerHTML = `<p style="color:#dc2626;padding:12px;font-size:0.86rem;">No se pudieron cargar las solicitudes. ${e.message}</p>`;
+    }
   }
 
   window.responderVac = async (id, estado) => {
@@ -71,94 +74,63 @@ document.addEventListener('DOMContentLoaded', async () => {
       await empleados.responderVac(id, { estado });
       toast(estado === 'aprobada' ? 'Vacaciones aprobadas' : 'Vacaciones rechazadas', estado === 'aprobada' ? 'success' : 'error');
       cargarVacaciones();
+      cargarHistorialVac();
+      cargarEmpleados();   // el saldo del empleado cambia al aprobar
     } catch (e) {
       toast(e.message, 'error');
     }
   };
 
-  // ── ADM-004/005: registrar uso de vacaciones ────────────
-  function llenarSelectVac(lista) {
-    const sel = document.getElementById('rvac-empleado');
-    if (!sel) return;
-    const previo = sel.value;
-    sel.innerHTML = '<option value="">-- Seleccionar empleado --</option>' +
-      lista.map(e => `<option value="${e.id_empleado}">${e.usuarios?.nombre ?? 'Empleado'} · ${e.dias_vacaciones ?? 0} días</option>`).join('');
-    if (previo) sel.value = previo;
-    mostrarSaldoVac();
-  }
+  // ── Historial de vacaciones (#6) ─────────────────────────
+  let historialVacCache = [];
+  let filtroVac = 'todas';
 
-  function mostrarSaldoVac() {
-    const sel = document.getElementById('rvac-empleado');
-    const inp = document.getElementById('rvac-saldo');
-    if (!sel || !inp) return;
-    const e = empleadosCache.find(x => x.id_empleado === parseInt(sel.value));
-    inp.value = e ? `${e.dias_vacaciones ?? 0} días` : '';
-  }
-
-  // Contar días hábiles (lun-vie) entre dos fechas, inclusive
-  function contarDiasHabiles(desde, hasta) {
-    const d1 = new Date(desde + 'T00:00:00'), d2 = new Date(hasta + 'T00:00:00');
-    if (isNaN(d1) || isNaN(d2) || d2 < d1) return 0;
-    let n = 0;
-    for (let d = new Date(d1); d <= d2; d.setDate(d.getDate() + 1)) {
-      const dia = d.getDay();
-      if (dia !== 0 && dia !== 6) n++;
+  window.cargarHistorialVac = async () => {
+    const tbody = document.getElementById('adm-vac-historial');
+    if (!tbody) return;
+    try {
+      historialVacCache = await empleados.historialVac();
+      renderHistorialVac();
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:20px;">No se pudo cargar el historial. ${e.message}</td></tr>`;
     }
-    return n;
-  }
+  };
 
-  function autoCalcularDias() {
-    const ini = document.getElementById('rvac-inicio').value;
-    const fin = document.getElementById('rvac-fin').value;
-    if (ini && fin) {
-      const n = contarDiasHabiles(ini, fin);
-      if (n > 0) document.getElementById('rvac-dias').value = n;
-    }
-  }
+  window.filtrarHistorialVac = (f, btn) => {
+    filtroVac = f;
+    document.querySelectorAll('#adm-vac-filtros .vacf').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderHistorialVac();
+  };
 
-  const selVac = document.getElementById('rvac-empleado');
-  if (selVac) selVac.addEventListener('change', mostrarSaldoVac);
-  ['rvac-inicio', 'rvac-fin'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', autoCalcularDias);
-  });
+  function renderHistorialVac() {
+    const tbody = document.getElementById('adm-vac-historial');
+    if (!tbody) return;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const esProxima    = v => v.estado === 'aprobada' && v.fecha_inicio > hoy;
+    const esDisfrutada = v => v.estado === 'aprobada' && v.fecha_fin < hoy;
 
-  const btnVac = document.getElementById('btn-registrar-vac');
-  if (btnVac) {
-    btnVac.addEventListener('click', async () => {
-      const id_empleado = parseInt(document.getElementById('rvac-empleado').value);
-      const fecha_inicio = document.getElementById('rvac-inicio').value;
-      const fecha_fin    = document.getElementById('rvac-fin').value;
-      const dias_habiles = parseInt(document.getElementById('rvac-dias').value);
+    let lista = historialVacCache;
+    if (filtroVac === 'proximas')         lista = lista.filter(esProxima);
+    else if (filtroVac === 'disfrutadas') lista = lista.filter(esDisfrutada);
+    else if (filtroVac !== 'todas')       lista = lista.filter(v => v.estado === filtroVac);
 
-      if (!id_empleado) { toast('Selecciona un empleado', 'error'); return; }
-      if (!fecha_inicio || !fecha_fin) { toast('Indica las fechas de inicio y fin', 'error'); return; }
-      if (new Date(fecha_fin) < new Date(fecha_inicio)) { toast('La fecha fin no puede ser anterior a la de inicio', 'error'); return; }
-      if (!dias_habiles || dias_habiles <= 0) { toast('Los días hábiles deben ser mayores a 0', 'error'); return; }
-
-      // ADM-005: aviso temprano en el front (el backend igual lo valida)
-      const emp = empleadosCache.find(x => x.id_empleado === id_empleado);
-      const saldo = emp?.dias_vacaciones ?? 0;
-      if (dias_habiles > saldo) {
-        toast(`Saldo insuficiente: ${emp?.usuarios?.nombre ?? 'el empleado'} solo tiene ${saldo} día(s).`, 'error');
-        return;
-      }
-
-      btnLoading(btnVac, true);
-      try {
-        const r = await empleados.registrarVac({ id_empleado, fecha_inicio, fecha_fin, dias_habiles });
-        toast(`Vacaciones registradas. Saldo restante: ${r.dias_restantes} día(s).`);
-        document.getElementById('rvac-dias').value   = '';
-        document.getElementById('rvac-inicio').value = '';
-        document.getElementById('rvac-fin').value    = '';
-        cerrarModal('modal-vacaciones');
-        await cargarEmpleados();
-      } catch (e) {
-        toast(e.message, 'error');
-      } finally {
-        btnLoading(btnVac, false);
-      }
-    });
+    tbody.innerHTML = lista.length ? lista.map(v => {
+      let cls, label;
+      if (v.estado === 'pendiente')      { cls = 'warning'; label = 'Solicitada'; }
+      else if (v.estado === 'rechazada') { cls = 'danger';  label = 'Rechazada'; }
+      else if (esProxima(v))             { cls = 'info';    label = 'Aprobada · Próxima'; }
+      else if (esDisfrutada(v))          { cls = 'neutral'; label = 'Aprobada · Disfrutada'; }
+      else                               { cls = 'success'; label = 'Aprobada · En curso'; }
+      return `
+        <tr>
+          <td><strong style="font-size:0.88rem;">${v.empleados?.usuarios?.nombre ?? '-'}</strong></td>
+          <td style="font-size:0.85rem;">${v.fecha_inicio}</td>
+          <td style="font-size:0.85rem;">${v.fecha_fin}</td>
+          <td style="text-align:center;">${v.dias_habiles}</td>
+          <td><span class="tag ${cls}">${label}</span></td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin registros en esta categoría</td></tr>';
   }
 
   const btnGuardar = document.getElementById('btn-guardar-empleado');
@@ -170,7 +142,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id_rol      = document.getElementById('adm-rol').value;
       const tipo_empleo = document.getElementById('adm-tipo').value;
       const fecha       = document.getElementById('adm-fecha').value;
-      const dias        = parseInt(document.getElementById('adm-dias').value) || 0;
       const esp         = document.getElementById('adm-especialidad').value;
       const password    = 'Villagra1!';
 
@@ -178,7 +149,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       btnLoading(btnGuardar, true);
       try {
-        await empleados.crear({ nombre, correo, password, id_rol: parseInt(id_rol), telefono, tipo_empleo, fecha_ingreso: fecha || null, dias_vacaciones: dias, especialidad: esp });
+        // Los días de vacaciones los calcula el backend según la fecha de ingreso
+        await empleados.crear({ nombre, correo, password, id_rol: parseInt(id_rol), telefono, tipo_empleo, fecha_ingreso: fecha || null, especialidad: esp });
         toast(`Empleado creado. Contraseña temporal: Villagra1!`);
         ['adm-nombre','adm-correo','adm-telefono','adm-fecha'].forEach(id => {
           const el = document.getElementById(id); if (el) el.value = '';
@@ -351,5 +323,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  await Promise.all([cargarEmpleados(), cargarVacaciones(), cargarUsuarios()]);
+  await Promise.all([cargarEmpleados(), cargarVacaciones(), cargarHistorialVac(), cargarUsuarios()]);
 });
