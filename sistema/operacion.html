@@ -355,8 +355,15 @@
             <input id="cat-nombre" placeholder="Ej: Cambio de batería">
           </div>
           <div class="field">
-            <label>Precio base <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
-            <input id="cat-precio" type="number" placeholder="0">
+            <label>Precio del servicio <span style="color:#94a3b8;font-weight:400;">(sin IVA)</span></label>
+            <input id="cat-precio" type="number" placeholder="0" oninput="calcularIVAServicio()">
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <div id="cat-iva-box" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 15px;font-size:0.87rem;">
+              <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:#475569;">Precio sin IVA</span><span id="cat-iva-base">₡0</span></div>
+              <div style="display:flex;justify-content:space-between;padding:2px 0;"><span style="color:#475569;">IVA (13%)</span><span id="cat-iva-monto" style="color:#2563eb;font-weight:600;">₡0</span></div>
+              <div style="display:flex;justify-content:space-between;border-top:1px solid #bfdbfe;margin-top:5px;padding-top:6px;font-weight:800;color:#0f172a;"><span>Precio total con IVA</span><span id="cat-iva-total">₡0</span></div>
+            </div>
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Descripción <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>

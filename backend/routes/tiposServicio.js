@@ -2,6 +2,9 @@ const router   = require('express').Router();
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
 
+const IVA_RATE = 0.13;
+const calcIVA = (base) => parseFloat((base * IVA_RATE).toFixed(2));
+
 // GET /api/tipos-servicio
 router.get('/', verificarToken, async (req, res) => {
   const { data, error } = await supabase
@@ -18,15 +21,17 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
   if (!nombre || !nombre.trim())
     return res.status(400).json({ error: 'El nombre del servicio es requerido' });
 
-  const { data, error } = await supabase
-    .from('tipos_servicio')
-    .insert({
-      nombre: nombre.trim(),
-      descripcion: descripcion || null,
-      precio_base: precio_base ? parseFloat(precio_base) : 0
-    })
-    .select()
-    .single();
+  const base = precio_base ? parseFloat(precio_base) : 0;
+  const registro = { nombre: nombre.trim(), descripcion: descripcion || null, precio_base: base };
+
+  // Guardar el IVA (13% del precio base). Si la migración aún no se corrió
+  // (columna inexistente), reintentar sin ella.
+  let data, error;
+  ({ data, error } = await supabase
+    .from('tipos_servicio').insert({ ...registro, iva: calcIVA(base) }).select().single());
+  if (error && (error.code === 'PGRST204' || /iva/i.test(error.message || ''))) {
+    ({ data, error } = await supabase.from('tipos_servicio').insert(registro).select().single());
+  }
 
   if (error) {
     if (error.code === '23505') return res.status(409).json({ error: 'Ese servicio ya existe' });
@@ -44,14 +49,21 @@ router.patch('/:id', verificarToken, soloRol('administrador'), async (req, res) 
     cambios.nombre = nombre.trim();
   }
   if (descripcion !== undefined) cambios.descripcion = descripcion || null;
-  if (precio_base !== undefined) cambios.precio_base = precio_base ? parseFloat(precio_base) : 0;
+  if (precio_base !== undefined) {
+    const base = precio_base ? parseFloat(precio_base) : 0;
+    cambios.precio_base = base;
+    cambios.iva = calcIVA(base);
+  }
 
-  const { data, error } = await supabase
-    .from('tipos_servicio')
-    .update(cambios)
-    .eq('id_tipo_servicio', req.params.id)
-    .select()
-    .single();
+  // Actualizar; si la columna iva aún no existe, reintentar sin ella.
+  let data, error;
+  ({ data, error } = await supabase
+    .from('tipos_servicio').update(cambios).eq('id_tipo_servicio', req.params.id).select().single());
+  if (error && (error.code === 'PGRST204' || /iva/i.test(error.message || ''))) {
+    const { iva, ...sinIva } = cambios;
+    ({ data, error } = await supabase
+      .from('tipos_servicio').update(sinIva).eq('id_tipo_servicio', req.params.id).select().single());
+  }
 
   if (error) {
     if (error.code === '23505') return res.status(409).json({ error: 'Ya existe un servicio con ese nombre' });

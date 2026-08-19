@@ -201,6 +201,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Crear / editar servicio del catálogo (OPE-006)
   let editServicioId = null;
 
+  // Desglose de IVA en vivo del servicio (13% sobre el precio sin IVA)
+  window.calcularIVAServicio = () => {
+    const base = parseFloat((document.getElementById('cat-precio').value || '').replace(/[^\d.]/g, '')) || 0;
+    const box  = document.getElementById('cat-iva-box');
+    if (!box) return;
+    if (base <= 0) { box.style.display = 'none'; return; }
+    const money = n => '₡' + Math.round(n).toLocaleString('es');
+    box.style.display = 'block';
+    document.getElementById('cat-iva-base').textContent  = money(base);
+    document.getElementById('cat-iva-monto').textContent = money(base * 0.13);
+    document.getElementById('cat-iva-total').textContent = money(base * 1.13);
+  };
+
   // Abrir el modal en modo "crear" (limpio)
   window.nuevoServicio = () => { cancelarEdicionServicio(); abrirModal('modal-servicio'); };
 
@@ -213,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('cat-precio').value = s.precio_base ?? '';
     document.getElementById('cat-desc').value   = s.descripcion ?? '';
     document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar cambios';
+    calcularIVAServicio();
     abrirModal('modal-servicio');
   };
 
@@ -223,6 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('cat-precio').value = '';
     document.getElementById('cat-desc').value   = '';
     document.getElementById('btn-crear-servicio').innerHTML = '<i class="fas fa-plus"></i> Agregar al catálogo';
+    calcularIVAServicio();
   };
 
   window.eliminarServicio = async (id, nombre) => {
