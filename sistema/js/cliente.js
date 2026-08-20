@@ -63,6 +63,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
   }
 
+  // Los invitados que no dejaron correo llevan uno de relleno generado por el
+  // backend (invitado.<tel>@sin-registro.local): no tiene sentido mostrarlo.
+  const esCorreoRelleno = (correo) => /@sin-registro\.local$/i.test(correo || '');
+
   function renderTablaClientes(lista) {
     const tbody = document.getElementById('cli-tbody');
     if (!lista.length) {
@@ -78,10 +82,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td>
             <div style="display:flex;align-items:center;gap:9px;">
               <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:#fff;flex-shrink:0;">${ini}</div>
-              <strong style="font-size:0.88rem;">${nombre}</strong>
+              <div>
+                <strong style="font-size:0.88rem;">${nombre}</strong>
+                ${c.usuarios?.es_invitado ? '<span class="tag info" style="margin-left:6px;font-size:0.68rem;">Sin registro</span>' : ''}
+              </div>
             </div>
           </td>
-          <td style="font-size:0.86rem;">${c.usuarios?.correo ?? '-'}</td>
+          <td style="font-size:0.86rem;">${esCorreoRelleno(c.usuarios?.correo) ? '<span style="color:#94a3b8;">— no dejó correo —</span>' : (c.usuarios?.correo ?? '-')}</td>
           <td style="font-size:0.86rem;">${c.telefono ?? '-'}</td>
           <td style="font-size:0.82rem;color:#64748b;">${fecha}</td>
           <td>

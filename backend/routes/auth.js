@@ -160,10 +160,19 @@ router.post('/reset', async (req, res) => {
     return res.status(400).json({ error: 'Token no válido para esta acción' });
 
   const hash = await bcrypt.hash(password, 10);
-  const { error } = await supabase
+
+  // Si era un cliente "invitado" (agendó sin registrarse y dejó su correo),
+  // al fijar contraseña reclama la cuenta y deja de ser invitado.
+  let { error } = await supabase
     .from('usuarios')
-    .update({ password_hash: hash })
+    .update({ password_hash: hash, es_invitado: false })
     .eq('id_usuario', payload.id);
+  if (error && (error.code === 'PGRST204' || /es_invitado/i.test(error.message || ''))) {
+    ({ error } = await supabase
+      .from('usuarios')
+      .update({ password_hash: hash })
+      .eq('id_usuario', payload.id));
+  }
 
   if (error) return res.status(500).json({ error: 'No se pudo actualizar la contraseña' });
   res.json({ mensaje: 'Contraseña actualizada. Ya puedes iniciar sesión.' });

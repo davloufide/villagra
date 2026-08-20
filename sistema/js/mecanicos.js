@@ -317,12 +317,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const servs = (m.tareas ?? []).map(t => t.tipos_servicio?.nombre).filter(Boolean).join(', ') || '—';
             const fecha = m.fecha_estimada_entrega
               ? new Date(m.fecha_estimada_entrega + 'T00:00:00').toLocaleDateString('es-CR') : 'sin fecha';
+            const tel = m.vehiculos?.clientes?.telefono ?? '';
             return `
               <div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;">
                 <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;">
                   <div>
                     <strong>${m.vehiculos?.placa ?? '-'} · ${m.vehiculos?.marcas?.nombre_marca ?? ''}</strong>
-                    <div style="color:#64748b;font-size:0.82rem;">${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · ${fecha}</div>
+                    <div style="color:#64748b;font-size:0.82rem;">
+                      ${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · ${fecha}
+                      ${m.vehiculos?.clientes?.usuarios?.es_invitado ? '<span class="tag info" style="margin-left:6px;">Sin registro</span>' : ''}
+                    </div>
+                    ${tel ? `<div style="color:#475569;font-size:0.82rem;margin-top:3px;"><i class="fas fa-phone" style="width:13px;"></i> <a href="tel:${tel}" style="color:#2563eb;font-weight:600;">${tel}</a></div>` : ''}
                     <div style="color:#475569;font-size:0.82rem;margin-top:3px;">Servicios: ${servs}</div>
                   </div>
                   <button class="btn btn-success btn-sm" onclick="tomarCita(${m.id_mantenimiento})"><i class="fas fa-hand"></i> Tomar</button>

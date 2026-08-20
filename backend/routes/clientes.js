@@ -38,13 +38,20 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
 
 // GET /api/clientes — lista todos (admin y mecánico, para registrar servicios)
 router.get('/', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
-  const { data, error } = await supabase
+  // `es_invitado` marca a quien agendó sin registrarse (columna nueva:
+  // si la migración aún no se corrió, se consulta sin ella).
+  const consulta = (campoInvitado) => supabase
     .from('clientes')
     .select(`
       id_cliente, telefono,
-      usuarios(nombre, correo)
+      usuarios(nombre, correo${campoInvitado})
     `)
     .order('id_cliente');
+
+  let { data, error } = await consulta(', es_invitado');
+  if (error && /es_invitado/i.test(error.message || '')) {
+    ({ data, error } = await consulta(''));
+  }
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });

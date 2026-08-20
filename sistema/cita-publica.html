@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendar cita – Lubricentro Villagra</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Variables locales: esta página es pública y no depende de styles.css */
+    :root {
+      --primary: #2563eb; --primary-dark: #1d4ed8;
+      --border: #e2e8f0; --surface-2: #f8fafc; --hover: #f1f5f9;
+      --text: #0f172a; --text-2: #334155; --muted: #94a3b8;
+      --danger: #dc2626; --danger-soft: #fef2f2;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: var(--text); min-height: 100vh; display: flex; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3, h4 { font-family: 'Poppins', 'Inter', sans-serif; letter-spacing: -0.2px; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── PANEL IZQUIERDO (marca) ── */
+    .auth-left {
+      flex: 1; min-width: 0;
+      background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+      padding: 48px 44px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden;
+    }
+    .auth-left::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 60%, rgba(37,99,235,0.3) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .auth-logo { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    .auth-logo-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, #2563eb, #60a5fa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: #fff;
+    }
+    .auth-logo span { font-size: 1.1rem; font-weight: 800; color: #fff; }
+    .auth-logo span b { color: #60a5fa; }
+    .auth-left-body { position: relative; z-index: 1; }
+    .auth-left-body h2 { font-size: 2rem; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+    .auth-left-body h2 span { color: #60a5fa; }
+    .auth-left-body p { color: #64748b; font-size: 0.95rem; line-height: 1.7; margin-bottom: 32px; }
+    .auth-features { display: grid; gap: 14px; }
+    .auth-feature { display: flex; align-items: center; gap: 12px; }
+    .auth-feature-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: rgba(37,99,235,0.2); color: #60a5fa;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.88rem; flex-shrink: 0;
+    }
+    .auth-feature p { color: #94a3b8; font-size: 0.87rem; line-height: 1.5; margin: 0; }
+    .auth-feature strong { color: #e2e8f0; display: block; font-size: 0.9rem; }
+    .auth-left-foot { position: relative; z-index: 1; }
+    .auth-left-foot a { color: #475569; font-size: 0.82rem; transition: color .16s; }
+    .auth-left-foot a:hover { color: #94a3b8; }
+
+    /* ── PANEL DERECHO (formulario) ── */
+    .auth-right { flex: 1.15; display: flex; align-items: flex-start; justify-content: center; padding: 40px 28px; overflow-y: auto; max-height: 100vh; }
+    .auth-box { width: 100%; max-width: 480px; }
+    .auth-box > h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+    .auth-box > .lead { color: #64748b; font-size: 0.88rem; margin-bottom: 22px; }
+
+    .paso { margin-bottom: 22px; }
+    .paso-titulo { display: flex; align-items: center; gap: 9px; font-size: 0.82rem; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 12px; }
+    .paso-num { width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0; }
+
+    .field { display: grid; gap: 6px; margin-bottom: 13px; }
+    .field label { font-size: 0.8rem; color: #475569; font-weight: 700; }
+    .field label .opt { color: var(--muted); font-weight: 600; text-transform: none; }
+    .field-wrap { position: relative; }
+    .field-wrap > i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.88rem; pointer-events: none; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 1px solid var(--border); background: var(--surface-2);
+      border-radius: 10px; padding: 11px 13px 11px 38px;
+      outline: none; font-size: 0.9rem; color: var(--text); font-family: inherit;
+      transition: border-color .16s, box-shadow .16s;
+    }
+    .field textarea { padding-left: 13px; resize: vertical; min-height: 70px; }
+    .field select { appearance: none; cursor: pointer; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: #fff; }
+    .hint { font-size: 0.76rem; color: var(--muted); }
+    .dos-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .dos-col { grid-template-columns: 1fr; } }
+
+    .servicios-box { display: grid; gap: 8px; max-height: 230px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--surface-2); }
+    .serv-opt { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background .12s; }
+    .serv-opt:hover { background: var(--hover); }
+    .serv-opt input { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .serv-opt .n { font-size: 0.87rem; font-weight: 600; color: var(--text-2); }
+    .serv-opt .p { margin-left: auto; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+
+    .auth-submit {
+      width: 100%; padding: 13px; border-radius: 11px; border: none;
+      background: var(--primary); color: #fff; font-size: 0.97rem; font-weight: 700;
+      cursor: pointer; transition: background .16s;
+    }
+    .auth-submit:hover:not(:disabled) { background: var(--primary-dark); }
+    .auth-submit:disabled { opacity: .6; cursor: not-allowed; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 0.84rem; margin-top: 18px; }
+    .back-link:hover { color: var(--text); }
+
+    .aviso { display: none; border-radius: 9px; padding: 11px 14px; font-size: 0.84rem; margin-bottom: 14px; }
+    .aviso.err { background: var(--danger-soft); border: 1px solid #fca5a5; color: var(--danger); }
+    .aviso.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+    /* ── Confirmación ── */
+    #pantalla-ok { display: none; text-align: center; padding: 30px 0; }
+    #pantalla-ok .tick { width: 66px; height: 66px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 18px; }
+    #pantalla-ok h3 { font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; }
+    #pantalla-ok p { color: #64748b; font-size: 0.9rem; line-height: 1.6; margin-bottom: 18px; }
+    .resumen { text-align: left; border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: var(--surface-2); margin-bottom: 20px; }
+    .resumen .fila { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 0.87rem; }
+    .resumen .fila span:first-child { color: #64748b; }
+    .resumen .fila span:last-child { font-weight: 700; color: var(--text); text-align: right; }
+
+    /* ── Calendario (copiado de styles.css para no depender del tema) ── */
+    .cal { user-select: none; }
+    .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-title { font-weight: 800; color: var(--text); font-size: 0.98rem; }
+    .cal-nav { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--surface-2); border-radius: 8px; cursor: pointer; color: var(--text); transition: background .12s; }
+    .cal-nav:hover { background: var(--hover); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .cal-labels { margin-bottom: 5px; }
+    .cal-lbl { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
+    .cal-dia { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; background: var(--surface-2); color: var(--text-2); transition: background .12s, border-color .12s; }
+    .cal-dia:hover:not(.vacio):not(.pasado):not(.bloqueado) { border-color: var(--primary); }
+    .cal-dia.vacio { background: transparent; cursor: default; }
+    .cal-dia.hoy { border-color: var(--primary); }
+    .cal-dia.sel { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .cal-dia.bloqueado { background: var(--danger-soft); color: var(--danger); cursor: not-allowed; text-decoration: line-through; }
+    .cal-dia.pasado { opacity: .32; cursor: not-allowed; }
+    .cal-wrap { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: #fff; }
+
+    @media (max-width: 900px) { .auth-left { display: none; } }
+  </style>
+</head>
+<body>
+
+  <!-- MARCA -->
+  <div class="auth-left">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="fas fa-oil-can"></i></div>
+      <span>Lubricentro <b>Villagra</b></span>
+    </div>
+
+    <div class="auth-left-body">
+      <h2>Agenda tu cita <span>sin crear cuenta</span></h2>
+      <p>Solo necesitamos tu nombre y un teléfono para contactarte. Te confirmamos la cita apenas revisemos la disponibilidad.</p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-bolt"></i></div>
+          <div><strong>Sin registro</strong><p>No hace falta contraseña ni correo obligatorio.</p></div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-calendar-check"></i></div>
+          <div><strong>Elegís el día</strong><p>Ves los días disponibles del taller en el calendario.</p></div>
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="fas fa-phone"></i></div>
+          <div><strong>Te confirmamos</strong><p>Te llamamos al número que dejaste para cerrar la cita.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-left-foot">
+      <a href="landing.html"><i class="fas fa-arrow-left" style="margin-right:6px;"></i>Volver al sitio</a>
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="auth-right">
+    <div class="auth-box">
+
+      <div id="pantalla-form">
+        <h3>Solicitar una cita</h3>
+        <p class="lead">Completá los datos y el taller te confirma la fecha. Los campos con * son obligatorios.</p>
+
+        <div class="aviso err" id="cp-error"></div>
+
+        <!-- 1. DATOS DE CONTACTO -->
+        <div class="paso">
+          <div class="paso-titulo"><span class="paso-num">1</span> Tus datos</div>
+          <div class="field">
+            <label for="cp-nombre">Nombre completo *</label>
+            <div class="field-wrap">
+              <i class="fas fa-user"></i>
+              <input id="cp-nombre" type="text" placeholder="Ej. María Rodríguez" autocomplete="name">
+            </div>
+          </div>
+          <div class="dos-col">
+            <div class="field">
+              <label for="cp-telefono">Teléfono *</label>
+              <div class="field-wrap">
+                <i class="fas fa-phone"></i>
+                <input id="cp-telefono" type="tel" placeholder="8888-8888" autocomplete="tel">
+              </div>
+            </div>
+            <div class="field">
+              <label for="cp-correo">Correo <span class="opt">(opcional)</span></label>
+              <div class="field-wrap">
+                <i class="fas fa-envelope"></i>
+                <input id="cp-correo" type="email" placeholder="correo@ejemplo.com" autocomplete="email">
+              </div>
+            </div>
+          </div>
+          <p class="hint"><i class="fas fa-circle-info"></i> Si dejás tu correo podés crear tu cuenta después con el mismo dato y ver tu historial.</p>
+        </div>
+
+        <!-- 2. VEHÍCULO -->
+        <div class="paso">
+          <div class="paso-titulo"><span class="paso-num">2</span> Tu vehículo</div>
+          <div class="dos-col">
+            <div class="field">
+              <label for="cp-placa">Placa *</label>
+              <div class="field-wrap">
+                <i class="fas fa-car"></i>
+                <input id="cp-placa" type="text" placeholder="ABC123" style="text-transform:uppercase;">
+              </div>
+            </div>
+            <div class="field">
+              <label for="cp-marca">Marca *</label>
+              <div class="field-wrap">
+                <i class="fas fa-tag"></i>
+                <select id="cp-marca"><option value="">Cargando…</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SERVICIOS -->
+        <div class="paso">
+          <div class="paso-titulo"><span class="paso-num">3</span> ¿Qué necesitás? *</div>
+          <div class="servicios-box" id="cp-servicios">
+            <p class="hint" style="padding:8px;">Cargando servicios…</p>
+          </div>
+        </div>
+
+        <!-- 4. FECHA -->
+        <div class="paso">
+          <div class="paso-titulo"><span class="paso-num">4</span> Día de la cita *</div>
+          <div class="cal-wrap">
+            <div id="cp-cal"></div>
+            <p class="hint" id="cp-fecha-label" style="margin-top:10px;">Ningún día seleccionado.</p>
+            <p class="hint" style="margin-top:4px;"><span style="color:var(--danger);">■</span> Días no disponibles</p>
+          </div>
+          <input type="hidden" id="cp-fecha">
+        </div>
+
+        <!-- 5. NOTAS -->
+        <div class="paso">
+          <div class="paso-titulo"><span class="paso-num">5</span> Comentarios <span style="text-transform:none;font-weight:600;color:var(--muted);">(opcional)</span></div>
+          <div class="field">
+            <textarea id="cp-obs" placeholder="Contanos qué le pasa al vehículo, modelo, año o cualquier detalle útil."></textarea>
+          </div>
+        </div>
+
+        <button class="auth-submit" id="cp-enviar">
+          <i class="fas fa-calendar-plus" style="margin-right:8px;"></i>Solicitar cita
+        </button>
+
+        <div style="text-align:center;margin-top:18px;font-size:0.87rem;color:#64748b;">
+          ¿Ya tenés cuenta? <a href="login.html" style="color:var(--primary);font-weight:700;">Iniciá sesión</a>
+        </div>
+        <a href="landing.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+      </div>
+
+      <!-- CONFIRMACIÓN -->
+      <div id="pantalla-ok">
+        <div class="tick"><i class="fas fa-check"></i></div>
+        <h3>¡Solicitud enviada!</h3>
+        <p>El taller la revisará y te contactará al teléfono que dejaste para confirmar la cita.</p>
+        <div class="resumen" id="cp-resumen"></div>
+        <p class="hint" id="cp-nota-correo" style="margin-bottom:18px;"></p>
+        <a href="landing.html" class="auth-submit" style="display:block;text-align:center;">Volver al inicio</a>
+        <a href="#" class="back-link" onclick="nuevaSolicitud(); return false;"><i class="fas fa-plus"></i> Solicitar otra cita</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="js/calendario.js"></script>
+  <script src="js/cita-publica.js"></script>
+</body>
+</html>

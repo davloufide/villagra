@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // ── Rutas ────────────────────────────────────────────────
+app.use('/api/publico',        require('./routes/publico'));   // sin token (citas de invitados)
 app.use('/api/auth',           require('./routes/auth'));
 app.use('/api/vehiculos',      require('./routes/vehiculos'));
 app.use('/api/clientes',       require('./routes/clientes'));

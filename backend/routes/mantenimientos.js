@@ -96,15 +96,23 @@ router.get('/', verificarToken, async (req, res) => {
 // GET /api/mantenimientos/solicitudes — citas pendientes de confirmación ("bolsa")
 // Visible para admin y mecánicos. DEBE IR ANTES DE /:id.
 router.get('/solicitudes', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
-  const { data, error } = await supabase
+  // Se incluye el teléfono del cliente (y si es un invitado sin cuenta) para
+  // que el taller pueda llamarlo al confirmar. `es_invitado` es una columna
+  // nueva: si la migración aún no se corrió, se reintenta sin ella.
+  const consulta = (campoInvitado) => supabase
     .from('mantenimientos')
     .select(`
       id_mantenimiento, fecha_ingreso, fecha_estimada_entrega, observaciones_cliente, estado_cita,
-      vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre))),
+      vehiculos(placa, marcas(nombre_marca), clientes(telefono, usuarios(nombre${campoInvitado}))),
       tareas(id_tarea, tipos_servicio(nombre))
     `)
     .eq('estado_cita', 'solicitada')
     .order('fecha_ingreso', { ascending: false });
+
+  let { data, error } = await consulta(', es_invitado');
+  if (error && /es_invitado/i.test(error.message || '')) {
+    ({ data, error } = await consulta(''));
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);

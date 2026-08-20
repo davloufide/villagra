@@ -93,6 +93,14 @@ const diasBloqueados = {
   desbloquear: (fecha)  => apiFetch(`/dias-bloqueados/${fecha}`, { method: 'DELETE' })
 };
 
+// ── Público (sin sesión): agendar cita sin registrarse ────
+const publico = {
+  servicios:      ()     => apiFetch('/publico/servicios'),
+  marcas:         ()     => apiFetch('/publico/marcas'),
+  diasBloqueados: ()     => apiFetch('/publico/dias-bloqueados'),
+  solicitarCita:  (body) => apiFetch('/publico/citas', { method: 'POST', body: JSON.stringify(body) })
+};
+
 // ── Catálogo de servicios (tipos_servicio) ────────────────
 const servicios = {
   lista:      ()         => apiFetch('/tipos-servicio'),
@@ -170,7 +178,7 @@ const reportes = {
 
 // ── Redirigir a login si no hay sesión ───────────────────
 (function protegerPagina() {
-  const publica = ['login.html', 'landing.html', 'reset.html'];
+  const publica = ['login.html', 'landing.html', 'reset.html', 'cita-publica.html'];
   const pagina  = window.location.pathname.split('/').pop();
   if (!publica.includes(pagina) && !getToken()) {
     window.location.href = 'login.html';

@@ -114,6 +114,17 @@
     .role-opt span { font-size: 0.78rem; font-weight: 700; color: #475569; }
     .role-opt.selected span { color: #1e40af; }
 
+    .auth-guest {
+      display: flex; align-items: center; gap: 13px;
+      border: 1px solid #e2e8f0; border-radius: 11px; padding: 13px 15px;
+      background: #f8fafc; transition: border-color .16s, background .16s;
+    }
+    .auth-guest:hover { border-color: #2563eb; background: #eff6ff; }
+    .auth-guest > i:first-child { color: #2563eb; font-size: 1.1rem; flex-shrink: 0; }
+    .auth-guest strong { display: block; font-size: 0.9rem; font-weight: 700; color: #0f172a; }
+    .auth-guest span { display: block; font-size: 0.79rem; color: #64748b; margin-top: 2px; }
+    .auth-guest .chev { margin-left: auto; color: #94a3b8; font-size: 0.8rem; }
+
     .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 0.84rem; margin-top: 20px; }
     .back-link:hover { color: #0f172a; }
 
@@ -189,6 +200,18 @@
         <button class="auth-submit" id="btn-login" onclick="hacerLogin()">
           <i class="fas fa-right-to-bracket" style="margin-right:8px;"></i>Ingresar al sistema
         </button>
+
+        <div class="auth-divider">o</div>
+
+        <a href="cita-publica.html" class="auth-guest">
+          <i class="fas fa-calendar-plus"></i>
+          <div>
+            <strong>Agendar cita sin cuenta</strong>
+            <span>Solo tu nombre y un teléfono. No hace falta registrarse.</span>
+          </div>
+          <i class="fas fa-chevron-right chev"></i>
+        </a>
+
         <a href="landing.html" class="back-link" style="margin-top:22px;"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
       </div>
 
@@ -260,6 +283,9 @@
 
         <div style="text-align:center;margin-top:18px;font-size:0.87rem;color:#64748b;">
           ¿Ya tenés cuenta? <a href="#" onclick="switchTab('login', document.querySelectorAll('.auth-tab')[0]); return false;" style="color:#2563eb;font-weight:700;">Iniciá sesión</a>
+        </div>
+        <div style="text-align:center;margin-top:8px;font-size:0.87rem;color:#64748b;">
+          ¿No querés registrarte? <a href="cita-publica.html" style="color:#2563eb;font-weight:700;">Agendá tu cita sin cuenta</a>
         </div>
         <a href="landing.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
       </div>
