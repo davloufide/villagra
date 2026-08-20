@@ -22,6 +22,7 @@ app.use('/api/usuarios',       require('./routes/usuarios'));
 app.use('/api/perfil',         require('./routes/perfil'));
 app.use('/api/facturacion',    require('./routes/facturacion'));
 app.use('/api/reportes',       require('./routes/reportes'));
+app.use('/api/flujo-caja',     require('./routes/flujoCaja'));
 
 // ── Health check ─────────────────────────────────────────
 app.get('/api/ping', (req, res) => res.json({ ok: true }));

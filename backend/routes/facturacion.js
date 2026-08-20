@@ -132,12 +132,24 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
 router.patch('/:id/pagar', verificarToken, soloRol('administrador'), async (req, res) => {
   const { metodo_pago } = req.body;
 
-  const { data, error } = await supabase
+  // fecha_pago = el día que entró la plata. Es lo que usa el flujo de caja
+  // (columna nueva: si la migración aún no se corrió, se guarda sin ella).
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  let { data, error } = await supabase
     .from('facturas')
-    .update({ estado: 'pagada', metodo_pago })
+    .update({ estado: 'pagada', metodo_pago, fecha_pago: hoy })
     .eq('id_factura', req.params.id)
     .select()
     .single();
+  if (error && (error.code === 'PGRST204' || /fecha_pago/i.test(error.message || ''))) {
+    ({ data, error } = await supabase
+      .from('facturas')
+      .update({ estado: 'pagada', metodo_pago })
+      .eq('id_factura', req.params.id)
+      .select()
+      .single());
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);

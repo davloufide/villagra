@@ -93,6 +93,18 @@ const diasBloqueados = {
   desbloquear: (fecha)  => apiFetch(`/dias-bloqueados/${fecha}`, { method: 'DELETE' })
 };
 
+// ── Flujo de caja (admin) ─────────────────────────────────
+const flujoCaja = {
+  resumen:          (desde, hasta, agrupar) =>
+                      apiFetch(`/flujo-caja?desde=${desde}&hasta=${hasta}&agrupar=${agrupar}`),
+  crear:            (body)     => apiFetch('/flujo-caja', { method: 'POST', body: JSON.stringify(body) }),
+  actualizar:       (id, body) => apiFetch(`/flujo-caja/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  eliminar:         (id)       => apiFetch(`/flujo-caja/${id}`, { method: 'DELETE' }),
+  categorias:       ()         => apiFetch('/flujo-caja/categorias'),
+  crearCategoria:   (body)     => apiFetch('/flujo-caja/categorias', { method: 'POST', body: JSON.stringify(body) }),
+  eliminarCategoria:(id)       => apiFetch(`/flujo-caja/categorias/${id}`, { method: 'DELETE' })
+};
+
 // ── Público (sin sesión): agendar cita sin registrarse ────
 const publico = {
   servicios:      ()     => apiFetch('/publico/servicios'),
