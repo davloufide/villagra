@@ -294,12 +294,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!cont || cont.dataset.cargado) return;
     try {
       const servicios = await apiFetch('/tipos-servicio');
+      // El cliente NO ve precios al elegir servicios: el monto se define
+      // al facturar (puede variar según lo que encuentre el mecánico).
       cont.innerHTML = servicios.map(s => {
-        const precio = s.precio_base ? ` · ₡${Number(s.precio_base).toLocaleString('es')}` : '';
         return `
           <label style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:9px 12px;cursor:pointer;font-size:0.86rem;">
             <input type="checkbox" class="cita-serv-check" value="${s.id_tipo_servicio}" style="width:16px;height:16px;cursor:pointer;">
-            <span>${s.nombre}<span style="color:#94a3b8;font-size:0.78rem;">${precio}</span></span>
+            <span>${s.nombre}</span>
           </label>`;
       }).join('');
       cont.dataset.cargado = '1';

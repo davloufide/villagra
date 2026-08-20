@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let serviciosCache = [];
 
   const $ = (id) => document.getElementById(id);
-  const money = (n) => '₡' + Number(n || 0).toLocaleString('es-CR');
 
   function mostrarError(msg) {
     const el = $('cp-error');
@@ -37,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <label class="serv-opt">
               <input type="checkbox" class="cp-serv" value="${s.id_tipo_servicio}">
               <span class="n">${s.nombre}</span>
-              ${s.precio_base ? `<span class="p">desde ${money(s.precio_base)}</span>` : ''}
             </label>`).join('')
         : '<p class="hint" style="padding:8px;">No hay servicios disponibles en este momento.</p>';
     } catch {

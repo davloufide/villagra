@@ -46,7 +46,7 @@ const correoInvitado = (telefono) => `invitado.${soloDigitos(telefono)}@sin-regi
 router.get('/servicios', async (req, res) => {
   const { data, error } = await supabase
     .from('tipos_servicio')
-    .select('id_tipo_servicio, nombre, descripcion, precio_base')
+    .select('id_tipo_servicio, nombre, descripcion')   // SIN precios: el cliente no los ve al agendar
     .order('nombre');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data ?? []);

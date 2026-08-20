@@ -6,10 +6,14 @@ const IVA_RATE = 0.13;
 const calcIVA = (base) => parseFloat((base * IVA_RATE).toFixed(2));
 
 // GET /api/tipos-servicio
+// El CLIENTE usa esta lista para elegir servicios al agendar, y no debe ver
+// los precios (el monto se define al facturar, según lo que encuentre el
+// mecánico). Por eso al rol cliente se le devuelve el catálogo sin importes.
 router.get('/', verificarToken, async (req, res) => {
+  const esCliente = req.usuario.rol === 'cliente';
   const { data, error } = await supabase
     .from('tipos_servicio')
-    .select('*')
+    .select(esCliente ? 'id_tipo_servicio, nombre, descripcion' : '*')
     .order('nombre');
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
