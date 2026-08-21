@@ -129,7 +129,7 @@
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
     .cal-labels { margin-bottom: 5px; }
     .cal-lbl { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-    .cal-dia { aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; background: var(--surface-2); color: var(--text-2); transition: background .12s, border-color .12s; }
+    .cal-dia { height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; background: var(--surface-2); color: var(--text-2); transition: background .12s, border-color .12s; }
     .cal-dia:hover:not(.vacio):not(.pasado):not(.bloqueado) { border-color: var(--primary); }
     .cal-dia.vacio { background: transparent; cursor: default; }
     .cal-dia.hoy { border-color: var(--primary); }
