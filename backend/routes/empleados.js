@@ -176,10 +176,16 @@ router.post('/vacaciones/registrar', verificarToken, soloRol('administrador'), a
 });
 
 // PATCH /api/empleados/vacaciones/:id — aprobar o rechazar (admin)
+// Al RECHAZAR hay que escribir el motivo: el empleado lo ve en su módulo
+// "Mis vacaciones", así sabe por qué se le negó y puede pedir otras fechas.
 router.patch('/vacaciones/:id', verificarToken, soloRol('administrador'), async (req, res) => {
   const { estado } = req.body;
+  const motivo = String(req.body.motivo ?? '').trim();
+
   if (!['aprobada', 'rechazada'].includes(estado))
     return res.status(400).json({ error: 'estado debe ser aprobada o rechazada' });
+  if (estado === 'rechazada' && motivo.length < 3)
+    return res.status(400).json({ error: 'Escribí el motivo del rechazo para que el empleado sepa por qué' });
 
   const { data: vac } = await supabase
     .from('vacaciones').select('*').eq('id_vacacion', req.params.id).single();
@@ -198,12 +204,18 @@ router.patch('/vacaciones/:id', verificarToken, soloRol('administrador'), async 
       .eq('id_empleado', vac.id_empleado);
   }
 
-  const { data, error } = await supabase
-    .from('vacaciones')
-    .update({ estado })
-    .eq('id_vacacion', req.params.id)
-    .select()
-    .single();
+  // El motivo solo aplica al rechazo; aprobar lo deja limpio (por si la
+  // solicitud se rechazó antes y se está corrigiendo).
+  const cambios = { estado, motivo_rechazo: estado === 'rechazada' ? motivo : null };
+
+  // Columna nueva: si la migración aún no se corrió, guardar solo el estado.
+  let data, error;
+  ({ data, error } = await supabase
+    .from('vacaciones').update(cambios).eq('id_vacacion', req.params.id).select().single());
+  if (error && (error.code === 'PGRST204' || /motivo_rechazo/i.test(error.message || ''))) {
+    ({ data, error } = await supabase
+      .from('vacaciones').update({ estado }).eq('id_vacacion', req.params.id).select().single());
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);

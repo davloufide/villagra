@@ -109,9 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="fila"><span>Día solicitado</span><span>${fechaBonita}</span></div>
         <div class="fila"><span>Estado</span><span style="color:#b45309;">Pendiente de confirmación</span></div>`;
 
-      $('cp-nota-correo').innerHTML = correo
-        ? `<i class="fas fa-circle-info"></i> Anotá tu número de solicitud <strong>#${r.numero}</strong>. Como dejaste tu correo, más adelante podés crear tu contraseña desde "¿Olvidaste tu contraseña?" en el login y ver tu historial.`
-        : `<i class="fas fa-circle-info"></i> Anotá tu número de solicitud <strong>#${r.numero}</strong> para cuando llames al taller.`;
+      $('cp-nota-correo').innerHTML =
+        `<i class="fas fa-circle-info"></i> Anotá tu número de solicitud <strong>#${r.numero}</strong> para cuando llames al taller.` +
+        (correo
+          ? ` Si más adelante querés seguir tus servicios en línea, podés <a href="login.html" style="color:var(--primary);font-weight:700;">crear tu cuenta</a> con este mismo correo y el teléfono que dejaste.`
+          : '');
 
       $('pantalla-form').style.display = 'none';
       $('pantalla-ok').style.display = 'block';

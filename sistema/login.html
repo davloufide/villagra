@@ -271,6 +271,17 @@
             <input id="reg-password" type="password" placeholder="Mínimo 8 caracteres">
           </div>
         </div>
+
+        <!-- Solo aparece si ese correo ya agendó una cita sin cuenta: sirve
+             para verificar que es la misma persona y activarle su cuenta. -->
+        <div class="field" id="reg-tel-wrap" style="display:none;">
+          <label>Teléfono que dejaste al agendar</label>
+          <div class="field-wrap">
+            <i class="fas fa-phone"></i>
+            <input id="reg-telefono" type="tel" placeholder="8888-8888">
+          </div>
+        </div>
+
         <button class="auth-submit" style="margin-top:6px;" onclick="hacerRegistro()">
           <i class="fas fa-user-plus" style="margin-right:8px;"></i>Crear mi cuenta
         </button>
@@ -391,15 +402,26 @@
       errEl.style.display = 'none';
       okEl.style.display  = 'none';
 
+      const telefono = document.getElementById('reg-telefono').value.trim();
+
       try {
-        await apiFetch('/auth/registro', {
+        const r = await apiFetch('/auth/registro', {
           method: 'POST',
-          body: JSON.stringify({ nombre, correo, password, id_rol: 3 }) // rol cliente
+          body: JSON.stringify({ nombre, correo, password, id_rol: 3, telefono }) // rol cliente
         });
-        okEl.textContent = 'Cuenta creada. Ya puedes iniciar sesión.';
+        document.getElementById('reg-tel-wrap').style.display = 'none';
+        okEl.textContent = r?.reclamada
+          ? (r.mensaje || 'Cuenta activada. Ya puedes iniciar sesión.')
+          : 'Cuenta creada. Ya puedes iniciar sesión.';
         okEl.style.display = 'block';
-        setTimeout(() => switchTab('login', document.querySelectorAll('.auth-tab')[0]), 1800);
+        setTimeout(() => switchTab('login', document.querySelectorAll('.auth-tab')[0]), 2200);
       } catch (e) {
+        // Si ese correo ya agendó sin cuenta, se pide el teléfono para verificar.
+        if (/tel[eé]fono/i.test(e.message)) {
+          const wrap = document.getElementById('reg-tel-wrap');
+          wrap.style.display = '';
+          document.getElementById('reg-telefono').focus();
+        }
         errEl.textContent = e.message;
         errEl.style.display = 'block';
       }

@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-success btn-sm" onclick="responderVac(${v.id_vacacion},'aprobada')"><i class="fas fa-check"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="responderVac(${v.id_vacacion},'rechazada')"><i class="fas fa-xmark"></i></button>
+            <button class="btn btn-danger btn-sm" title="Rechazar" onclick="abrirRechazoVac(${v.id_vacacion},'${(v.empleados?.usuarios?.nombre ?? '').replace(/'/g, "\\'")}')"><i class="fas fa-xmark"></i></button>
           </div>
         </div>
       `).join('') || '<p style="color:#94a3b8;padding:12px;">Sin solicitudes pendientes</p>';
@@ -69,9 +69,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  window.responderVac = async (id, estado) => {
+  // Rechazar exige motivo: se pide en un modal y el empleado lo ve después.
+  window.abrirRechazoVac = (id, nombre) => {
+    document.getElementById('mvac-id').value = id;
+    document.getElementById('mvac-motivo').value = '';
+    document.getElementById('mvac-quien').textContent =
+      nombre ? `Solicitud de ${nombre} · escribí por qué se rechaza` : 'Escribí por qué se rechaza';
+    abrirModal('modal-motivo-vac');
+  };
+
+  window.confirmarRechazoVac = async () => {
+    const id     = document.getElementById('mvac-id').value;
+    const motivo = document.getElementById('mvac-motivo').value.trim();
+    if (motivo.length < 3) { toast('Escribí el motivo del rechazo', 'error'); return; }
+    const btn = document.getElementById('btn-confirmar-rechazo');
+    btnLoading(btn, true);
     try {
-      await empleados.responderVac(id, { estado });
+      await responderVac(id, 'rechazada', motivo);
+      cerrarModal('modal-motivo-vac');
+    } finally {
+      btnLoading(btn, false);
+    }
+  };
+
+  window.responderVac = async (id, estado, motivo) => {
+    try {
+      await empleados.responderVac(id, { estado, motivo });
       toast(estado === 'aprobada' ? 'Vacaciones aprobadas' : 'Vacaciones rechazadas', estado === 'aprobada' ? 'success' : 'error');
       cargarVacaciones();
       cargarHistorialVac();
@@ -129,8 +152,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td style="font-size:0.85rem;">${v.fecha_fin}</td>
           <td style="text-align:center;">${v.dias_habiles}</td>
           <td><span class="tag ${cls}">${label}</span></td>
+          <td style="font-size:0.83rem;color:#94a3b8;max-width:260px;">${v.motivo_rechazo ? v.motivo_rechazo : '—'}</td>
         </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Sin registros en esta categoría</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Sin registros en esta categoría</td></tr>';
   }
 
   const btnGuardar = document.getElementById('btn-guardar-empleado');

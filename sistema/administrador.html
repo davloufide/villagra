@@ -206,14 +206,34 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Empleado</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Estado</th><th>Motivo del rechazo</th></tr></thead>
             <tbody id="adm-vac-historial">
-              <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+              <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     </div><!-- /vista-vacaciones -->
+
+    <!-- ══════════ MODAL: motivo del rechazo de vacaciones ══════════ -->
+    <div id="modal-motivo-vac" class="modal-overlay" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <div><h3>Rechazar solicitud</h3><p id="mvac-quien">Escribí por qué se rechaza</p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-motivo-vac')"><i class="fas fa-times"></i></button>
+        </div>
+        <input type="hidden" id="mvac-id">
+        <div class="field">
+          <label>Motivo del rechazo *</label>
+          <textarea id="mvac-motivo" style="height:90px;" placeholder="Ej. Esa semana ya hay dos mecánicos de vacaciones. Podés pedirlas a partir del 15."></textarea>
+          <small style="color:#94a3b8;font-size:0.78rem;margin-top:5px;display:block;">El empleado va a ver este texto en su módulo "Mis vacaciones".</small>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-motivo-vac')">Cancelar</button>
+          <button class="btn btn-danger" id="btn-confirmar-rechazo" onclick="confirmarRechazoVac()"><i class="fas fa-xmark"></i> Rechazar solicitud</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ══════════ MODAL: Registrar cliente ══════════ -->
     <div id="modal-cliente" class="modal-overlay" style="display:none;">

@@ -49,6 +49,66 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/registro (solo admin crea usuarios)
+// ── Reclamar una cuenta de cliente invitado ──────────────────
+// Un invitado (agendó sin registrarse) no tiene contraseña utilizable. Si
+// después quiere su cuenta, se la damos verificando el teléfono que dejó.
+// Solo aplica a usuarios con es_invitado = true: una cuenta real nunca se
+// puede tomar por este camino.
+const soloDigitos = (t) => String(t || '').replace(/\D/g, '');
+
+async function intentarReclamarInvitado({ correo, password_hash, nombre, telefono }) {
+  const { data: usuario } = await supabase
+    .from('usuarios').select('id_usuario, nombre, correo, id_rol, es_invitado')
+    .eq('correo', correo).maybeSingle();
+
+  // Sin columna es_invitado (migración no corrida) o cuenta real: no se reclama.
+  if (!usuario || usuario.es_invitado !== true)
+    return { ok: false, respuesta: { error: 'Correo ya registrado' } };
+
+  const { data: cliente } = await supabase
+    .from('clientes').select('id_cliente, telefono').eq('id_usuario', usuario.id_usuario).maybeSingle();
+
+  const tel = soloDigitos(telefono);
+  if (!tel)
+    return {
+      ok: false,
+      respuesta: {
+        error: 'Ya agendaste una cita con ese correo. Para activar tu cuenta, escribí el teléfono que dejaste al agendar.',
+        requiere_telefono: true
+      }
+    };
+
+  if (!cliente || soloDigitos(cliente.telefono) !== tel)
+    return {
+      ok: false,
+      respuesta: {
+        error: 'El teléfono no coincide con el que dejaste al agendar. Revisalo o llamá al taller.',
+        requiere_telefono: true
+      }
+    };
+
+  // Coincide: se le pone la contraseña y deja de ser invitado.
+  const cambios = { password_hash, nombre: nombre || usuario.nombre, es_invitado: false };
+  let error;
+  ({ error } = await supabase.from('usuarios').update(cambios).eq('id_usuario', usuario.id_usuario));
+  if (error && /es_invitado/i.test(error.message || '')) {
+    const { es_invitado, ...sinFlag } = cambios;
+    ({ error } = await supabase.from('usuarios').update(sinFlag).eq('id_usuario', usuario.id_usuario));
+  }
+  if (error) return { ok: false, respuesta: { error: 'No se pudo activar la cuenta' } };
+
+  return {
+    ok: true,
+    usuario: {
+      id_usuario: usuario.id_usuario,
+      nombre: nombre || usuario.nombre,
+      correo: usuario.correo,
+      reclamada: true,
+      mensaje: 'Cuenta activada. Conservás tu vehículo y tus citas anteriores.'
+    }
+  };
+}
+
 router.post('/registro', async (req, res) => {
   const { nombre, correo, password, id_rol } = req.body;
   if (!nombre || !correo || !password || !id_rol)
@@ -66,8 +126,21 @@ router.post('/registro', async (req, res) => {
     .single();
 
   if (error) {
-    if (error.code === '23505')
-      return res.status(409).json({ error: 'Correo ya registrado' });
+    if (error.code === '23505') {
+      // El correo ya existe. Puede ser un CLIENTE INVITADO: alguien que
+      // agendó sin cuenta dejando ese correo. En ese caso puede "reclamar"
+      // su cuenta y conservar su vehículo y su historial, verificando con el
+      // teléfono que dejó al agendar (no se usa el correo para verificar
+      // porque justamente puede no llegarle).
+      const reclamada = await intentarReclamarInvitado({
+        correo: correo.toLowerCase().trim(),
+        password_hash: hash,
+        nombre,
+        telefono: req.body.telefono
+      });
+      if (reclamada.ok) return res.status(200).json(reclamada.usuario);
+      return res.status(409).json(reclamada.respuesta);
+    }
     return res.status(500).json({ error: 'Error al crear usuario' });
   }
 

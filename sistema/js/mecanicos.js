@@ -395,12 +395,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? sols.map(v => {
             const [cls, label] = ESTADO_VAC[v.estado] ?? ['neutral', v.estado];
             return `
-              <div class="list-item">
-                <div>
-                  <strong style="font-size:0.9rem;">${v.fecha_inicio} al ${v.fecha_fin}</strong>
-                  <div style="color:#64748b;font-size:0.8rem;">${v.dias_habiles} día(s) hábiles</div>
+              <div class="list-item" style="${v.motivo_rechazo ? 'flex-direction:column;align-items:stretch;gap:8px;' : ''}">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+                  <div>
+                    <strong style="font-size:0.9rem;">${v.fecha_inicio} al ${v.fecha_fin}</strong>
+                    <div style="color:#64748b;font-size:0.8rem;">${v.dias_habiles} día(s) hábiles</div>
+                  </div>
+                  <span class="tag ${cls}">${label}</span>
                 </div>
-                <span class="tag ${cls}">${label}</span>
+                ${v.motivo_rechazo ? `
+                  <div style="background:var(--danger-soft);border:1px solid rgba(220,38,38,0.25);border-radius:9px;padding:10px 12px;">
+                    <strong style="color:var(--danger);font-size:0.78rem;text-transform:uppercase;letter-spacing:.4px;">Motivo del rechazo</strong>
+                    <p style="color:var(--text-2);font-size:0.86rem;margin-top:4px;line-height:1.5;">${v.motivo_rechazo}</p>
+                  </div>` : ''}
               </div>`;
           }).join('')
         : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no has solicitado vacaciones.</p>';
