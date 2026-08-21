@@ -33,13 +33,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (m) {
       const tareas = m.tareas ?? [];
       if (tareas.length) {
-        tareas.forEach(t => lineas.push({
-          descripcion: t.tipos_servicio?.nombre ?? t.descripcion ?? 'Servicio',
-          cantidad: 1,
-          precio_unitario: Number(t.tipos_servicio?.precio_base ?? 0)
-        }));
-      } else {
-        lineas.push({ descripcion: 'Servicio general', cantidad: 1, precio_unitario: 0 });
+        tareas
+          .filter(t => t.id_tipo_servicio)
+          .forEach(t => lineas.push({
+            id_tipo_servicio: t.id_tipo_servicio,
+            descripcion: t.tipos_servicio?.nombre ?? 'Servicio',
+            cantidad: 1,
+            precio_unitario: Number(t.tipos_servicio?.precio_base ?? 0)
+          }));
       }
     }
     renderLineas();
@@ -47,7 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // ── Edición de líneas ─────────────────────────────────────
-  window.agregarLinea = () => { lineas.push({ descripcion: '', cantidad: 1, precio_unitario: 0 }); renderLineas(); renderPreview(mantActual()); };
+  // NO existe "línea manual": no se puede escribir una descripción ni un
+  // precio a mano. Toda línea sale del catálogo y el servidor recalcula el
+  // precio al generar la factura, así el monto no se puede inventar.
 
   // Precargar una línea desde el catálogo: carga el nombre y el precio SIN IVA
   // automáticamente (el usuario no escribe nombre ni precio). El IVA y el total
@@ -55,7 +58,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.agregarLineaServicio = (idServ) => {
     const s = serviciosCatalogo.find(x => String(x.id_tipo_servicio) === String(idServ));
     if (s) {
-      lineas.push({ descripcion: s.nombre, cantidad: 1, precio_unitario: Number(s.precio_base) || 0 });
+      lineas.push({
+        id_tipo_servicio: s.id_tipo_servicio,
+        descripcion: s.nombre,
+        cantidad: 1,
+        precio_unitario: Number(s.precio_base) || 0
+      });
       renderLineas();
       renderPreview(mantActual());
     }
@@ -72,8 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) { console.error('[Factura catálogo]', e); }
   }
   window.quitarLinea  = (i) => { lineas.splice(i, 1); renderLineas(); renderPreview(mantActual()); };
-  window.editarLinea  = (i, campo, val) => {
-    lineas[i][campo] = campo === 'descripcion' ? val : (parseFloat(val) || 0);
+  // Solo la CANTIDAD es editable. La descripción y el precio vienen del
+  // catálogo y el servidor los vuelve a resolver al generar la factura.
+  window.editarCantidad = (i, val) => {
+    const n = Math.floor(Number(val));
+    lineas[i].cantidad = Number.isInteger(n) && n >= 1 ? Math.min(n, 999) : 1;
     renderPreview(mantActual());
   };
 
@@ -84,24 +95,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderLineas() {
     const cont = document.getElementById('fac-lineas');
     if (!lineas.length) {
-      cont.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;padding:8px;">Selecciona un mantenimiento o agrega líneas manualmente.</p>';
+      cont.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;padding:8px;">Elegí un mantenimiento, o agregá servicios del catálogo con el selector de arriba.</p>';
       return;
     }
     cont.innerHTML = lineas.map((l, i) => `
       <div class="form-grid" style="grid-template-columns:2.5fr 0.7fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px;">
         <div class="field" style="margin:0;">
-          ${i === 0 ? '<label>Descripción</label>' : ''}
-          <input value="${(l.descripcion ?? '').replace(/"/g, '&quot;')}" oninput="editarLinea(${i},'descripcion',this.value)" placeholder="Descripción">
+          ${i === 0 ? '<label>Servicio</label>' : ''}
+          <div style="padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;font-size:0.86rem;">${l.descripcion}</div>
         </div>
         <div class="field" style="margin:0;">
           ${i === 0 ? '<label>Cant.</label>' : ''}
-          <input type="number" min="1" value="${l.cantidad}" oninput="editarLinea(${i},'cantidad',this.value)">
+          <input type="number" min="1" max="999" step="1" value="${l.cantidad}" oninput="editarCantidad(${i},this.value)">
         </div>
         <div class="field" style="margin:0;">
           ${i === 0 ? '<label>Precio unit. (sin IVA)</label>' : ''}
-          <input type="number" min="0" value="${l.precio_unitario}" oninput="editarLinea(${i},'precio_unitario',this.value)">
+          <div title="El precio lo define el catálogo" style="padding:9px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9px;font-size:0.86rem;color:#475569;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-lock" style="font-size:0.7rem;color:#94a3b8;"></i>${money(l.precio_unitario)}
+          </div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="quitarLinea(${i})" style="margin-bottom:1px;"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
+        <button class="btn btn-outline btn-sm" onclick="quitarLinea(${i})" title="Quitar esta línea" style="margin-bottom:1px;"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
       </div>`).join('');
   }
 
@@ -161,8 +174,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idMant = parseInt(document.getElementById('fac-mantenimiento').value);
     if (!idMant) { toast('Selecciona un mantenimiento', 'error'); return; }
 
-    const lineasValidas = lineas.filter(l => l.descripcion.trim() && l.precio_unitario > 0);
-    if (!lineasValidas.length) { toast('Agrega al menos una línea con descripción y precio', 'error'); return; }
+    // Se manda QUÉ se cobra, no CUÁNTO: el servidor busca el precio en el catálogo.
+    const items = lineas
+      .filter(l => l.id_tipo_servicio)
+      .map(l => ({ id_tipo_servicio: l.id_tipo_servicio, cantidad: l.cantidad }));
+    if (!items.length) { toast('Agregá al menos un servicio del catálogo', 'error'); return; }
 
     // FACT-005: si hay descuento, debe estar entre 1% y 100%
     const rawDesc = document.getElementById('fac-descuento').value.trim();
@@ -181,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         id_mantenimiento: idMant,
         metodo_pago: document.getElementById('fac-metodo').value,
         descuento_pct,
-        lineas: lineasValidas
+        items
       });
       toast('Factura generada correctamente');
       lineas = [];

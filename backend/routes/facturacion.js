@@ -27,7 +27,7 @@ router.get('/facturables', verificarToken, soloRol('administrador'), async (req,
     .select(`
       id_mantenimiento, fecha_ingreso, estado,
       vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre))),
-      tareas(descripcion, tipos_servicio(nombre, precio_base)),
+      tareas(descripcion, id_tipo_servicio, tipos_servicio(nombre, precio_base)),
       facturas(id_factura)
     `)
     .eq('estado', 'terminado')
@@ -73,12 +73,73 @@ router.get('/:id', verificarToken, async (req, res) => {
 });
 
 // POST /api/facturacion — generar factura (admin)
+//
+// SEGURIDAD: las líneas NO se toman del body. El cliente solo manda QUÉ
+// servicios se cobran (id_tipo_servicio) y en qué cantidad; el nombre y el
+// precio los busca el servidor en el catálogo (tipos_servicio). Así nadie
+// puede emitir una factura con un monto inventado, ni desde la pantalla ni
+// llamando a la API directamente.
+//
+// Body: { id_mantenimiento, items:[{id_tipo_servicio, cantidad}], metodo_pago, descuento_pct }
+// Si no vienen items, se factura lo que tenga el mantenimiento (sus tareas).
 router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
-  const { id_mantenimiento, lineas, metodo_pago, descuento_pct } = req.body;
-  if (!id_mantenimiento || !lineas?.length)
-    return res.status(400).json({ error: 'id_mantenimiento y lineas son requeridos' });
+  const { id_mantenimiento, items, metodo_pago, descuento_pct } = req.body;
+  if (!id_mantenimiento)
+    return res.status(400).json({ error: 'id_mantenimiento es requerido' });
 
-  // FACT-005: descuento opcional; si viene, debe estar entre 1% y 100%
+  const CANT_MAX = 999;
+
+  // ── 1. Qué se cobra: lo que mande el admin, o las tareas del mantenimiento ──
+  let pedidos = [];
+  if (Array.isArray(items) && items.length) {
+    pedidos = items;
+  } else {
+    const { data: tareas, error: errT } = await supabase
+      .from('tareas').select('id_tipo_servicio').eq('id_mantenimiento', id_mantenimiento);
+    if (errT) return res.status(500).json({ error: errT.message });
+    pedidos = (tareas ?? [])
+      .filter(t => t.id_tipo_servicio)
+      .map(t => ({ id_tipo_servicio: t.id_tipo_servicio, cantidad: 1 }));
+  }
+
+  if (!pedidos.length)
+    return res.status(400).json({ error: 'No hay servicios que facturar. Agregá tareas al mantenimiento o servicios del catálogo a la factura.' });
+
+  // ── 2. Normalizar y validar cantidades ──
+  const normalizados = [];
+  for (const it of pedidos) {
+    const idServ = Number(it?.id_tipo_servicio);
+    const cant   = Math.floor(Number(it?.cantidad ?? 1));
+    if (!Number.isInteger(idServ) || idServ <= 0)
+      return res.status(400).json({ error: 'Cada línea debe indicar un servicio válido del catálogo' });
+    if (!Number.isInteger(cant) || cant < 1 || cant > CANT_MAX)
+      return res.status(400).json({ error: `La cantidad de cada línea debe estar entre 1 y ${CANT_MAX}` });
+    normalizados.push({ id_tipo_servicio: idServ, cantidad: cant });
+  }
+
+  // ── 3. Precio y nombre SIEMPRE desde el catálogo ──
+  const idsUnicos = [...new Set(normalizados.map(n => n.id_tipo_servicio))];
+  const { data: servicios, error: errS } = await supabase
+    .from('tipos_servicio')
+    .select('id_tipo_servicio, nombre, precio_base')
+    .in('id_tipo_servicio', idsUnicos);
+  if (errS) return res.status(500).json({ error: errS.message });
+
+  const catalogo = new Map((servicios ?? []).map(s => [s.id_tipo_servicio, s]));
+  const faltantes = idsUnicos.filter(id => !catalogo.has(id));
+  if (faltantes.length)
+    return res.status(400).json({ error: 'Hay servicios que ya no existen en el catálogo. Actualizá la factura.' });
+
+  const lineas = normalizados.map(n => {
+    const serv = catalogo.get(n.id_tipo_servicio);
+    return {
+      descripcion: serv.nombre,
+      cantidad: n.cantidad,
+      precio_unitario: parseFloat(Number(serv.precio_base ?? 0).toFixed(2))
+    };
+  });
+
+  // ── 4. Descuento opcional (FACT-005): porcentaje entre 1% y 100% ──
   let pct = 0;
   if (descuento_pct != null && descuento_pct !== '' && Number(descuento_pct) !== 0) {
     pct = Number(descuento_pct);
@@ -88,6 +149,10 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
 
   const IVA_RATE = 0.13;
   const subtotal  = parseFloat(lineas.reduce((s, l) => s + l.cantidad * l.precio_unitario, 0).toFixed(2));
+
+  if (subtotal <= 0)
+    return res.status(400).json({ error: 'La factura quedaría en ₡0. Revisá los precios del catálogo antes de facturar.' });
+
   const descuento = parseFloat((subtotal * pct / 100).toFixed(2));
   const base      = parseFloat((subtotal - descuento).toFixed(2));
   const iva       = parseFloat((base * IVA_RATE).toFixed(2));
@@ -115,12 +180,7 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 
-  const lineasConId = lineas.map(l => ({
-    id_factura: factura.id_factura,
-    descripcion: l.descripcion,
-    cantidad: l.cantidad,
-    precio_unitario: l.precio_unitario
-  }));
+  const lineasConId = lineas.map(l => ({ id_factura: factura.id_factura, ...l }));
 
   const { error: errL } = await supabase.from('lineas_factura').insert(lineasConId);
   if (errL) return res.status(500).json({ error: errL.message });
