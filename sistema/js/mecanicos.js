@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const lista = await mantenimientos.lista();
       misMants = lista;
-      const activos = lista.filter(m => m.estado !== 'terminado');
+      const activos = lista.filter(m => m.estado !== 'terminado' && m.estado !== 'cancelado');
 
       document.getElementById('mec-asignados').textContent  = activos.length;
       document.getElementById('mec-completados').textContent = lista.filter(m => m.estado === 'terminado').length;
@@ -132,6 +132,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!id_cliente) { toast('Selecciona el cliente', 'error'); return; }
     if (!vehSel)     { toast('Selecciona el vehículo del cliente', 'error'); return; }
     if (!servicios.length) { toast('Selecciona al menos una tarea', 'error'); return; }
+    const errFecha = errorFechaEntrega(fecha);
+    if (errFecha) { toast(errFecha, 'error'); return; }
 
     btnLoading(btn, true);
     try {
@@ -180,10 +182,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const det = await mantenimientos.detalle(id);
       document.getElementById('mec-p-titulo').textContent =
         `${det.vehiculos?.placa ?? '-'}${det.vehiculos?.marcas?.nombre_marca ? ' · ' + det.vehiculos.marcas.nombre_marca : ''}`;
-      document.getElementById('mec-p-sub').textContent =
-        `Cliente: ${det.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · Estado: ${det.estado ?? '-'}`;
+      document.getElementById('mec-p-sub').innerHTML =
+        `Cliente: ${det.vehiculos?.clientes?.usuarios?.nombre ?? '-'} · Estado: ${tagEstado(det.estado)}`;
       document.getElementById('mec-p-obs').value   = det.observaciones_cliente ?? '';
       document.getElementById('mec-p-fecha').value = det.fecha_estimada_entrega ?? '';
+
+      // Cancelado (OPE-012 / GM-003): solo lectura, no se marcan ni agregan tareas
+      const cancelado = det.estado === 'cancelado';
+      document.getElementById('mec-cancelado-box').style.display = cancelado ? '' : 'none';
+      document.getElementById('mec-edit-wrap').style.display     = cancelado ? 'none' : '';
+      document.getElementById('mec-add-wrap').style.display      = cancelado ? 'none' : '';
+      const puedeReabrir = !det.facturas;
 
       const tareas = det.tareas ?? [];
       document.getElementById('mec-p-tareas').innerHTML = tareas.length
@@ -195,10 +204,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td style="font-size:0.84rem;">${t.empleados?.usuarios?.nombre ?? '-'}</td>
                 <td>${tagEstado(t.estado)}</td>
                 <td>
+                  ${cancelado ? '' : `
                   <div style="display:flex;gap:5px;">
-                    ${completa ? '' : `<button class="btn btn-success btn-sm" onclick="completarTareaMec(${t.id_tarea})"><i class="fas fa-check"></i></button>`}
+                    ${!completa
+                      ? `<button class="btn btn-success btn-sm" onclick="completarTareaMec(${t.id_tarea})" title="Marcar como completada"><i class="fas fa-check"></i></button>`
+                      : (puedeReabrir ? `<button class="btn btn-outline btn-sm" onclick="reabrirTareaMec(${t.id_tarea})" title="Desmarcar (completada por error)"><i class="fas fa-rotate-left"></i></button>` : '')}
                     <button class="btn btn-outline btn-sm" onclick="eliminarTareaMec(${t.id_tarea})" title="Quitar"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
-                  </div>
+                  </div>`}
                 </td>
               </tr>`;
           }).join('')
@@ -229,6 +241,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Guardar info editada
   document.getElementById('btn-guardar-mant-mec').addEventListener('click', async () => {
     if (!panelMantId) return;
+    const errFecha = errorFechaEntrega(document.getElementById('mec-p-fecha').value);
+    if (errFecha) { toast(errFecha, 'error'); return; }
     const btn = document.getElementById('btn-guardar-mant-mec');
     btnLoading(btn, true);
     try {
@@ -263,6 +277,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await mantenimientos.actualizarTarea(idTarea, { estado: 'completada' });
       toast('Tarea completada');
+      if (panelMantId) await gestionarMant(panelMantId);
+      cargarMisMantenimientos();
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  // Desmarcar una tarea completada por error (GM-003): vuelve a pendiente
+  window.reabrirTareaMec = async (idTarea) => {
+    try {
+      await mantenimientos.actualizarTarea(idTarea, { estado: 'pendiente' });
+      toast('Tarea devuelta a pendiente');
       if (panelMantId) await gestionarMant(panelMantId);
       cargarMisMantenimientos();
     } catch (e) { toast(e.message, 'error'); }

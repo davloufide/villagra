@@ -2,6 +2,7 @@ const router   = require('express').Router();
 const bcrypt   = require('bcryptjs');
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
+const { esCorreoValido, MSG_CORREO } = require('../utils/validacion');
 
 // Días de vacaciones que corresponden por antigüedad.
 // Regla: 1 día hábil por cada mes completo trabajado desde la fecha de ingreso
@@ -37,6 +38,9 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
   if (!nombre || !correo || !password || !id_rol)
     return res.status(400).json({ error: 'nombre, correo, password e id_rol requeridos' });
 
+  if (!esCorreoValido(correo))
+    return res.status(400).json({ error: MSG_CORREO });
+
   if (password.length < 8)
     return res.status(400).json({ error: 'Contraseña mínimo 8 caracteres' });
 
@@ -44,7 +48,7 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
 
   const { data: usuario, error: errU } = await supabase
     .from('usuarios')
-    .insert({ nombre, correo: correo.toLowerCase(), password_hash: hash, id_rol })
+    .insert({ nombre, correo: correo.toLowerCase().trim(), password_hash: hash, id_rol })
     .select('id_usuario')
     .single();
 

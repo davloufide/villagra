@@ -409,10 +409,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <strong style="font-size:0.9rem;">${m.placa} · ${m.marca ?? ''}</strong>
                   <div style="color:#94a3b8;font-size:0.78rem;">${new Date(m.fecha_ingreso).toLocaleDateString('es-CR')}${fac ? ' · ₡' + Number(fac.total).toLocaleString('es') : ''}</div>
                 </div>
-                ${m.estado_cita === 'solicitada'
+                ${m.estado_cita === 'solicitada' && m.estado !== 'cancelado'
                   ? '<span class="tag warning">Pendiente de confirmación</span>'
                   : tagEstado(m.estado)}
               </div>
+              ${m.estado === 'cancelado' ? `
+                <div style="background:var(--danger-soft);border:1px solid rgba(220,38,38,0.25);border-radius:9px;padding:9px 12px;margin-bottom:8px;font-size:0.82rem;color:var(--text-2);">
+                  <strong style="color:var(--danger);">Mantenimiento cancelado por el taller.</strong>
+                  ${m.motivo_cancelacion ? `Motivo: ${m.motivo_cancelacion}` : ''}
+                </div>` : `
+                <div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">Entrega estimada: ${m.fecha_estimada_entrega ? new Date(m.fecha_estimada_entrega + 'T00:00:00').toLocaleDateString('es-CR') : 'Por confirmar'}</div>`}
               <div class="progress" style="margin-bottom:6px;"><span style="width:${avance}%"></span></div>
               <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:8px;">${comp} de ${tareas.length} tareas completadas (${avance}%)</div>
               ${tareasHtml}
@@ -457,10 +463,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div style="color:#64748b;font-size:0.8rem;">${v.marcas?.nombre_marca ?? '-'}${v.observaciones ? ' · ' + v.observaciones : ''}</div>
               </div>
             </div>
-            <button class="btn btn-outline btn-sm" onclick="editarVehiculo(${v.id_vehiculo})"><i class="fas fa-pen"></i> Editar</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="verHistorialVehiculo(${v.id_vehiculo})"><i class="fas fa-clock-rotate-left"></i> Historial</button>
+              <button class="btn btn-outline btn-sm" onclick="editarVehiculo(${v.id_vehiculo})"><i class="fas fa-pen"></i> Editar</button>
+            </div>
           </div>`).join('')
       : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no tienes vehículos registrados. Usa "Registrar vehículo".</p>';
   }
+
+  // ── Historial de mantenimientos de UN vehículo (GV-003) ──
+  // Ordenado por fecha (más reciente primero), con estado y descripción; cada
+  // mantenimiento se despliega para ver su detalle (tareas, fechas, factura).
+  window.verHistorialVehiculo = (id) => {
+    const v = misVehiculos.find(x => x.id_vehiculo === id);
+    if (!v) return;
+    const mants = [...(v.mantenimientos ?? [])]
+      .sort((a, b) => new Date(b.fecha_ingreso) - new Date(a.fecha_ingreso));
+    const fecha = f => f ? new Date(String(f).length === 10 ? f + 'T00:00:00' : f).toLocaleDateString('es-CR') : null;
+
+    document.getElementById('vh-titulo').textContent = `Historial · ${v.placa}`;
+    document.getElementById('vh-sub').textContent =
+      `${v.marcas?.nombre_marca ?? ''} · ${mants.length} mantenimiento(s), del más reciente al más antiguo`;
+
+    document.getElementById('vh-lista').innerHTML = mants.length
+      ? mants.map(m => {
+          const tareas = m.tareas ?? [];
+          const servicios = tareas.map(t => t.tipos_servicio?.nombre ?? t.descripcion).filter(Boolean).join(', ') || 'Sin servicios asignados';
+          const fac = facturaDe(m);
+          const estadoTag = m.estado_cita === 'solicitada' && m.estado !== 'cancelado'
+            ? '<span class="tag warning">Pendiente de confirmación</span>' : tagEstado(m.estado);
+          return `
+            <details style="border:1px solid var(--border);border-radius:11px;padding:12px 14px;margin-bottom:10px;">
+              <summary style="cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <div>
+                  <strong style="font-size:0.9rem;">${fecha(m.fecha_ingreso)}</strong>
+                  <div style="color:#64748b;font-size:0.8rem;margin-top:2px;">${servicios}</div>
+                </div>
+                ${estadoTag}
+              </summary>
+              <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;font-size:0.84rem;color:#475569;line-height:1.7;">
+                <div><strong>Avance:</strong> ${m.porcentaje_avance ?? 0}% (${tareas.filter(t => t.estado === 'completada').length} de ${tareas.length} tareas)</div>
+                <div><strong>Entrega estimada:</strong> ${fecha(m.fecha_estimada_entrega) ?? 'Por confirmar'}</div>
+                ${m.observaciones_cliente ? `<div><strong>Observaciones:</strong> ${m.observaciones_cliente}</div>` : ''}
+                ${m.estado === 'cancelado' ? `<div style="color:var(--danger);"><strong>Motivo de cancelación:</strong> ${m.motivo_cancelacion ?? 'Ver observaciones'}</div>` : ''}
+                ${tareas.map(t => `<div><i class="fas ${t.estado === 'completada' ? 'fa-circle-check' : 'fa-clock'}" style="color:${t.estado === 'completada' ? '#16a34a' : '#94a3b8'};width:16px;"></i> ${t.tipos_servicio?.nombre ?? t.descripcion ?? 'Servicio'} ${tagEstado(t.estado)}</div>`).join('')}
+                ${fac ? `<div style="margin-top:6px;"><strong>Factura:</strong> ₡${Number(fac.total).toLocaleString('es')} ${tagEstado(fac.estado)}
+                  <button class="btn btn-outline btn-sm" style="margin-left:6px;" onclick="descargarFacturaPDF(${fac.id_factura})"><i class="fas fa-file-pdf"></i> PDF</button></div>` : ''}
+              </div>
+            </details>`;
+        }).join('')
+      : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Este vehículo aún no tiene mantenimientos registrados.</p>';
+
+    abrirModal('modal-veh-historial');
+  };
 
   async function cargarMarcasVehiculo() {
     const sel = document.getElementById('veh-f-marca');

@@ -83,7 +83,8 @@ const mantenimientos = {
   // Citas: bolsa de solicitudes + confirmar/rechazar
   solicitudes:  ()         => apiFetch('/mantenimientos/solicitudes'),
   confirmar:    (id, body) => apiFetch(`/mantenimientos/${id}/confirmar`, { method: 'PATCH', body: JSON.stringify(body || {}) }),
-  rechazar:     (id)       => apiFetch(`/mantenimientos/${id}/rechazar`, { method: 'PATCH' })
+  rechazar:     (id)       => apiFetch(`/mantenimientos/${id}/rechazar`, { method: 'PATCH' }),
+  cancelar:     (id, motivo) => apiFetch(`/mantenimientos/${id}/cancelar`, { method: 'PATCH', body: JSON.stringify({ motivo }) })
 };
 
 // ── Días bloqueados (calendario de disponibilidad) ────────
@@ -182,9 +183,11 @@ const facturacion = {
 // ── Reportes ──────────────────────────────────────────────
 const reportes = {
   resumen:           () => apiFetch('/reportes/resumen'),
-  ingresosMensuales: () => apiFetch('/reportes/ingresos-mensuales'),
+  ingresosMensuales: (q = {}) => apiFetch('/reportes/ingresos-mensuales?' + new URLSearchParams(q)),
+  mantenimientosMes: (mes)    => apiFetch('/reportes/mantenimientos-mes?mes=' + encodeURIComponent(mes)),
   rankingMecanicos:  () => apiFetch('/reportes/ranking-mecanicos'),
-  mantenimientosPorMecanico: () => apiFetch('/reportes/mantenimientos-por-mecanico'),
+  mantenimientosPorMecanico: (q = {}) => apiFetch('/reportes/mantenimientos-por-mecanico?' + new URLSearchParams(q)),
+  historial:         (q)      => apiFetch('/reportes/historial?' + new URLSearchParams(q)),
   serviciosPopulares:() => apiFetch('/reportes/servicios-populares')
 };
 

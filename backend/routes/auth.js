@@ -3,6 +3,7 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const supabase = require('../db/supabase');
 const { enviarCorreo, correoConfigurado } = require('../utils/mailer');
+const { esCorreoValido, MSG_CORREO } = require('../utils/validacion');
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -113,6 +114,9 @@ router.post('/registro', async (req, res) => {
   const { nombre, correo, password, id_rol } = req.body;
   if (!nombre || !correo || !password || !id_rol)
     return res.status(400).json({ error: 'Todos los campos son requeridos' });
+
+  if (!esCorreoValido(correo))
+    return res.status(400).json({ error: MSG_CORREO });
 
   if (password.length < 8)
     return res.status(400).json({ error: 'Contraseña mínimo 8 caracteres' });

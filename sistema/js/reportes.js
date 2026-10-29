@@ -75,11 +75,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const pagMantMec = crearPaginador('pag-mant-mecanico', renderMantMec, 5);
 
+  // Rango de fechas válido para los filtros de reportes (RPS-002 / RPS-004)
+  function errorRango(desde, hasta) {
+    if (!desde && !hasta) return null;
+    if (desde && hasta && desde > hasta) return 'La fecha "desde" no puede ser posterior a "hasta"';
+    if (desde && desde > hoyISO()) return 'El rango no puede empezar en una fecha futura';
+    return null;
+  }
+  const fechaCR = f => { const [y, m, d] = f.split('-'); return `${d}/${m}/${y}`; };
+  const textoRango = (desde, hasta) =>
+    desde && hasta ? `Del ${fechaCR(desde)} al ${fechaCR(hasta)}`
+      : desde ? `Desde el ${fechaCR(desde)}` : `Hasta el ${fechaCR(hasta)}`;
+
+  let rangoMantMec = {};
+  window.filtrarMantMec = () => {
+    const desde = document.getElementById('rep-mm-desde').value;
+    const hasta = document.getElementById('rep-mm-hasta').value;
+    const err = errorRango(desde, hasta);
+    if (err) { toast(err, 'error'); return; }
+    rangoMantMec = {};
+    if (desde) rangoMantMec.desde = desde;
+    if (hasta) rangoMantMec.hasta = hasta;
+    document.getElementById('rep-mm-rango').textContent =
+      desde || hasta ? `Completados · ${textoRango(desde, hasta)}` : 'Productividad histórica del equipo';
+    cargarMantPorMecanico();
+  };
+  window.limpiarMantMec = () => {
+    document.getElementById('rep-mm-desde').value = '';
+    document.getElementById('rep-mm-hasta').value = '';
+    filtrarMantMec();
+  };
+
   async function cargarMantPorMecanico() {
     const tbody = document.getElementById('rep-mant-mecanico');
     if (!tbody) return;
     try {
-      const lista = await reportes.mantenimientosPorMecanico();
+      const lista = await reportes.mantenimientosPorMecanico(rangoMantMec);
       R.mantMec = lista;
       mantMecFull = lista;
       mantMecMax  = Math.max(...lista.map(m => m.completados), 1);
@@ -117,13 +148,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ── Gráfico de ingresos mensuales ─────────────────────────
+  let rangoIngresos = {};
+  window.filtrarIngresos = () => {
+    const desde = document.getElementById('rep-ing-desde').value;
+    const hasta = document.getElementById('rep-ing-hasta').value;
+    const err = errorRango(desde, hasta);
+    if (err) { toast(err, 'error'); return; }
+    rangoIngresos = {};
+    if (desde) rangoIngresos.desde = desde;
+    if (hasta) rangoIngresos.hasta = hasta;
+    document.getElementById('rep-ing-rango').textContent = desde || hasta ? textoRango(desde, hasta) : 'Últimos 6 meses';
+    cargarChart();
+  };
+  window.limpiarIngresos = () => {
+    document.getElementById('rep-ing-desde').value = '';
+    document.getElementById('rep-ing-hasta').value = '';
+    filtrarIngresos();
+  };
+
   async function cargarChart() {
     const cont = document.getElementById('rep-chart');
     try {
-      const datos = await reportes.ingresosMensuales();
+      const datos = await reportes.ingresosMensuales(rangoIngresos);
       R.ingresos = datos;
       if (!datos.length) {
-        cont.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Sin facturación registrada todavía</p>';
+        cont.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Sin facturación en el período</p>';
         return;
       }
       const max = Math.max(...datos.map(d => d.total), 1);
@@ -142,6 +191,101 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('[Reportes chart]', e);
     }
   }
+
+  // ── RPS-001: mantenimientos por mes ───────────────────────
+  const mesActual = hoyISO().slice(0, 7);
+  const inpMes = document.getElementById('rep-mes');
+  if (inpMes) { inpMes.max = mesActual; inpMes.value = mesActual; }
+
+  function renderMensual(items) {
+    document.getElementById('rm-tbody').innerHTML = items.length
+      ? items.map(m => `
+          <tr>
+            <td style="font-size:0.85rem;">${fechaCR(m.fecha)}</td>
+            <td><strong>${m.placa}</strong> <small style="color:#94a3b8;">#${m.id_mantenimiento}</small></td>
+            <td>${m.cliente}</td>
+            <td>${tagEstado(m.estado)}</td>
+            <td style="text-align:right;">${m.porcentaje_avance ?? 0}%</td>
+          </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">No hay mantenimientos registrados en este mes</td></tr>';
+  }
+  const pagMensual = crearPaginador('pag-mensual', renderMensual, 5);
+
+  window.cargarReporteMensual = async () => {
+    const mes = inpMes.value;
+    if (!mes) { toast('Elige un mes', 'error'); return; }
+    if (mes > mesActual) { toast('No se puede generar el reporte de un mes futuro', 'error'); return; }
+    try {
+      const r = await reportes.mantenimientosMes(mes);
+      R.mensual = r;
+      const pe = r.por_estado ?? {};
+      document.getElementById('rm-total').textContent      = r.total;
+      document.getElementById('rm-activos').textContent    = (pe.recibido ?? 0) + (pe.en_progreso ?? 0);
+      document.getElementById('rm-terminados').textContent = pe.terminado ?? 0;
+      document.getElementById('rm-cancelados').textContent = pe.cancelado ?? 0;
+      const [y, m] = mes.split('-');
+      const nombreMes = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('es-CR', { month: 'long', year: 'numeric' });
+      document.getElementById('rm-sub').textContent = `${nombreMes} · ${r.total} mantenimiento(s)`;
+      pagMensual.set(r.mantenimientos ?? []);
+    } catch (e) { toast(e.message, 'error'); }
+  };
+
+  // ── RPS-003: inventario bajo (mismo criterio que Inventario: stock < mínimo) ──
+  window.cargarInventarioBajo = async () => {
+    const tbody = document.getElementById('ri-tbody');
+    try {
+      const lista = await inventario.alertas();
+      R.inventarioBajo = lista;
+      tbody.innerHTML = lista.length
+        ? lista.map(p => `
+            <tr>
+              <td><strong>${p.nombre}</strong></td>
+              <td style="color:#64748b;">${p.codigo ?? '-'}</td>
+              <td>${p.categorias?.nombre ?? '-'}</td>
+              <td style="text-align:center;"><span class="tag danger">${p.cantidad_stock}</span></td>
+              <td style="text-align:center;">${p.stock_minimo}</td>
+              <td style="text-align:center;font-weight:700;">${p.stock_minimo - p.cantidad_stock}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;"><i class="fas fa-circle-check"></i> No hay productos con stock bajo</td></tr>';
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:24px;">${e.message}</td></tr>`;
+    }
+  };
+
+  // ── RPS-005: historial por placa o cliente ────────────────
+  function renderHistorial(items) {
+    document.getElementById('rh-tbody').innerHTML = items.map(m => `
+      <tr>
+        <td style="font-size:0.85rem;">${fechaCR(m.fecha)}</td>
+        <td><strong>${m.placa}</strong><br><small style="color:#94a3b8;">${m.marca}</small></td>
+        <td>${m.cliente}</td>
+        <td style="font-size:0.84rem;">${m.servicios.join(', ') || '-'}</td>
+        <td>${tagEstado(m.estado)}</td>
+        <td style="text-align:right;">${m.total != null ? money(m.total) : '-'}</td>
+      </tr>`).join('');
+  }
+  const pagHistorial = crearPaginador('pag-historial', renderHistorial, 5);
+
+  window.buscarHistorial = async () => {
+    const placa   = document.getElementById('rh-placa').value.trim();
+    const cliente = document.getElementById('rh-cliente').value.trim();
+    if (!placa && !cliente) { toast('Ingresa una placa o el nombre de un cliente', 'error'); return; }
+    const q = {};
+    if (placa) q.placa = placa;
+    if (cliente) q.cliente = cliente;
+    try {
+      const lista = await reportes.historial(q);
+      const criterio = [placa && `placa "${placa}"`, cliente && `cliente "${cliente}"`].filter(Boolean).join(' y ');
+      document.getElementById('rh-sub').textContent = `${lista.length} resultado(s) para ${criterio}`;
+      if (!lista.length) {
+        pagHistorial.set([]);
+        document.getElementById('rh-tbody').innerHTML =
+          '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No se encontraron mantenimientos para esa búsqueda</td></tr>';
+        return;
+      }
+      pagHistorial.set(lista);
+    } catch (e) { toast(e.message, 'error'); }
+  };
 
   // ── RPS-006: exportar los reportes a PDF ──────────────────
   window.exportarReportesPDF = () => {

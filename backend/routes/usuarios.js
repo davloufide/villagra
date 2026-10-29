@@ -2,6 +2,7 @@ const router   = require('express').Router();
 const bcrypt   = require('bcryptjs');
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
+const { esCorreoValido, MSG_CORREO } = require('../utils/validacion');
 
 // Todas las rutas de este módulo son solo para administrador
 router.use(verificarToken, soloRol('administrador'));
@@ -21,6 +22,8 @@ router.post('/', async (req, res) => {
   const { nombre, correo, password, id_rol } = req.body;
   if (!nombre || !correo || !password || !id_rol)
     return res.status(400).json({ error: 'nombre, correo, password e id_rol son requeridos' });
+  if (!esCorreoValido(correo))
+    return res.status(400).json({ error: MSG_CORREO });
   if (password.length < 8)
     return res.status(400).json({ error: 'La contraseña debe tener mínimo 8 caracteres' });
 
@@ -47,6 +50,8 @@ router.post('/', async (req, res) => {
 // PATCH /api/usuarios/:id — editar usuario (admin)
 router.patch('/:id', async (req, res) => {
   const { nombre, correo, id_rol, activo, password } = req.body;
+  if (correo !== undefined && !esCorreoValido(correo))
+    return res.status(400).json({ error: MSG_CORREO });
   const cambios = {};
   if (nombre !== undefined)  cambios.nombre = nombre;
   if (correo !== undefined)  cambios.correo = correo.toLowerCase().trim();

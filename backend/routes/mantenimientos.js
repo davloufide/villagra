@@ -1,6 +1,35 @@
 const router   = require('express').Router();
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
+const { hoyCR, esFechaValida } = require('../utils/fechas');
+
+const MAX_OBS = 500;
+
+// Fecha estimada de entrega (OPE-013): formato válido y no anterior a hoy.
+// Devuelve el mensaje de error o null si es válida (vacía = "por confirmar").
+function errorFechaEntrega(fecha) {
+  if (!fecha) return null;
+  if (!esFechaValida(fecha)) return 'La fecha estimada de entrega no es válida';
+  if (fecha < hoyCR()) return 'La fecha estimada de entrega no puede ser anterior a hoy';
+  return null;
+}
+
+function errorObservaciones(obs) {
+  if (obs && String(obs).length > MAX_OBS) return `Las observaciones no pueden superar ${MAX_OBS} caracteres`;
+  return null;
+}
+
+// Estado actual del mantenimiento + si ya tiene factura (para bloquear cambios)
+async function infoMantenimiento(id_mantenimiento) {
+  const { data } = await supabase
+    .from('mantenimientos')
+    .select('id_mantenimiento, estado, observaciones_cliente, facturas(id_factura)')
+    .eq('id_mantenimiento', id_mantenimiento)
+    .maybeSingle();
+  return data;
+}
+
+const MSG_CANCELADO = 'Este mantenimiento está cancelado: ya no admite cambios';
 
 // ── Helper: recalcular estado y % avance de un mantenimiento ──
 // Reglas:
@@ -8,6 +37,10 @@ const { verificarToken, soloRol } = require('../middleware/auth');
 //   tareas en proceso     -> estado 'en_progreso', avance = completadas/total
 //   todas completadas     -> estado 'terminado',  avance 100
 async function recalcularMantenimiento(id_mantenimiento) {
+  // Un mantenimiento cancelado queda congelado (no vuelve a recibido/en progreso)
+  const info = await infoMantenimiento(id_mantenimiento);
+  if (info?.estado === 'cancelado') return { estado: 'cancelado', porcentaje_avance: 0 };
+
   const { data: tareas } = await supabase
     .from('tareas')
     .select('estado')
@@ -107,6 +140,7 @@ router.get('/solicitudes', verificarToken, soloRol('administrador', 'mecanico'),
       tareas(id_tarea, tipos_servicio(nombre))
     `)
     .eq('estado_cita', 'solicitada')
+    .neq('estado', 'cancelado')
     .order('fecha_ingreso', { ascending: false });
 
   let { data, error } = await consulta(', es_invitado');
@@ -161,9 +195,13 @@ router.post('/', verificarToken, soloRol('administrador', 'cliente', 'mecanico')
     return res.status(400).json({ error: 'id_vehiculo requerido' });
 
   // Servicios solicitados: acepta un array `servicios` o un único `id_tipo_servicio`
-  const listaServicios = Array.isArray(servicios) && servicios.length
+  // (sin repetidos: un mismo servicio no se agrega dos veces, OPE-006)
+  const listaServicios = [...new Set((Array.isArray(servicios) && servicios.length
     ? servicios
-    : (id_tipo_servicio ? [id_tipo_servicio] : []);
+    : (id_tipo_servicio ? [id_tipo_servicio] : [])).map(Number).filter(Boolean))];
+
+  const errDatos = errorFechaEntrega(fecha_estimada_entrega) || errorObservaciones(observaciones_cliente);
+  if (errDatos) return res.status(400).json({ error: errDatos });
 
   // Si es cliente, verificar que el vehículo le pertenece
   if (req.usuario.rol === 'cliente') {
@@ -234,6 +272,17 @@ router.post('/:id/tareas', verificarToken, soloRol('administrador', 'mecanico'),
   if (!id_tipo_servicio)
     return res.status(400).json({ error: 'id_tipo_servicio es requerido' });
 
+  const info = await infoMantenimiento(id_mantenimiento);
+  if (!info) return res.status(404).json({ error: 'Mantenimiento no encontrado' });
+  if (info.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
+
+  // OPE-006: no repetir un servicio que ya es tarea de este mantenimiento
+  const { data: repetida } = await supabase
+    .from('tareas').select('id_tarea')
+    .eq('id_mantenimiento', id_mantenimiento).eq('id_tipo_servicio', id_tipo_servicio).limit(1);
+  if ((repetida ?? []).length)
+    return res.status(409).json({ error: 'Ese servicio ya es una tarea de este mantenimiento' });
+
   if (req.usuario.rol === 'mecanico') {
     const { data: emp } = await supabase
       .from('empleados').select('id_empleado').eq('id_usuario', req.usuario.id).single();
@@ -285,20 +334,40 @@ router.post('/:id/reordenar', verificarToken, soloRol('administrador'), async (r
 // PATCH /api/mantenimientos/tareas/:idTarea — actualizar estado de tarea (admin/mecánico)
 router.patch('/tareas/:idTarea', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
   const { estado, tiempo_invertido, resultado, observaciones_tecnicas } = req.body;
+  const { id_tipo_servicio, id_empleado, descripcion } = req.body;
+
+  const { data: tarea } = await supabase
+    .from('tareas').select('id_tarea, id_mantenimiento, id_empleado, estado')
+    .eq('id_tarea', req.params.idTarea).maybeSingle();
+  if (!tarea) return res.status(404).json({ error: 'Tarea no encontrada' });
 
   // Si es mecánico, verificar que la tarea le pertenece
   if (req.usuario.rol === 'mecanico') {
     const { data: emp } = await supabase
       .from('empleados').select('id_empleado').eq('id_usuario', req.usuario.id).single();
     if (!emp) return res.status(403).json({ error: 'Empleado no encontrado' });
-
-    const { data: tarea } = await supabase
-      .from('tareas').select('id_empleado').eq('id_tarea', req.params.idTarea).single();
-    if (!tarea || tarea.id_empleado !== emp.id_empleado)
+    if (tarea.id_empleado !== emp.id_empleado)
       return res.status(403).json({ error: 'Esta tarea no está asignada a ti' });
   }
 
-  const { id_tipo_servicio, id_empleado, descripcion } = req.body;
+  const info = await infoMantenimiento(tarea.id_mantenimiento);
+  if (info?.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
+
+  // Reabrir una tarea completada por error (GM-003 / OPE-011): se permite
+  // mientras el mantenimiento no esté facturado.
+  if (estado !== undefined && estado !== 'completada' && tarea.estado === 'completada' && info?.facturas)
+    return res.status(409).json({ error: 'El mantenimiento ya fue facturado: no se pueden reabrir sus tareas' });
+
+  // OPE-006: al cambiar el servicio, que no quede repetido en el mantenimiento
+  if (id_tipo_servicio !== undefined) {
+    const { data: repetida } = await supabase
+      .from('tareas').select('id_tarea')
+      .eq('id_mantenimiento', tarea.id_mantenimiento).eq('id_tipo_servicio', parseInt(id_tipo_servicio))
+      .neq('id_tarea', tarea.id_tarea).limit(1);
+    if ((repetida ?? []).length)
+      return res.status(409).json({ error: 'Ese servicio ya es otra tarea de este mantenimiento' });
+  }
+
   const cambios = { updated_at: new Date() };
   if (estado !== undefined)                 cambios.estado = estado;
   if (tiempo_invertido !== undefined)       cambios.tiempo_invertido = tiempo_invertido;
@@ -346,8 +415,16 @@ router.patch('/:id', verificarToken, soloRol('administrador', 'mecanico'), async
     if (!ok) return res.status(403).json({ error: 'No tienes tareas en este mantenimiento' });
   }
 
+  const info = await infoMantenimiento(id);
+  if (!info) return res.status(404).json({ error: 'Mantenimiento no encontrado' });
+  if (info.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
+
+  // OPE-004 / OPE-013: validar antes de guardar
+  const errDatos = errorFechaEntrega(fecha_estimada_entrega) || errorObservaciones(observaciones_cliente);
+  if (errDatos) return res.status(400).json({ error: errDatos });
+
   const cambios = {};
-  if (observaciones_cliente !== undefined)  cambios.observaciones_cliente = observaciones_cliente || null;
+  if (observaciones_cliente !== undefined)  cambios.observaciones_cliente = String(observaciones_cliente ?? '').trim() || null;
   if (fecha_estimada_entrega !== undefined) cambios.fecha_estimada_entrega = fecha_estimada_entrega || null;
 
   if (!Object.keys(cambios).length)
@@ -364,6 +441,9 @@ router.delete('/tareas/:idTarea', verificarToken, soloRol('administrador', 'meca
   const { data: tarea } = await supabase
     .from('tareas').select('id_tarea, id_mantenimiento, id_empleado').eq('id_tarea', req.params.idTarea).single();
   if (!tarea) return res.status(404).json({ error: 'Tarea no encontrada' });
+
+  const info = await infoMantenimiento(tarea.id_mantenimiento);
+  if (info?.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
 
   if (req.usuario.rol === 'mecanico') {
     const { data: emp } = await supabase
@@ -386,6 +466,10 @@ router.delete('/tareas/:idTarea', verificarToken, soloRol('administrador', 'meca
 router.patch('/:id/confirmar', verificarToken, soloRol('administrador', 'mecanico'), async (req, res) => {
   const id = parseInt(req.params.id);
   let id_empleado;
+
+  const info = await infoMantenimiento(id);
+  if (!info) return res.status(404).json({ error: 'Mantenimiento no encontrado' });
+  if (info.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
 
   if (req.usuario.rol === 'mecanico') {
     const { data: emp } = await supabase
@@ -421,6 +505,44 @@ router.patch('/:id/rechazar', verificarToken, soloRol('administrador', 'mecanico
   const { data, error } = await supabase
     .from('mantenimientos').update({ estado_cita: 'solicitada' })
     .eq('id_mantenimiento', id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// PATCH /api/mantenimientos/:id/cancelar — cancelar con justificación (admin) [OPE-012]
+// Solo si está recibido o en progreso. Libera a los mecánicos (desasigna las
+// tareas) y deja el mantenimiento congelado en estado 'cancelado'.
+router.patch('/:id/cancelar', verificarToken, soloRol('administrador'), async (req, res) => {
+  const id = parseInt(req.params.id);
+  const motivo = String(req.body.motivo ?? '').trim();
+  if (motivo.length < 5)
+    return res.status(400).json({ error: 'Ingresa la justificación de la cancelación (mínimo 5 caracteres)' });
+  if (motivo.length > MAX_OBS)
+    return res.status(400).json({ error: `La justificación no puede superar ${MAX_OBS} caracteres` });
+
+  const info = await infoMantenimiento(id);
+  if (!info) return res.status(404).json({ error: 'Mantenimiento no encontrado' });
+  if (info.estado === 'cancelado') return res.status(409).json({ error: 'Este mantenimiento ya está cancelado' });
+  if (info.estado === 'terminado' || info.facturas)
+    return res.status(409).json({ error: 'No se puede cancelar un mantenimiento terminado' });
+
+  // Primero liberar las tareas (el trigger de tareas recalcula el estado del
+  // mantenimiento) y DESPUÉS marcarlo cancelado, para que nada lo pise.
+  const { error: eT } = await supabase
+    .from('tareas').update({ id_empleado: null }).eq('id_mantenimiento', id);
+  if (eT) return res.status(500).json({ error: eT.message });
+
+  // motivo_cancelacion es una columna nueva (migracion-cancelacion.sql): si
+  // aún no existe, la justificación se anota en las observaciones.
+  let { data, error } = await supabase
+    .from('mantenimientos').update({ estado: 'cancelado', motivo_cancelacion: motivo })
+    .eq('id_mantenimiento', id).select().single();
+  if (error && (error.code === 'PGRST204' || /motivo_cancelacion/i.test(error.message || ''))) {
+    const obs = [info.observaciones_cliente, `[Cancelado] ${motivo}`].filter(Boolean).join('\n');
+    ({ data, error } = await supabase
+      .from('mantenimientos').update({ estado: 'cancelado', observaciones_cliente: obs })
+      .eq('id_mantenimiento', id).select().single());
+  }
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });

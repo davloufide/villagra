@@ -35,7 +35,10 @@
         </button>
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="resumen" data-titulo="Resumen general" data-sub="Indicadores principales, ingresos y servicios" onclick="mostrarVista('resumen');return false;"><i class="fas fa-gauge-high"></i> Resumen general</a>
+          <a href="#" class="subitem" data-vista="mensual" data-titulo="Mantenimientos por mes" data-sub="Demanda del taller en el mes seleccionado" onclick="mostrarVista('mensual');cargarReporteMensual();return false;"><i class="fas fa-calendar-days"></i> Mantenimientos por mes</a>
           <a href="#" class="subitem" data-vista="mecanicos" data-titulo="Productividad de mecánicos" data-sub="Ranking y mantenimientos completados por mecánico" onclick="mostrarVista('mecanicos');return false;"><i class="fas fa-user-gear"></i> Productividad mecánicos</a>
+          <a href="#" class="subitem" data-vista="inventario" data-titulo="Inventario bajo" data-sub="Productos por debajo del stock mínimo" onclick="mostrarVista('inventario');cargarInventarioBajo();return false;"><i class="fas fa-boxes-stacked"></i> Inventario bajo</a>
+          <a href="#" class="subitem" data-vista="historial" data-titulo="Historial por placa o cliente" data-sub="Mantenimientos registrados de un vehículo o cliente" onclick="mostrarVista('historial');return false;"><i class="fas fa-clock-rotate-left"></i> Historial</a>
           <a href="#" class="subitem" data-vista="flujo" data-titulo="Flujo de caja" data-sub="Ingresos y gastos del período" onclick="mostrarVista('flujo');cargarFlujoCaja();return false;"><i class="fas fa-cash-register"></i> Flujo de caja</a>
         </div>
       </div>
@@ -75,23 +78,20 @@
         <div class="card kpi-card kpi-blue">
           <div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div>
           <h3>Mantenimientos</h3>
-          <div class="number" id="rep-mantenimientos">48</div>
-          <p class="sub">Este mes</p>
-          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +6 vs mes anterior</div>
+          <div class="number" id="rep-mantenimientos">-</div>
+          <p class="sub">Ingresados este mes</p>
         </div>
         <div class="card kpi-card kpi-green">
           <div class="kpi-icon"><i class="fas fa-coins"></i></div>
           <h3>Ingresos</h3>
-          <div class="number" id="rep-ingresos">₡1.25M</div>
-          <p class="sub">Facturación mensual</p>
-          <div class="kpi-trend trend-up"><i class="fas fa-arrow-up"></i> +12%</div>
+          <div class="number" id="rep-ingresos">-</div>
+          <p class="sub">Facturado este mes</p>
         </div>
         <div class="card kpi-card kpi-red">
           <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
           <h3>Stock bajo</h3>
-          <div class="number" id="rep-stock-bajo">4</div>
-          <p class="sub">Productos críticos</p>
-          <div class="kpi-trend trend-down"><i class="fas fa-arrow-up"></i> +1 nuevo</div>
+          <div class="number" id="rep-stock-bajo">-</div>
+          <p class="sub">Productos bajo el mínimo</p>
         </div>
         <div class="card kpi-card kpi-purple">
           <div class="kpi-icon"><i class="fas fa-trophy"></i></div>
@@ -105,8 +105,14 @@
         <!-- Chart -->
         <div class="card">
           <div class="card-header">
-            <div><h3>Ingresos mensuales</h3><p>Últimos 6 meses</p></div>
-            <span class="tag info">2025</span>
+            <div><h3>Ingresos mensuales</h3><p id="rep-ing-rango">Últimos 6 meses</p></div>
+          </div>
+          <!-- Rango de fechas (RPS-002) -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+            <div class="field" style="margin:0;"><label style="font-size:0.75rem;">Desde</label><input id="rep-ing-desde" type="date"></div>
+            <div class="field" style="margin:0;"><label style="font-size:0.75rem;">Hasta</label><input id="rep-ing-hasta" type="date"></div>
+            <button class="btn btn-primary btn-sm" onclick="filtrarIngresos()"><i class="fas fa-filter"></i> Aplicar</button>
+            <button class="btn btn-outline btn-sm" onclick="limpiarIngresos()">Últimos 6 meses</button>
           </div>
           <div id="rep-chart" style="display:flex;align-items:flex-end;gap:10px;height:160px;padding:10px 0 0;">
             <p style="color:#94a3b8;font-size:0.85rem;margin:auto;">Cargando...</p>
@@ -137,7 +143,14 @@
       <!-- RPS-004: mantenimientos completados por mecánico -->
       <div class="card">
         <div class="card-header">
-          <div><h3>Mantenimientos completados por mecánico</h3><p>Productividad histórica del equipo</p></div>
+          <div><h3>Mantenimientos completados por mecánico</h3><p id="rep-mm-rango">Productividad histórica del equipo</p></div>
+        </div>
+        <!-- Rango de fechas de finalización (RPS-004) -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+          <div class="field" style="margin:0;"><label style="font-size:0.75rem;">Completados desde</label><input id="rep-mm-desde" type="date"></div>
+          <div class="field" style="margin:0;"><label style="font-size:0.75rem;">Hasta</label><input id="rep-mm-hasta" type="date"></div>
+          <button class="btn btn-primary btn-sm" onclick="filtrarMantMec()"><i class="fas fa-filter"></i> Aplicar</button>
+          <button class="btn btn-outline btn-sm" onclick="limpiarMantMec()">Todo el historial</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -151,6 +164,66 @@
       </div>
 
     </div><!-- /vista-mecanicos -->
+
+    <!-- ══════════ SUBMÓDULO: Mantenimientos por mes (RPS-001) ══════════ -->
+    <div id="vista-mensual" class="vista" style="display:none;">
+      <div class="card" style="margin-bottom:18px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="margin:0;"><label>Mes</label><input id="rep-mes" type="month"></div>
+          <button class="btn btn-primary btn-sm" onclick="cargarReporteMensual()"><i class="fas fa-magnifying-glass"></i> Consultar</button>
+        </div>
+      </div>
+      <section class="grid kpi">
+        <div class="card kpi-card kpi-blue"><div class="kpi-icon"><i class="fas fa-screwdriver-wrench"></i></div><h3>Total del mes</h3><div class="number" id="rm-total">-</div><p class="sub">Mantenimientos ingresados</p></div>
+        <div class="card kpi-card kpi-orange"><div class="kpi-icon"><i class="fas fa-spinner"></i></div><h3>Activos</h3><div class="number" id="rm-activos">-</div><p class="sub">Recibidos o en proceso</p></div>
+        <div class="card kpi-card kpi-green"><div class="kpi-icon"><i class="fas fa-circle-check"></i></div><h3>Terminados</h3><div class="number" id="rm-terminados">-</div><p class="sub">Servicio completo</p></div>
+        <div class="card kpi-card kpi-red"><div class="kpi-icon"><i class="fas fa-ban"></i></div><h3>Cancelados</h3><div class="number" id="rm-cancelados">-</div><p class="sub">Con justificación</p></div>
+      </section>
+      <div class="card">
+        <div class="card-header"><div><h3>Detalle del mes</h3><p id="rm-sub">-</p></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Placa</th><th>Cliente</th><th>Estado</th><th style="text-align:right;">Avance</th></tr></thead>
+            <tbody id="rm-tbody"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px;">Elige un mes y presiona Consultar</td></tr></tbody>
+          </table>
+        </div>
+        <div id="pag-mensual" class="paginador" style="display:none;"></div>
+      </div>
+    </div><!-- /vista-mensual -->
+
+    <!-- ══════════ SUBMÓDULO: Inventario bajo (RPS-003) ══════════ -->
+    <div id="vista-inventario" class="vista" style="display:none;">
+      <div class="card">
+        <div class="card-header"><div><h3>Productos con stock bajo</h3><p>Stock actual por debajo del mínimo configurado</p></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Producto</th><th>Código</th><th>Categoría</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Mínimo</th><th style="text-align:center;">Faltan</th></tr></thead>
+            <tbody id="ri-tbody"><tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /vista-inventario -->
+
+    <!-- ══════════ SUBMÓDULO: Historial por placa o cliente (RPS-005) ══════════ -->
+    <div id="vista-historial" class="vista" style="display:none;">
+      <div class="card" style="margin-bottom:18px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="field" style="margin:0;"><label>Placa</label><input id="rh-placa" placeholder="Ej. ABC123" onkeydown="if(event.key==='Enter')buscarHistorial()"></div>
+          <div class="field" style="margin:0;"><label>Cliente</label><input id="rh-cliente" placeholder="Nombre del cliente" onkeydown="if(event.key==='Enter')buscarHistorial()"></div>
+          <button class="btn btn-primary btn-sm" onclick="buscarHistorial()"><i class="fas fa-magnifying-glass"></i> Buscar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div><h3>Resultados</h3><p id="rh-sub">Ingresa una placa o el nombre de un cliente</p></div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Placa</th><th>Cliente</th><th>Servicios</th><th>Estado</th><th style="text-align:right;">Facturado</th></tr></thead>
+            <tbody id="rh-tbody"><tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Sin búsqueda todavía</td></tr></tbody>
+          </table>
+        </div>
+        <div id="pag-historial" class="paginador" style="display:none;"></div>
+      </div>
+    </div><!-- /vista-historial -->
 
     <!-- ══════════ SUBMÓDULO: Flujo de caja ══════════ -->
     <div id="vista-flujo" class="vista" style="display:none;">

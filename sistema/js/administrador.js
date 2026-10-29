@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const password    = 'Villagra1!';
 
       if (!nombre || !correo || !id_rol) { toast('Nombre, correo y rol son requeridos', 'error'); return; }
+      if (!correoValido(correo)) { toast('El correo no tiene un formato válido', 'error'); return; }
 
       btnLoading(btnGuardar, true);
       try {
@@ -199,6 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const password = document.getElementById('ncli-password').value.trim() || 'Cliente123!';
 
       if (!nombre || !correo) { toast('Nombre y correo son requeridos', 'error'); return; }
+      if (!correoValido(correo)) { toast('El correo no tiene un formato válido', 'error'); return; }
 
       btnLoading(btnCli, true);
       try {
@@ -305,6 +307,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const password = document.getElementById('usr-password').value;
 
     if (!nombre || !correo) { toast('Nombre y correo son requeridos', 'error'); return; }
+    if (!correoValido(correo)) { toast('El correo no tiene un formato válido', 'error'); return; }
 
     btnLoading(btn, true);
     try {

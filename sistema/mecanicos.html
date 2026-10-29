@@ -128,18 +128,23 @@
           </div>
         </div>
 
+        <!-- Aviso de mantenimiento cancelado (OPE-012): queda en solo lectura -->
+        <div id="mec-cancelado-box" style="display:none;background:var(--danger-soft);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;color:var(--danger);font-size:0.86rem;font-weight:600;">
+          <i class="fas fa-ban"></i> Este mantenimiento fue cancelado: ya no admite cambios.
+        </div>
+
         <!-- Editar info -->
-        <div class="form-grid" style="margin-bottom:18px;">
+        <div id="mec-edit-wrap" class="form-grid" style="margin-bottom:18px;">
           <div class="field">
             <label>Fecha estimada de entrega</label>
-            <input id="mec-p-fecha" type="date">
+            <input id="mec-p-fecha" type="date" class="fecha-futura">
           </div>
           <div class="field" style="display:flex;align-items:flex-end;">
             <button id="btn-guardar-mant-mec" class="btn btn-outline" style="width:100%;"><i class="fas fa-floppy-disk"></i> Guardar cambios</button>
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Observaciones</label>
-            <textarea id="mec-p-obs" placeholder="Notas del servicio..." style="height:55px;"></textarea>
+            <textarea id="mec-p-obs" placeholder="Notas del servicio..." maxlength="500" style="height:55px;"></textarea>
           </div>
         </div>
 
@@ -153,7 +158,7 @@
         </div>
 
         <!-- Agregar tarea -->
-        <div class="form-grid">
+        <div id="mec-add-wrap" class="form-grid">
           <div class="field">
             <label>Agregar tarea / servicio</label>
             <select id="mec-p-add-servicio"><option value="">-- Seleccionar servicio --</option></select>
@@ -231,7 +236,7 @@
           </div>
           <div class="field">
             <label>Fecha estimada de entrega</label>
-            <input id="mec-n-fecha" type="date">
+            <input id="mec-n-fecha" type="date" class="fecha-futura">
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Tareas / servicios <span style="color:#dc2626;">*</span> <span style="color:#94a3b8;font-weight:400;">(se te asignan a ti)</span></label>

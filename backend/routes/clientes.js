@@ -2,6 +2,7 @@ const router   = require('express').Router();
 const bcrypt   = require('bcryptjs');
 const supabase = require('../db/supabase');
 const { verificarToken, soloRol } = require('../middleware/auth');
+const { esCorreoValido, MSG_CORREO } = require('../utils/validacion');
 
 // POST /api/clientes — el admin registra un cliente manualmente
 // Crea la cuenta de usuario (rol cliente) + su perfil en la tabla clientes.
@@ -9,6 +10,8 @@ router.post('/', verificarToken, soloRol('administrador'), async (req, res) => {
   const { nombre, correo, password, telefono } = req.body;
   if (!nombre || !correo || !password)
     return res.status(400).json({ error: 'nombre, correo y contraseña son requeridos' });
+  if (!esCorreoValido(correo))
+    return res.status(400).json({ error: MSG_CORREO });
   if (password.length < 8)
     return res.status(400).json({ error: 'La contraseña debe tener mínimo 8 caracteres' });
 
@@ -82,8 +85,7 @@ router.get('/mi-perfil', verificarToken, soloRol('cliente'), async (req, res) =>
   const { data: mants, error: mErr } = await supabase
     .from('mantenimientos')
     .select(`
-      id_mantenimiento, id_vehiculo, fecha_ingreso,
-      estado, porcentaje_avance, observaciones_cliente,
+      *,
       tareas(descripcion, estado, tipos_servicio(nombre), empleados(usuarios(nombre))),
       facturas(id_factura, total, estado)
     `)

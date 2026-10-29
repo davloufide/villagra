@@ -301,6 +301,17 @@
           </div>
           </div><!-- /modal-veh-cli -->
 
+          <!-- MODAL: Historial de mantenimientos de un vehículo (GV-003) -->
+          <div id="modal-veh-historial" class="modal-overlay" style="display:none;">
+            <div class="card">
+              <div class="card-header">
+                <div><h3 id="vh-titulo">Historial del vehículo</h3><p id="vh-sub">Mantenimientos del más reciente al más antiguo</p></div>
+                <button class="modal-close" onclick="cerrarModal('modal-veh-historial')" title="Cerrar">&times;</button>
+              </div>
+              <div id="vh-lista"></div>
+            </div>
+          </div>
+
           <div id="veh-lista" class="list">
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
           </div>

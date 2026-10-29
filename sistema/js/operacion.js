@@ -282,6 +282,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Ver detalle de un mantenimiento ──────────────────────
   window.verDetalleMant = async (id) => {
+    // Al abrir el panel (no al refrescarlo), descartar una edición de tarea a medias
+    if (mantSeleccionado !== id || document.getElementById('modal-op-panel').style.display !== 'flex') resetFormTarea();
     mantSeleccionado = id;
     abrirModal('modal-op-panel');
     document.getElementById('op-tarea-titulo').textContent = 'Cargando...';
@@ -303,6 +305,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('op-edit-obs').value   = det.observaciones_cliente ?? '';
       document.getElementById('op-edit-fecha').value = det.fecha_estimada_entrega ?? '';
 
+      // Cancelado (OPE-012): solo lectura + motivo. Cancelable si recibido/en progreso.
+      const cancelado = det.estado === 'cancelado';
+      document.getElementById('op-tarea-sub').innerHTML =
+        `Cliente: ${cliente} · Estado: ${tagEstado(det.estado)}`;
+      document.getElementById('btn-cancelar-mant').style.display =
+        (det.estado === 'recibido' || det.estado === 'en_progreso') && !det.facturas ? '' : 'none';
+      document.getElementById('op-cancelado-box').style.display = cancelado ? '' : 'none';
+      document.getElementById('op-cancelado-motivo').textContent = cancelado ? motivoCancelacion(det) : '';
+      ['op-edit-wrap', 'op-form-tarea-wrap', 'op-rep-wrap'].forEach(idEl => {
+        document.getElementById(idEl).style.display = cancelado ? 'none' : '';
+      });
+      // Reabrir una tarea completada: solo si el mantenimiento no está facturado
+      const puedeReabrir = !det.facturas;
+
       const tareas  = det.tareas ?? [];
       tareasPanel = tareas;
       const listaEl = document.getElementById('op-tareas-lista');
@@ -317,18 +333,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ${tareas.map((t, i) => `
                   <tr>
                     <td>
-                      <button class="btn btn-outline btn-sm" onclick="moverTarea(${i},-1)" ${i === 0 ? 'disabled' : ''} title="Subir"><i class="fas fa-arrow-up"></i></button>
-                      <button class="btn btn-outline btn-sm" onclick="moverTarea(${i},1)" ${i === tareas.length - 1 ? 'disabled' : ''} title="Bajar"><i class="fas fa-arrow-down"></i></button>
+                      <button class="btn btn-outline btn-sm" onclick="moverTarea(${i},-1)" ${i === 0 || cancelado ? 'disabled' : ''} title="Subir"><i class="fas fa-arrow-up"></i></button>
+                      <button class="btn btn-outline btn-sm" onclick="moverTarea(${i},1)" ${i === tareas.length - 1 || cancelado ? 'disabled' : ''} title="Bajar"><i class="fas fa-arrow-down"></i></button>
                     </td>
                     <td>${t.tipos_servicio?.nombre ?? t.descripcion ?? '-'}</td>
                     <td>${t.empleados?.usuarios?.nombre ?? '-'}</td>
                     <td>${tagEstado(t.estado)}</td>
                     <td>
+                      ${cancelado ? '' : `
                       <div style="display:flex;gap:5px;">
-                        ${t.estado !== 'completada' ? `<button class="btn btn-success btn-sm" onclick="completarTareaOp(${t.id_tarea})" title="Marcar como completada"><i class="fas fa-check"></i></button>` : ''}
+                        ${t.estado !== 'completada'
+                          ? `<button class="btn btn-success btn-sm" onclick="completarTareaOp(${t.id_tarea})" title="Marcar como completada"><i class="fas fa-check"></i></button>`
+                          : (puedeReabrir ? `<button class="btn btn-outline btn-sm" onclick="reabrirTareaOp(${t.id_tarea})" title="Desmarcar (volver a pendiente)"><i class="fas fa-rotate-left"></i></button>` : '')}
                         <button class="btn btn-outline btn-sm" onclick="editarTareaMant(${t.id_tarea})" title="Editar tarea"><i class="fas fa-pen"></i></button>
                         <button class="btn btn-outline btn-sm" onclick="eliminarTareaMant(${t.id_tarea})" title="Quitar tarea"><i class="fas fa-trash" style="color:#dc2626;"></i></button>
-                      </div>
+                      </div>`}
                     </td>
                   </tr>`).join('')}
               </tbody>
@@ -346,7 +365,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.cerrarPanelTarea = () => {
     mantSeleccionado = null;
+    resetFormTarea();
     cerrarModal('modal-op-panel');
+  };
+
+  // Justificación guardada en su columna o, sin la migración, en las observaciones
+  function motivoCancelacion(det) {
+    if (det.motivo_cancelacion) return det.motivo_cancelacion;
+    const m = /\[Cancelado\]\s*(.*)$/s.exec(det.observaciones_cliente ?? '');
+    return m ? m[1] : 'Sin justificación registrada';
+  }
+
+  // ── Cancelar mantenimiento con justificación (OPE-012) ────
+  window.abrirCancelarMant = () => {
+    if (!mantSeleccionado) return;
+    document.getElementById('op-cancel-motivo').value = '';
+    document.getElementById('cancel-mant-sub').textContent =
+      `${document.getElementById('op-tarea-titulo').textContent} · esta acción no se puede deshacer`;
+    abrirModal('modal-cancelar-mant');
+  };
+
+  window.confirmarCancelacionMant = async () => {
+    const motivo = document.getElementById('op-cancel-motivo').value.trim();
+    if (motivo.length < 5) { toast('Ingresa la justificación de la cancelación (mínimo 5 caracteres)', 'error'); return; }
+    const btn = document.getElementById('btn-confirmar-cancelacion');
+    btnLoading(btn, true);
+    try {
+      await mantenimientos.cancelar(mantSeleccionado, motivo);
+      toast('Mantenimiento cancelado');
+      cerrarModal('modal-cancelar-mant');
+      await Promise.all([verDetalleMant(mantSeleccionado), cargarMantenimientos(), cargarSolicitudes()]);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btnLoading(btn, false);
+    }
+  };
+
+  // Desmarcar una tarea completada por error (OPE-011): vuelve a pendiente y
+  // el backend recalcula el avance (un mantenimiento terminado vuelve a en proceso).
+  window.reabrirTareaOp = async (idTarea) => {
+    try {
+      await mantenimientos.actualizarTarea(idTarea, { estado: 'pendiente' });
+      toast('Tarea devuelta a pendiente');
+      if (mantSeleccionado) verDetalleMant(mantSeleccionado);
+      cargarMantenimientos();
+    } catch (e) { toast(e.message, 'error'); }
   };
 
   // El admin marca una tarea como completada (cuando todas lo están, el
@@ -390,6 +454,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnEditarMant) {
     btnEditarMant.addEventListener('click', async () => {
       if (!mantSeleccionado) return;
+      const errFecha = errorFechaEntrega(document.getElementById('op-edit-fecha').value);
+      if (errFecha) { toast(errFecha, 'error'); return; }
       btnLoading(btnEditarMant, true);
       try {
         await mantenimientos.editar(mantSeleccionado, {
@@ -428,6 +494,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('op-tarea-servicio').value = t.id_tipo_servicio ?? '';
     document.getElementById('op-tarea-desc').value     = t.descripcion ?? '';
     document.getElementById('btn-agregar-tarea').innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar cambios';
+    document.getElementById('op-form-tarea-titulo').textContent = 'Editar tarea';
+    document.getElementById('btn-cancelar-edicion-tarea').style.display = '';
     document.getElementById('op-form-tarea-wrap').scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
@@ -437,7 +505,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('op-tarea-servicio').value = '';
     document.getElementById('op-tarea-desc').value     = '';
     document.getElementById('btn-agregar-tarea').innerHTML = '<i class="fas fa-plus"></i> Agregar tarea';
+    document.getElementById('op-form-tarea-titulo').textContent = 'Agregar nueva tarea';
+    document.getElementById('btn-cancelar-edicion-tarea').style.display = 'none';
   }
+
+  // Cancelar la modificación de una tarea (OPE-008): descarta lo escrito
+  window.cancelarEdicionTarea = () => { resetFormTarea(); toast('Edición cancelada', 'info'); };
 
   // ── Reordenar tareas (OPE-008) ────────────────────────────
   window.moverTarea = async (idx, dir) => {
@@ -532,6 +605,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!id_cliente) { toast('Selecciona el cliente', 'error'); return; }
       if (!vehSel)     { toast('Selecciona el vehículo del cliente', 'error'); return; }
       if (!servicios.length) { toast('Selecciona al menos una tarea', 'error'); return; }
+      const errFecha = errorFechaEntrega(fecha);
+      if (errFecha) { toast(errFecha, 'error'); return; }
 
       btnLoading(btnGuardar, true);
       try {

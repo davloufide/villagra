@@ -202,23 +202,50 @@ function confirmar(opciones) {
     });
 
     const cerrar = (val) => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey, true);
       overlay.style.opacity = '0';
       setTimeout(() => overlay.remove(), 140);
       resolve(val);
     };
+    // Escape/Enter se atrapan aquí (fase de captura) para que no lleguen al
+    // listener global de modales: cancelar NO debe cerrar el panel de atrás.
     const onKey = (e) => {
-      if (e.key === 'Escape') cerrar(false);
-      else if (e.key === 'Enter') cerrar(true);
+      if (e.key !== 'Escape' && e.key !== 'Enter') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      cerrar(e.key === 'Enter');
     };
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) return cerrar(false);
       const btn = e.target.closest('[data-c]');
       if (btn) cerrar(btn.dataset.c === 'si');
     });
-    document.addEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, true);
     setTimeout(() => overlay.querySelector('[data-c="si"]').focus(), 30);
   });
+}
+
+// Fecha de hoy 'YYYY-MM-DD' en hora local (para min de inputs date y validar)
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Fecha estimada de entrega (OPE-013): vacía es válida ("por confirmar"),
+// pero no puede ser anterior a hoy. Devuelve el mensaje de error o null.
+function errorFechaEntrega(fecha) {
+  if (!fecha) return null;
+  return fecha < hoyISO() ? 'La fecha estimada de entrega no puede ser anterior a hoy' : null;
+}
+
+// Los inputs de fecha estimada (.fecha-futura) no ofrecen días pasados
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input.fecha-futura').forEach(i => { i.min = hoyISO(); });
+});
+
+// Formato de correo (mismo criterio que el backend, utils/validacion.js)
+function correoValido(correo) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(correo ?? '').trim());
 }
 
 // Toast de notificaciones
@@ -242,6 +269,7 @@ function tagEstado(estado) {
     recibido:    ['info',    'Recibido'],
     en_progreso: ['warning', 'En proceso'],
     terminado:   ['success', 'Terminado'],
+    cancelado:   ['danger',  'Cancelado'],
     pendiente:   ['info',    'Pendiente'],
     en_proceso:  ['warning', 'En proceso'],
     completada:  ['success', 'Completada'],

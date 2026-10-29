@@ -117,6 +117,7 @@
               <option value="recibido">Recibido</option>
               <option value="en_progreso">En proceso</option>
               <option value="terminado">Terminado</option>
+              <option value="cancelado">Cancelado</option>
             </select>
           </div>
           <div>
@@ -160,21 +161,30 @@
             <h3 id="op-tarea-titulo">Detalle del mantenimiento</h3>
             <p id="op-tarea-sub" style="color:#64748b;font-size:0.85rem;">-</p>
           </div>
-          <button class="modal-close" onclick="cerrarModal('modal-op-panel')" title="Cerrar">&times;</button>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button id="btn-cancelar-mant" onclick="abrirCancelarMant()" class="btn btn-outline btn-sm" title="Cancelar este mantenimiento" style="display:none;"><i class="fas fa-ban" style="color:#dc2626;"></i> Cancelar mantenimiento</button>
+            <button class="modal-close" onclick="cerrarModal('modal-op-panel')" title="Cerrar">&times;</button>
+          </div>
+        </div>
+
+        <!-- Aviso de mantenimiento cancelado (OPE-012) -->
+        <div id="op-cancelado-box" style="display:none;background:var(--danger-soft);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+          <strong style="color:var(--danger);font-size:0.8rem;text-transform:uppercase;letter-spacing:.4px;"><i class="fas fa-ban"></i> Mantenimiento cancelado</strong>
+          <p id="op-cancelado-motivo" style="color:var(--text-2);font-size:0.88rem;margin-top:4px;line-height:1.5;"></p>
         </div>
 
         <!-- Editar información del mantenimiento -->
-        <div class="form-grid" style="margin-bottom:18px;">
+        <div id="op-edit-wrap" class="form-grid" style="margin-bottom:18px;">
           <div class="field">
             <label>Fecha estimada de entrega</label>
-            <input id="op-edit-fecha" type="date">
+            <input id="op-edit-fecha" type="date" class="fecha-futura">
           </div>
           <div class="field" style="display:flex;align-items:flex-end;">
             <button id="btn-editar-mant" class="btn btn-outline" style="width:100%;"><i class="fas fa-floppy-disk"></i> Guardar cambios</button>
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Observaciones</label>
-            <textarea id="op-edit-obs" placeholder="Notas del servicio..." style="height:55px;"></textarea>
+            <textarea id="op-edit-obs" placeholder="Notas del servicio..." maxlength="500" style="height:55px;"></textarea>
           </div>
         </div>
 
@@ -183,7 +193,7 @@
 
         <!-- Agregar tarea (solo admin) -->
         <div class="admin-only" id="op-form-tarea-wrap">
-          <h4 style="font-size:0.87rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:14px;border-top:1px solid #e2e8f0;padding-top:16px;">Agregar nueva tarea</h4>
+          <h4 id="op-form-tarea-titulo" style="font-size:0.87rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:14px;border-top:1px solid #e2e8f0;padding-top:16px;">Agregar nueva tarea</h4>
           <div class="form-grid">
             <div class="field">
               <label>Mecánico <span style="color:#94a3b8;font-weight:400;">(opcional, se auto-asigna)</span></label>
@@ -203,6 +213,7 @@
             </div>
           </div>
           <div class="form-actions">
+            <button id="btn-cancelar-edicion-tarea" class="btn btn-outline" onclick="cancelarEdicionTarea()" style="display:none;">Cancelar</button>
             <button id="btn-agregar-tarea" class="btn btn-primary">
               <i class="fas fa-plus"></i> Agregar tarea
             </button>
@@ -210,7 +221,7 @@
         </div>
 
         <!-- Repuestos / insumos usados (IVO-008 / IVO-009) -->
-        <div class="admin-only" style="border-top:1px solid #e2e8f0;margin-top:16px;padding-top:16px;">
+        <div class="admin-only" id="op-rep-wrap" style="border-top:1px solid #e2e8f0;margin-top:16px;padding-top:16px;">
           <h4 style="font-size:0.87rem;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.4px;margin-bottom:12px;">Repuestos / insumos usados</h4>
           <div class="table-wrap" style="margin-bottom:14px;">
             <table>
@@ -234,6 +245,25 @@
         </div>
       </div>
       </div><!-- /modal-op-panel -->
+
+      <!-- MODAL: Cancelar mantenimiento con justificación (OPE-012) -->
+      <div id="modal-cancelar-mant" class="modal-overlay" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div><h3>Cancelar mantenimiento</h3><p id="cancel-mant-sub">Esta acción no se puede deshacer</p></div>
+            <button class="modal-close" onclick="cerrarModal('modal-cancelar-mant')" title="Cerrar">&times;</button>
+          </div>
+          <div class="field">
+            <label>Justificación <span style="color:#dc2626;">*</span></label>
+            <textarea id="op-cancel-motivo" maxlength="500" placeholder="Explica por qué se cancela el mantenimiento..." style="height:90px;"></textarea>
+          </div>
+          <p style="color:#64748b;font-size:0.82rem;margin-top:8px;">Las tareas se liberan (se desasigna a los mecánicos) y el cliente verá el mantenimiento como cancelado.</p>
+          <div class="form-actions">
+            <button class="btn btn-outline" onclick="cerrarModal('modal-cancelar-mant')">Volver</button>
+            <button id="btn-confirmar-cancelacion" class="btn btn-danger" onclick="confirmarCancelacionMant()"><i class="fas fa-ban"></i> Cancelar mantenimiento</button>
+          </div>
+        </div>
+      </div>
 
     </div><!-- /vista-lista -->
 
@@ -273,7 +303,7 @@
           </div>
           <div class="field">
             <label>Fecha estimada de entrega</label>
-            <input id="op-fecha" type="date">
+            <input id="op-fecha" type="date" class="fecha-futura">
           </div>
           <div class="field" style="grid-column:1/-1;">
             <label>Observaciones <span style="color:#94a3b8;font-weight:400;">(opcional)</span></label>
