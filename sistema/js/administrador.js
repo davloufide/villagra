@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </td>
           <td><span class="tag ${e.usuarios?.roles?.nombre === 'administrador' ? 'info' : 'purple'}">${e.usuarios?.roles?.nombre ?? '-'}</span></td>
           <td><span class="tag ${e.usuarios?.activo ? 'success' : 'danger'}">${e.usuarios?.activo ? 'Activo' : 'Inactivo'}</span></td>
-          <td>${e.dias_vacaciones} días</td>
+          <td>${e.dias_faltados ?? 0} día(s)</td>
         </tr>
       `;
     }).join('') || '<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Sin empleados</td></tr>';
@@ -95,16 +95,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.responderVac = async (id, estado, motivo) => {
     try {
       await empleados.responderVac(id, { estado, motivo });
-      toast(estado === 'aprobada' ? 'Vacaciones aprobadas' : 'Vacaciones rechazadas', estado === 'aprobada' ? 'success' : 'error');
+      toast(estado === 'aprobada' ? 'Días faltantes aprobados' : 'Días faltantes rechazados', estado === 'aprobada' ? 'success' : 'error');
       cargarVacaciones();
       cargarHistorialVac();
-      cargarEmpleados();   // el saldo del empleado cambia al aprobar
+      cargarEmpleados();   // los días faltados del año cambian al aprobar
     } catch (e) {
       toast(e.message, 'error');
     }
   };
 
-  // ── Historial de vacaciones (#6) ─────────────────────────
+  // ── Historial de días faltantes (#6) ─────────────────────
   let historialVacCache = [];
   let filtroVac = 'todas';
 
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (v.estado === 'pendiente')      { cls = 'warning'; label = 'Solicitada'; }
       else if (v.estado === 'rechazada') { cls = 'danger';  label = 'Rechazada'; }
       else if (esProxima(v))             { cls = 'info';    label = 'Aprobada · Próxima'; }
-      else if (esDisfrutada(v))          { cls = 'neutral'; label = 'Aprobada · Disfrutada'; }
+      else if (esDisfrutada(v))          { cls = 'neutral'; label = 'Aprobada · Ya pasó'; }
       else                               { cls = 'success'; label = 'Aprobada · En curso'; }
       return `
         <tr>
@@ -174,7 +174,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       btnLoading(btnGuardar, true);
       try {
-        // Los días de vacaciones los calcula el backend según la fecha de ingreso
         await empleados.crear({ nombre, correo, password, id_rol: parseInt(id_rol), telefono, tipo_empleo, fecha_ingreso: fecha || null, especialidad: esp });
         toast(`Empleado creado. Contraseña temporal: Villagra1!`);
         ['adm-nombre','adm-correo','adm-telefono','adm-fecha'].forEach(id => {

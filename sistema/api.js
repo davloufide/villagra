@@ -84,7 +84,8 @@ const mantenimientos = {
   solicitudes:  ()         => apiFetch('/mantenimientos/solicitudes'),
   confirmar:    (id, body) => apiFetch(`/mantenimientos/${id}/confirmar`, { method: 'PATCH', body: JSON.stringify(body || {}) }),
   rechazar:     (id)       => apiFetch(`/mantenimientos/${id}/rechazar`, { method: 'PATCH' }),
-  cancelar:     (id, motivo) => apiFetch(`/mantenimientos/${id}/cancelar`, { method: 'PATCH', body: JSON.stringify({ motivo }) })
+  cancelar:     (id, motivo) => apiFetch(`/mantenimientos/${id}/cancelar`, { method: 'PATCH', body: JSON.stringify({ motivo }) }),
+  asignarMecanico: (id, id_empleado) => apiFetch(`/mantenimientos/${id}/asignar`, { method: 'PATCH', body: JSON.stringify({ id_empleado }) })
 };
 
 // ── Días bloqueados (calendario de disponibilidad) ────────
@@ -119,7 +120,8 @@ const servicios = {
   lista:      ()         => apiFetch('/tipos-servicio'),
   crear:      (body)     => apiFetch('/tipos-servicio', { method: 'POST', body: JSON.stringify(body) }),
   actualizar: (id, body) => apiFetch(`/tipos-servicio/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
-  eliminar:   (id)       => apiFetch(`/tipos-servicio/${id}`, { method: 'DELETE' })
+  eliminar:   (id)       => apiFetch(`/tipos-servicio/${id}`, { method: 'DELETE' }),
+  importar:   (filas)    => apiFetch('/tipos-servicio/importar', { method: 'POST', body: JSON.stringify({ filas }) })
 };
 
 // ── Inventario ────────────────────────────────────────────
@@ -135,7 +137,8 @@ const inventario = {
   salida:      (id, cantidad) => apiFetch(`/inventario/${id}/salida`, { method: 'PATCH', body: JSON.stringify({ cantidad }) }),
   ajuste:      (id, cantidad) => apiFetch(`/inventario/${id}/ajuste`, { method: 'PATCH', body: JSON.stringify({ cantidad }) }),
   movimiento:  (body)   => apiFetch('/inventario/movimiento', { method: 'POST', body: JSON.stringify(body) }),
-  movimientosDe: (idMant) => apiFetch(`/inventario/movimientos/${idMant}`)
+  movimientosDe: (idMant) => apiFetch(`/inventario/movimientos/${idMant}`),
+  importar:    (filas)  => apiFetch('/inventario/importar', { method: 'POST', body: JSON.stringify({ filas }) })
 };
 
 // ── Mi perfil (cualquier rol) ─────────────────────────────

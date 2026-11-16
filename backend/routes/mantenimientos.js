@@ -95,7 +95,8 @@ router.get('/', verificarToken, async (req, res) => {
     .from('mantenimientos')
     .select(`
       *,
-      vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre)))
+      vehiculos(placa, marcas(nombre_marca), clientes(usuarios(nombre))),
+      tareas(id_empleado, estado, empleados(usuarios(nombre)))
     `)
     .order('fecha_ingreso', { ascending: false });
 
@@ -491,6 +492,41 @@ router.patch('/:id/confirmar', verificarToken, soloRol('administrador', 'mecanic
     .eq('id_mantenimiento', id).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// PATCH /api/mantenimientos/:id/asignar — el admin elige el mecánico encargado
+// del mantenimiento. Body: { id_empleado }. Pasa a ese mecánico todas las
+// tareas que aún no están completadas (las completadas conservan a quien las
+// hizo). Si era una cita sin confirmar, queda confirmada.
+router.patch('/:id/asignar', verificarToken, soloRol('administrador'), async (req, res) => {
+  const id = parseInt(req.params.id);
+  const id_empleado = parseInt(req.body.id_empleado);
+  if (!id_empleado) return res.status(400).json({ error: 'Selecciona el mecánico a asignar' });
+
+  const info = await infoMantenimiento(id);
+  if (!info) return res.status(404).json({ error: 'Mantenimiento no encontrado' });
+  if (info.estado === 'cancelado') return res.status(409).json({ error: MSG_CANCELADO });
+  if (info.facturas) return res.status(409).json({ error: 'El mantenimiento ya está facturado' });
+
+  const { data: emp } = await supabase
+    .from('empleados').select('id_empleado, usuarios(nombre, activo)').eq('id_empleado', id_empleado).maybeSingle();
+  if (!emp) return res.status(404).json({ error: 'Mecánico no encontrado' });
+  if (emp.usuarios?.activo === false) return res.status(409).json({ error: 'Ese mecánico está inactivo' });
+
+  const { data: tareas, error: eT } = await supabase
+    .from('tareas').update({ id_empleado })
+    .eq('id_mantenimiento', id).neq('estado', 'completada')
+    .select('id_tarea');
+  if (eT) return res.status(500).json({ error: eT.message });
+  if (!tareas.length)
+    return res.status(409).json({ error: 'No hay tareas pendientes para asignar. Agregá una tarea primero.' });
+
+  // Cita del cliente sin confirmar → confirmada (best-effort si falta la columna)
+  await supabase.from('mantenimientos').update({ estado_cita: 'confirmada' })
+    .eq('id_mantenimiento', id).eq('estado_cita', 'solicitada')
+    .then(() => {}, () => {});
+
+  res.json({ ok: true, tareas_asignadas: tareas.length, mecanico: emp.usuarios?.nombre ?? null });
 });
 
 // PATCH /api/mantenimientos/:id/rechazar — rechazar/soltar una cita (admin o mecánico)

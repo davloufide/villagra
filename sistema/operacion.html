@@ -139,6 +139,7 @@
               <tr>
                 <th>Vehículo</th>
                 <th>Cliente</th>
+                <th>Mecánico</th>
                 <th>Estado</th>
                 <th>Avance</th>
                 <th>Ingreso</th>
@@ -146,7 +147,7 @@
               </tr>
             </thead>
             <tbody id="op-tbody-activos">
-              <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
+              <tr><td colspan="7"style="text-align:center;color:#94a3b8;padding:24px;">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -186,6 +187,18 @@
             <label>Observaciones</label>
             <textarea id="op-edit-obs" placeholder="Notas del servicio..." maxlength="500" style="height:55px;"></textarea>
           </div>
+        </div>
+
+        <!-- Mecánico encargado: el admin lo elige y se le pasan las tareas pendientes -->
+        <div id="op-asignar-wrap" class="form-grid" style="margin-bottom:18px;">
+          <div class="field">
+            <label>Mecánico encargado</label>
+            <select id="op-asignar-mecanico"><option value="">Selecciona un mecánico</option></select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <button id="btn-asignar-mec" class="btn btn-primary" style="width:100%;" onclick="asignarMecanicoMant()"><i class="fas fa-user-check"></i> Asignar mecánico</button>
+          </div>
+          <small id="op-asignar-ayuda" style="grid-column:1/-1;color:var(--muted);font-size:0.8rem;margin-top:-6px;">Se le asignan todas las tareas pendientes de este mantenimiento.</small>
         </div>
 
         <!-- Tareas existentes -->
@@ -326,7 +339,10 @@
       <div class="card">
         <div class="card-header">
           <div><h3>Catálogo de servicios</h3><p>Procesos y precios base del taller</p></div>
-          <button class="btn btn-primary btn-sm" onclick="nuevoServicio()"><i class="fas fa-plus"></i> Agregar servicio</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="importarServicios()"><i class="fas fa-file-excel"></i> Importar Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="nuevoServicio()"><i class="fas fa-plus"></i> Agregar servicio</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>

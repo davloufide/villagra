@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <small style="color:#94a3b8;">${m.vehiculos?.marcas?.nombre_marca ?? ''}</small>
               </td>
               <td>${m.vehiculos?.clientes?.usuarios?.nombre ?? '-'}</td>
+              <td style="font-size:0.85rem;">${mecanicosDe(m)}</td>
               <td>${tagEstado(m.estado)}</td>
               <td>
                 <div class="progress" style="width:80px;display:inline-block;">
@@ -38,7 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
               </td>
             </tr>`;
         }).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px;">No hay mantenimientos en esta vista</td></tr>';
+      : '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">No hay mantenimientos en esta vista</td></tr>';
+  }
+
+  // Nombres de los mecánicos con tareas en el mantenimiento (sin repetir)
+  function mecanicosDe(m) {
+    const nombres = [...new Set((m.tareas ?? []).map(t => t.empleados?.usuarios?.nombre).filter(Boolean))];
+    if (nombres.length) return nombres.join(', ');
+    return (m.tareas ?? []).length && m.estado !== 'cancelado'
+      ? '<span class="tag warning">Sin asignar</span>'
+      : '<span style="color:#94a3b8;">—</span>';
   }
 
   const pagMant = crearPaginador('pag-mantenimientos', renderMant, 5);
@@ -117,6 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       emps.forEach(e => {
         opt('op-mecanico',       e.id_empleado, e.usuarios?.nombre);
         opt('op-tarea-mecanico', e.id_empleado, e.usuarios?.nombre);
+        if (e.usuarios?.activo !== false) opt('op-asignar-mecanico', e.id_empleado, e.usuarios?.nombre);
       });
       clientes.forEach(c => opt('op-cliente', c.id_cliente, c.usuarios?.nombre ?? ('Cliente ' + c.id_cliente)));
       marcas.forEach(m => opt('op-marca', m.id_marca, m.nombre_marca));
@@ -216,6 +227,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Abrir el modal en modo "crear" (limpio)
   window.nuevoServicio = () => { cancelarEdicionServicio(); abrirModal('modal-servicio'); };
+
+  // Carga masiva del catálogo desde Excel. Si el servicio ya existe (mismo
+  // nombre) se actualiza su precio y descripción.
+  window.importarServicios = () => abrirImportadorExcel({
+    titulo: 'Importar servicios desde Excel',
+    ayuda: 'Si un servicio ya existe (mismo nombre), se actualizan su precio y descripción.',
+    plantilla: 'plantilla-servicios.xlsx',
+    columnas: [
+      { clave: 'nombre',      encabezado: 'Servicio', alias: ['nombre', 'nombre del servicio'], requerido: true,
+        ejemplo: ['Cambio de aceite', 'Alineado y balanceo'] },
+      { clave: 'precio_base', encabezado: 'Precio (sin IVA)', alias: ['precio', 'precio base', 'precio sin iva'], requerido: true, numero: true,
+        ejemplo: [15000, 22000] },
+      { clave: 'descripcion', encabezado: 'Descripción', alias: ['detalle'],
+        ejemplo: ['Incluye filtro de aceite', ''] }
+    ],
+    enviar: (filas) => servicios.importar(filas),
+    alTerminar: cargarCatalogo
+  });
 
   window.editarServicio = (id) => {
     const s = serviciosCache.find(x => x.id_tipo_servicio === id);
@@ -321,6 +350,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const tareas  = det.tareas ?? [];
       tareasPanel = tareas;
+
+      // Mecánico encargado: preseleccionar si todas las pendientes son del mismo
+      const pendientes = tareas.filter(t => t.estado !== 'completada');
+      const actuales   = [...new Set(pendientes.map(t => t.id_empleado))];
+      document.getElementById('op-asignar-wrap').style.display = cancelado || det.facturas ? 'none' : '';
+      document.getElementById('op-asignar-mecanico').value =
+        actuales.length === 1 && actuales[0] ? actuales[0] : '';
+      document.getElementById('op-asignar-ayuda').textContent = pendientes.length
+        ? `Se le asignan las ${pendientes.length} tarea(s) pendiente(s) de este mantenimiento.`
+        : 'No hay tareas pendientes: agregá una tarea abajo para poder asignar un mecánico.';
       const listaEl = document.getElementById('op-tareas-lista');
 
       listaEl.innerHTML = tareas.length
@@ -360,6 +399,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       await cargarRepuestosMant(id);
     } catch (e) {
       toast('Error cargando detalle: ' + e.message, 'error');
+    }
+  };
+
+  window.asignarMecanicoMant = async () => {
+    if (!mantSeleccionado) return;
+    const id_emp = document.getElementById('op-asignar-mecanico').value;
+    if (!id_emp) { toast('Selecciona el mecánico a asignar', 'error'); return; }
+    const btn = document.getElementById('btn-asignar-mec');
+    btnLoading(btn, true);
+    try {
+      const r = await mantenimientos.asignarMecanico(mantSeleccionado, parseInt(id_emp));
+      toast(`${r.mecanico ?? 'Mecánico'} quedó a cargo (${r.tareas_asignadas} tarea(s))`);
+      await Promise.all([verDetalleMant(mantSeleccionado), cargarMantenimientos(), cargarSolicitudes()]);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btnLoading(btn, false);
     }
   };
 

@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // ══════════════════════════════════════════════════════
-  // MIS VACACIONES: el empleado solicita días y ve el estado
+  // DÍAS FALTANTES: el empleado avisa qué días falta y ve el estado
   // ══════════════════════════════════════════════════════
   const ESTADO_VAC = {
     pendiente: ['warning', 'Pendiente'],
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const r = await empleados.misVacaciones();
       const saldo = document.getElementById('mvac-saldo');
-      if (saldo) saldo.textContent = r.dias_vacaciones;
+      if (saldo) saldo.textContent = r.dias_faltados ?? 0;
       const sols = r.solicitudes ?? [];
       if (cont) cont.innerHTML = sols.length
         ? sols.map(v => {
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                   </div>` : ''}
               </div>`;
           }).join('')
-        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no has solicitado vacaciones.</p>';
+        : '<p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Aún no registraste días faltantes.</p>';
     } catch (e) {
       if (cont) cont.innerHTML = `<p style="color:#dc2626;padding:12px;font-size:0.86rem;">${e.message}</p>`;
     }
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('mvac-dias').value   = '';
         await cargarMisVacaciones();
       } catch (e) {
-        toast(e.message, 'error');   // p.ej. "Días disponibles insuficientes"
+        toast(e.message, 'error');
       } finally {
         btnLoading(btnSolVac, false);
       }

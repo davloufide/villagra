@@ -30,6 +30,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     abrirModal('modal-producto');
   };
 
+  // Carga masiva del inventario desde Excel. El producto se identifica por
+  // código: si ya existe se actualizan sus datos y el stock se SUMA.
+  window.importarInventario = () => abrirImportadorExcel({
+    titulo: 'Importar inventario desde Excel',
+    ayuda: 'Si el código ya existe, se actualizan los datos y el stock del archivo se suma al actual. Las categorías nuevas se crean solas.',
+    plantilla: 'plantilla-inventario.xlsx',
+    columnas: [
+      { clave: 'codigo',         encabezado: 'Código', alias: ['cod', 'sku', 'codigo producto'], requerido: true, ejemplo: ['AC-5W30', 'FA-010'] },
+      { clave: 'nombre',         encabezado: 'Nombre', alias: ['producto', 'nombre producto'], requerido: true, ejemplo: ['Aceite 5W-30 1L', 'Filtro de aire'] },
+      { clave: 'marca',          encabezado: 'Marca', ejemplo: ['Castrol', 'Bosch'] },
+      { clave: 'categoria',      encabezado: 'Categoría', alias: ['categoria producto'], ejemplo: ['Lubricantes', 'Filtros'] },
+      { clave: 'cantidad_stock', encabezado: 'Stock', alias: ['cantidad', 'existencias', 'stock actual'], numero: true, ejemplo: [24, 10] },
+      { clave: 'stock_minimo',   encabezado: 'Stock mínimo', alias: ['minimo', 'stock min'], numero: true, ejemplo: [6, 3] },
+      { clave: 'costo_unitario', encabezado: 'Costo unitario', alias: ['costo', 'precio costo', 'precio de costo'], numero: true, ejemplo: [4500, 3800] },
+      { clave: 'precio_sin_iva', encabezado: 'Precio venta (sin IVA)', alias: ['precio venta', 'precio', 'precio sin iva', 'precio de venta'], numero: true, ejemplo: [6500, 5500] }
+    ],
+    enviar: (filas) => inventario.importar(filas),
+    alTerminar: () => Promise.all([cargarProductos(), cargarCategorias()])
+  });
+
   function nivelStock(p) {
     if (p.cantidad_stock < p.stock_minimo) return 'danger';
     if (p.cantidad_stock <= p.stock_minimo + 2) return 'warning';

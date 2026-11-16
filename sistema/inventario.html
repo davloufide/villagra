@@ -33,6 +33,7 @@
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Inventario actual" data-sub="Control de productos, stock y alertas de reposición" onclick="mostrarVista('lista');return false;"><i class="fas fa-list"></i> Inventario</a>
           <a href="#" class="subitem" onclick="nuevoProducto();return false;"><i class="fas fa-plus"></i> Registrar producto</a>
+          <a href="#" class="subitem" onclick="importarInventario();return false;"><i class="fas fa-file-excel"></i> Importar desde Excel</a>
           <a href="#" class="subitem" onclick="irAjustarStock();return false;"><i class="fas fa-plus-minus"></i> Ajustar stock</a>
           <a href="#" class="subitem" data-vista="reposicion" data-titulo="Reposición" data-sub="Productos bajo mínimo para anticipar compras" onclick="mostrarVista('reposicion');cargarReposicion();return false;"><i class="fas fa-cart-shopping"></i> Reposición</a>
           <a href="#" class="subitem" onclick="abrirModal('modal-categorias');return false;"><i class="fas fa-tags"></i> Categorías</a>
@@ -63,6 +64,7 @@
         <p id="modulo-sub">Control de productos, stock y alertas de reposición</p>
       </div>
       <div class="top-actions">
+        <button class="btn btn-outline btn-sm" onclick="importarInventario()"><i class="fas fa-file-excel"></i> Importar Excel</button>
         <button class="btn btn-outline btn-sm" onclick="exportarInventarioPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
         <button class="btn btn-outline btn-sm" onclick="irAjustarStock()"><i class="fas fa-plus-minus"></i> Ajustar stock</button>
         <button class="btn btn-primary btn-sm" onclick="nuevoProducto()"><i class="fas fa-plus"></i> Producto nuevo</button>

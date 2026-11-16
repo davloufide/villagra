@@ -470,3 +470,223 @@ function btnLoading(btn, loading) {
     btn.innerHTML = btn._orig;
   }
 }
+
+// ── Importar desde Excel (catálogo de servicios e inventario) ──
+// El navegador lee el .xlsx con SheetJS, reconoce las columnas por su
+// encabezado (sin importar tildes ni mayúsculas), valida y muestra una vista
+// previa. Al confirmar manda las filas como JSON al backend, que crea o
+// actualiza y devuelve { creados, actualizados, errores:[{fila, error}] }.
+//
+// abrirImportadorExcel({
+//   titulo, ayuda, plantilla: 'archivo.xlsx',
+//   columnas: [{ clave, encabezado, alias:[...], requerido, numero, ejemplo }],
+//   enviar: async (filas) => resultado,
+//   alTerminar: () => {}            // refrescar la tabla de la página
+// })
+const MAX_FILAS_EXCEL = 2000;
+let _sheetJS = null;
+let _imp = null;   // { cfg, filas, errores }
+
+// SheetJS se descarga solo cuando se usa (no pesa en el resto de páginas)
+function cargarSheetJS() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!_sheetJS) {
+    _sheetJS = new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload  = () => ok(window.XLSX);
+      s.onerror = () => { _sheetJS = null; fail(new Error('No se pudo cargar el lector de Excel. Revisá la conexión a internet.')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _sheetJS;
+}
+
+const _normEnc = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const _escHTML = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Acepta 12500 · "₡12.500" · "12,500.50" · "12500,5". Devuelve NaN si no es número.
+function _numeroExcel(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v).replace(/[^\d.,-]/g, '');
+  if (!s) return NaN;
+  const coma = s.lastIndexOf(','), punto = s.lastIndexOf('.');
+  if (coma > -1 && punto > -1) {
+    // El separador que aparece último es el decimal
+    s = coma > punto ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  } else if (coma > -1) {
+    s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(',', '.');
+  } else if (punto > -1 && /^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.replace(/\./g, '');   // "12.500" = doce mil quinientos
+  }
+  return s.trim() === '' ? NaN : Number(s);
+}
+
+function abrirImportadorExcel(cfg) {
+  _imp = { cfg, filas: [], errores: [] };
+  let m = document.getElementById('modal-importar');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'modal-importar';
+    m.className = 'modal-overlay';
+    m.style.display = 'none';
+    m.innerHTML = `
+      <div class="card" style="max-width:760px;">
+        <div class="card-header">
+          <div><h3 id="imp-titulo">Importar desde Excel</h3><p id="imp-ayuda"></p></div>
+          <button class="modal-close" onclick="cerrarModal('modal-importar')"><i class="fas fa-times"></i></button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <button class="btn btn-outline btn-sm" onclick="descargarPlantillaExcel()"><i class="fas fa-download"></i> Descargar plantilla</button>
+          <span style="color:var(--muted);font-size:0.82rem;">Columnas: <span id="imp-columnas"></span></span>
+        </div>
+        <div class="field">
+          <label>Archivo de Excel (.xlsx, .xls o .csv)</label>
+          <input id="imp-archivo" type="file" accept=".xlsx,.xls,.csv" onchange="leerArchivoExcel(this.files[0])">
+        </div>
+        <div id="imp-resumen" style="margin-top:12px;"></div>
+        <div class="form-actions">
+          <button id="imp-btn" class="btn btn-success" style="flex:1;" disabled onclick="enviarImportacion()"><i class="fas fa-file-import"></i> Importar</button>
+          <button class="btn btn-outline" onclick="cerrarModal('modal-importar')"><i class="fas fa-xmark"></i> Cerrar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+  }
+  document.getElementById('imp-titulo').textContent = cfg.titulo;
+  document.getElementById('imp-ayuda').textContent = cfg.ayuda ?? '';
+  document.getElementById('imp-columnas').innerHTML = cfg.columnas
+    .map(c => c.requerido ? `<strong>${_escHTML(c.encabezado)}*</strong>` : _escHTML(c.encabezado)).join(' · ');
+  document.getElementById('imp-archivo').value = '';
+  document.getElementById('imp-resumen').innerHTML = '';
+  const btn = document.getElementById('imp-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-file-import"></i> Importar';
+  abrirModal('modal-importar');
+  cargarSheetJS().catch(() => {});   // precarga mientras el admin elige el archivo
+}
+
+async function descargarPlantillaExcel() {
+  const { cfg } = _imp;
+  try {
+    const XLSX = await cargarSheetJS();
+    const filas = [cfg.columnas.map(c => c.encabezado)];
+    (cfg.columnas[0].ejemplo ?? []).forEach((_, i) => filas.push(cfg.columnas.map(c => c.ejemplo?.[i] ?? '')));
+    const hoja = XLSX.utils.aoa_to_sheet(filas);
+    hoja['!cols'] = cfg.columnas.map(c => ({ wch: Math.max(14, c.encabezado.length + 4) }));
+    const libro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(libro, hoja, 'Datos');
+    XLSX.writeFile(libro, cfg.plantilla);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function leerArchivoExcel(archivo) {
+  const resumen = document.getElementById('imp-resumen');
+  const btn = document.getElementById('imp-btn');
+  btn.disabled = true;
+  if (!archivo) { resumen.innerHTML = ''; return; }
+  resumen.innerHTML = '<p style="color:var(--muted);font-size:0.86rem;"><i class="fas fa-spinner fa-spin"></i> Leyendo archivo...</p>';
+
+  const { cfg } = _imp;
+  try {
+    const XLSX = await cargarSheetJS();
+    const libro = XLSX.read(await archivo.arrayBuffer(), { type: 'array' });
+    const matriz = XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { header: 1, defval: '', blankrows: false });
+
+    // Fila de encabezados: la primera (de las 10 primeras) que tenga alguna columna conocida
+    const nombresCol = c => [c.encabezado, c.clave, ...(c.alias ?? [])].map(_normEnc);
+    const idxEnc = matriz.slice(0, 10).findIndex(fila => fila.some(v => cfg.columnas.some(c => nombresCol(c).includes(_normEnc(v)))));
+    if (idxEnc === -1) throw new Error('No se encontraron los encabezados. Usá la plantilla (primera fila con los nombres de las columnas).');
+    const enc = matriz[idxEnc].map(_normEnc);
+    const posicion = {};
+    cfg.columnas.forEach(c => { posicion[c.clave] = enc.findIndex(e => nombresCol(c).includes(e)); });
+    const faltan = cfg.columnas.filter(c => c.requerido && posicion[c.clave] === -1).map(c => c.encabezado);
+    if (faltan.length) throw new Error(`Falta la columna: ${faltan.join(', ')}`);
+
+    const filas = [], errores = [];
+    matriz.slice(idxEnc + 1).forEach((fila, i) => {
+      if (fila.every(v => String(v).trim() === '')) return;
+      const numFila = idxEnc + i + 2;   // número de fila tal como se ve en Excel
+      const obj = { fila: numFila };
+      const problemas = [];
+      cfg.columnas.forEach(c => {
+        if (posicion[c.clave] === -1) return;
+        let v = fila[posicion[c.clave]];
+        if (typeof v === 'string') v = v.trim();
+        if (v === '' || v === undefined) {
+          if (c.requerido) problemas.push(`falta "${c.encabezado}"`);
+          return;
+        }
+        if (c.numero) {
+          const n = _numeroExcel(v);
+          if (Number.isNaN(n) || n < 0) { problemas.push(`"${c.encabezado}" no es un número válido`); return; }
+          v = n;
+        }
+        obj[c.clave] = c.numero ? v : String(v);
+      });
+      if (problemas.length) errores.push({ fila: numFila, error: problemas.join(', ') });
+      else filas.push(obj);
+    });
+
+    if (filas.length + errores.length > MAX_FILAS_EXCEL)
+      throw new Error(`El archivo tiene ${filas.length + errores.length} filas; el máximo es ${MAX_FILAS_EXCEL}. Dividilo en varios archivos.`);
+    if (!filas.length && !errores.length) throw new Error('El archivo no tiene filas con datos.');
+
+    _imp.filas = filas;
+    _imp.errores = errores;
+    const muestra = filas.slice(0, 8);
+    resumen.innerHTML = `
+      <p style="font-size:0.88rem;margin-bottom:8px;">
+        <span class="tag success">${filas.length} fila(s) listas</span>
+        ${errores.length ? `<span class="tag danger">${errores.length} con errores (no se importan)</span>` : ''}
+      </p>
+      ${muestra.length ? `
+        <div class="table-wrap" style="max-height:240px;overflow:auto;">
+          <table>
+            <thead><tr><th>Fila</th>${cfg.columnas.map(c => `<th>${_escHTML(c.encabezado)}</th>`).join('')}</tr></thead>
+            <tbody>${muestra.map(f => `<tr><td>${f.fila}</td>${cfg.columnas.map(c => `<td>${_escHTML(f[c.clave] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        </div>
+        ${filas.length > muestra.length ? `<p style="color:var(--muted);font-size:0.8rem;margin-top:6px;">... y ${filas.length - muestra.length} fila(s) más</p>` : ''}` : ''}
+      ${_listaErroresImp(errores)}`;
+    btn.disabled = !filas.length;
+    btn.innerHTML = `<i class="fas fa-file-import"></i> Importar ${filas.length} fila(s)`;
+  } catch (e) {
+    resumen.innerHTML = `<p style="color:var(--danger);font-size:0.86rem;"><i class="fas fa-circle-exclamation"></i> ${_escHTML(e.message)}</p>`;
+  }
+}
+
+function _listaErroresImp(errores) {
+  if (!errores.length) return '';
+  const max = 30;
+  return `
+    <div style="margin-top:10px;background:var(--danger-soft);border-radius:9px;padding:10px 12px;font-size:0.82rem;max-height:160px;overflow:auto;">
+      ${errores.slice(0, max).map(e => `<div><strong>Fila ${e.fila}:</strong> ${_escHTML(e.error)}</div>`).join('')}
+      ${errores.length > max ? `<div>... y ${errores.length - max} más</div>` : ''}
+    </div>`;
+}
+
+async function enviarImportacion() {
+  const { cfg, filas, errores } = _imp;
+  const btn = document.getElementById('imp-btn');
+  btnLoading(btn, true);
+  try {
+    const r = await cfg.enviar(filas);
+    const todosErrores = [...errores, ...(r.errores ?? [])].sort((a, b) => a.fila - b.fila);
+    document.getElementById('imp-resumen').innerHTML = `
+      <p style="font-size:0.9rem;">
+        <span class="tag success">${r.creados} creado(s)</span>
+        <span class="tag info">${r.actualizados} actualizado(s)</span>
+        ${todosErrores.length ? `<span class="tag danger">${todosErrores.length} con errores</span>` : ''}
+      </p>
+      ${_listaErroresImp(todosErrores)}`;
+    toast(`Importación lista: ${r.creados} creado(s), ${r.actualizados} actualizado(s)`);
+    document.getElementById('imp-archivo').value = '';
+    _imp.filas = [];
+    if (cfg.alTerminar) cfg.alTerminar();
+    btnLoading(btn, false);
+    btn.disabled = true;
+  } catch (e) {
+    toast(e.message, 'error');
+    btnLoading(btn, false);
+  }
+}

@@ -32,7 +32,7 @@
         <div class="submenu">
           <a href="#" class="subitem active" data-vista="lista" data-titulo="Mis mantenimientos" data-sub="Trabajos asignados y gestión de servicios" onclick="mostrarVista('lista');return false;"><i class="fas fa-list-check"></i> Mis mantenimientos</a>
           <a href="#" class="subitem" onclick="abrirModal('modal-nuevo-mec');return false;"><i class="fas fa-plus"></i> Nuevo mantenimiento</a>
-          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Mis vacaciones" data-sub="Solicita días libres y consulta el estado" onclick="mostrarVista('vacaciones');cargarMisVacaciones();return false;"><i class="fas fa-umbrella-beach"></i> Mis vacaciones</a>
+          <a href="#" class="subitem" data-vista="vacaciones" data-titulo="Días faltantes" data-sub="Avisá qué días vas a faltar y consultá el estado" onclick="mostrarVista('vacaciones');cargarMisVacaciones();return false;"><i class="fas fa-calendar-xmark"></i> Días faltantes</a>
         </div>
       </div>
       <a href="inventario.html" class="admin-only"><i class="fas fa-boxes-stacked"></i> Inventario</a>
@@ -172,21 +172,22 @@
 
     </div><!-- /vista-lista -->
 
-    <!-- ══════════ SUBMÓDULO: Mis vacaciones ══════════ -->
+    <!-- ══════════ SUBMÓDULO: Días faltantes ══════════ -->
+    <!-- (los ids siguen diciendo "vac": la tabla en la BD se llama vacaciones) -->
     <div id="vista-vacaciones" class="vista" style="display:none;">
       <section class="grid kpi">
         <div class="card kpi-card kpi-blue">
-          <div class="kpi-icon"><i class="fas fa-umbrella-beach"></i></div>
-          <h3>Días disponibles</h3>
+          <div class="kpi-icon"><i class="fas fa-calendar-xmark"></i></div>
+          <h3>Días faltados este año</h3>
           <div class="number" id="mvac-saldo">-</div>
-          <p class="sub">Saldo de vacaciones</p>
+          <p class="sub">Ausencias aprobadas</p>
         </div>
       </section>
 
       <div class="two-col">
         <div class="card">
           <div class="card-header">
-            <div><h3>Solicitar vacaciones</h3><p>Elige el rango de fechas; los días hábiles se calculan solos</p></div>
+            <div><h3>Avisar días faltantes</h3><p>Elige el rango de fechas; los días hábiles se calculan solos</p></div>
           </div>
           <div class="form-grid">
             <div class="field"><label>Desde <span style="color:#dc2626;">*</span></label><input id="mvac-inicio" type="date" onchange="autoCalcularDiasVac()"></div>
@@ -196,12 +197,12 @@
           <div class="form-actions">
             <button id="btn-solicitar-vac" class="btn btn-success" style="flex:1;"><i class="fas fa-paper-plane"></i> Enviar solicitud</button>
           </div>
-          <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">El administrador revisa la solicitud. Los días se descuentan del saldo cuando la aprueba.</p>
+          <p style="font-size:0.78rem;color:#94a3b8;margin-top:8px;">El administrador revisa la solicitud y la aprueba o la rechaza.</p>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <div><h3>Mis solicitudes</h3><p>Estado de tus pedidos de vacaciones</p></div>
+            <div><h3>Mis solicitudes</h3><p>Estado de tus días faltantes</p></div>
           </div>
           <div class="list" id="mvac-lista">
             <p style="color:#94a3b8;padding:12px;font-size:0.88rem;">Cargando...</p>
