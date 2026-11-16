@@ -376,8 +376,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   let fcChart      = null;   // instancia de Chart.js
   let fcCargadas   = false;  // ¿ya se trajeron las categorías?
 
-  const hoyISO = () => new Date().toISOString().slice(0, 10);
-  const iso = (d) => d.toISOString().slice(0, 10);
+  // hoyISO() viene de js/ui.js (fecha local). No redeclararla aquí: una const
+  // con el mismo nombre en este bloque rompía todo el script por la TDZ.
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   // Rango de fechas de cada atajo. La semana arranca el lunes.
   function rangoPreset(preset) {
